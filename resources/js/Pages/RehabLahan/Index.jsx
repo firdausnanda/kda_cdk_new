@@ -332,7 +332,7 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex justify-center gap-2">
                                                 {/* Submit Button for Operators */}
-                                                {(isOperator || isAdmin) && (item.status === 'draft' || item.status === 'rejected') && (
+                                                {((isOperator || isAdmin) && (item.status === 'draft' || item.status === 'rejected')) && (
                                                     <button
                                                         onClick={() => handleSubmit(item.id)}
                                                         className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors shadow-sm bg-blue-50"
@@ -344,8 +344,8 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                                                     </button>
                                                 )}
 
-                                                {/* Verify & Reject for Kasi */}
-                                                {isKasi && item.status === 'waiting_kasi' && (
+                                                {/* Verify & Reject for Kasi / Admin */}
+                                                {(isKasi || isAdmin) && item.status === 'waiting_kasi' && (
                                                     <>
                                                         <button
                                                             onClick={() => handleVerify(item.id)}
@@ -368,8 +368,8 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                                                     </>
                                                 )}
 
-                                                {/* Verify & Reject for KaCDK */}
-                                                {isKaCDK && item.status === 'waiting_cdk' && (
+                                                {/* Verify & Reject for KaCDK / Admin */}
+                                                {(isKaCDK || isAdmin) && item.status === 'waiting_cdk' && (
                                                     <>
                                                         <button
                                                             onClick={() => handleVerify(item.id)}
@@ -392,8 +392,8 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                                                     </>
                                                 )}
 
-                                                {/* Edit & Delete (Draft/Rejected only) */}
-                                                {(isOperator || isAdmin) && (item.status === 'draft' || item.status === 'rejected') && (
+                                                {/* Edit & Delete */}
+                                                {((isOperator || isAdmin) && (item.status === 'draft' || item.status === 'rejected' || isAdmin)) && (
                                                     <>
                                                         <Link
                                                             href={route('rehab-lahan.edit', item.id)}

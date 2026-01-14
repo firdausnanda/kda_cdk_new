@@ -146,7 +146,7 @@ class RehabManggroveController extends Controller
   {
     $user = auth()->user();
 
-    if ($user->hasRole('kasi') && $rehabManggrove->status === 'waiting_kasi') {
+    if (($user->hasRole('kasi') || $user->hasRole('admin')) && $rehabManggrove->status === 'waiting_kasi') {
       $rehabManggrove->update([
         'status' => 'waiting_cdk',
         'approved_by_kasi_at' => now(),
@@ -154,7 +154,7 @@ class RehabManggroveController extends Controller
       return redirect()->back()->with('success', 'Laporan disetujui dan diteruskan ke KaCDK.');
     }
 
-    if ($user->hasRole('kacdk') && $rehabManggrove->status === 'waiting_cdk') {
+    if (($user->hasRole('kacdk') || $user->hasRole('admin')) && $rehabManggrove->status === 'waiting_cdk') {
       $rehabManggrove->update([
         'status' => 'final',
         'approved_by_cdk_at' => now(),

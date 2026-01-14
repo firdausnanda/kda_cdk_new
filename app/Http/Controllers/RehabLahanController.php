@@ -161,7 +161,7 @@ class RehabLahanController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('kasi') && $rehabLahan->status === 'waiting_kasi') {
+        if (($user->hasRole('kasi') || $user->hasRole('admin')) && $rehabLahan->status === 'waiting_kasi') {
             $rehabLahan->update([
                 'status' => 'waiting_cdk',
                 'approved_by_kasi_at' => now(),
@@ -169,7 +169,7 @@ class RehabLahanController extends Controller
             return redirect()->back()->with('success', 'Laporan disetujui dan diteruskan ke KaCDK.');
         }
 
-        if ($user->hasRole('kacdk') && $rehabLahan->status === 'waiting_cdk') {
+        if (($user->hasRole('kacdk') || $user->hasRole('admin')) && $rehabLahan->status === 'waiting_cdk') {
             $rehabLahan->update([
                 'status' => 'final',
                 'approved_by_cdk_at' => now(),

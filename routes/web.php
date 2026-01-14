@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RehabLahanController;
 use App\Http\Controllers\PenghijauanLingkunganController;
 use App\Http\Controllers\RehabManggroveController;
+use App\Http\Controllers\RhlTeknisController;
 use App\Http\Controllers\LocationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -55,6 +56,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/rehab-manggrove/{rehab_manggrove}/submit', [RehabManggroveController::class, 'submit'])->name('rehab-manggrove.submit');
     Route::post('/rehab-manggrove/{rehab_manggrove}/approve', [RehabManggroveController::class, 'approve'])->name('rehab-manggrove.approve');
     Route::post('/rehab-manggrove/{rehab_manggrove}/reject', [RehabManggroveController::class, 'reject'])->name('rehab-manggrove.reject');
+
+    // RHL Teknis
+    Route::resource('rhl-teknis', RhlTeknisController::class)->parameters(['rhl-teknis' => 'rhl_teknis']);
+    Route::post('/rhl-teknis/{rhl_teknis}/submit', [RhlTeknisController::class, 'submit'])->name('rhl-teknis.submit');
+    Route::post('/rhl-teknis/{rhl_teknis}/approve', [RhlTeknisController::class, 'approve'])->name('rhl-teknis.approve');
+    Route::post('/rhl-teknis/{rhl_teknis}/reject', [RhlTeknisController::class, 'reject'])->name('rhl-teknis.reject');
     Route::resource('rehab-manggrove', RehabManggroveController::class);
 });
 

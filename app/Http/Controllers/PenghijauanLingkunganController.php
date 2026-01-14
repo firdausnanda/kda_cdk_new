@@ -150,7 +150,7 @@ class PenghijauanLingkunganController extends Controller
   {
     $user = auth()->user();
 
-    if ($user->hasRole('kasi') && $penghijauanLingkungan->status === 'waiting_kasi') {
+    if (($user->hasRole('kasi') || $user->hasRole('admin')) && $penghijauanLingkungan->status === 'waiting_kasi') {
       $penghijauanLingkungan->update([
         'status' => 'waiting_cdk',
         'approved_by_kasi_at' => now(),
@@ -158,7 +158,7 @@ class PenghijauanLingkunganController extends Controller
       return redirect()->back()->with('success', 'Laporan disetujui dan diteruskan ke KaCDK.');
     }
 
-    if ($user->hasRole('kacdk') && $penghijauanLingkungan->status === 'waiting_cdk') {
+    if (($user->hasRole('kacdk') || $user->hasRole('admin')) && $penghijauanLingkungan->status === 'waiting_cdk') {
       $penghijauanLingkungan->update([
         'status' => 'final',
         'approved_by_cdk_at' => now(),
