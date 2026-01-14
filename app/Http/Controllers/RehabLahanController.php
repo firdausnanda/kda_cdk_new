@@ -3,22 +3,53 @@
 namespace App\Http\Controllers;
 
 use App\Models\RehabLahan;
+use App\Models\SumberDana;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class RehabLahanController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
+        $selectedYear = $request->query('year', date('Y'));
+
         $datas = RehabLahan::query()
-            ->latest()
-            ->paginate(10);
+            ->leftJoin('m_regencies', 'rehab_lahan.regency_id', '=', 'm_regencies.id')
+            ->leftJoin('m_districts', 'rehab_lahan.district_id', '=', 'm_districts.id')
+            ->leftJoin('m_villages', 'rehab_lahan.village_id', '=', 'm_villages.id')
+            ->select(
+                'rehab_lahan.*',
+                'm_regencies.name as regency_name',
+                'm_districts.name as district_name',
+                'm_villages.name as village_name'
+            )
+            ->when($selectedYear, function ($query, $year) {
+                return $query->where('rehab_lahan.year', $year);
+            })
+            ->with(['creator', 'regency_rel', 'district_rel', 'village_rel'])
+            ->latest('rehab_lahan.created_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        $stats = [
+            'total_target' => RehabLahan::where('year', $selectedYear)->where('status', 'final')->sum('target_annual'),
+            'total_realization' => RehabLahan::where('year', $selectedYear)->where('status', 'final')->sum('realization'),
+            'total_count' => RehabLahan::where('year', $selectedYear)->where('status', 'final')->count(),
+        ];
+
+        $availableYears = RehabLahan::distinct()->orderBy('year', 'desc')->pluck('year');
+        if ($availableYears->isEmpty()) {
+            $availableYears = [date('Y')];
+        }
 
         return Inertia::render('RehabLahan/Index', [
             'datas' => $datas,
+            'stats' => $stats,
+            'filters' => [
+                'year' => (int) $selectedYear
+            ],
+            'availableYears' => $availableYears,
+            'sumberDana' => SumberDana::all()
         ]);
     }
 
@@ -27,7 +58,9 @@ class RehabLahanController extends Controller
      */
     public function create()
     {
-        return Inertia::render('RehabLahan/Create');
+        return Inertia::render('RehabLahan/Create', [
+            'sumberDana' => SumberDana::all()
+        ]);
     }
 
     /**
@@ -38,6 +71,10 @@ class RehabLahanController extends Controller
         $validated = $request->validate([
             'year' => 'required|integer',
             'month' => 'required|integer|min:1|max:12',
+            'province_id' => 'nullable|exists:m_provinces,id',
+            'regency_id' => 'nullable|exists:m_regencies,id',
+            'district_id' => 'nullable|exists:m_districts,id',
+            'village_id' => 'nullable|exists:m_villages,id',
             'target_annual' => 'required|numeric',
             'realization' => 'required|numeric',
             'fund_source' => 'required|string',
@@ -65,7 +102,8 @@ class RehabLahanController extends Controller
     public function edit(RehabLahan $rehabLahan)
     {
         return Inertia::render('RehabLahan/Edit', [
-            'data' => $rehabLahan
+            'data' => $rehabLahan->load(['regency_rel', 'district_rel', 'village_rel']),
+            'sumberDana' => SumberDana::all()
         ]);
     }
 
@@ -77,6 +115,10 @@ class RehabLahanController extends Controller
         $validated = $request->validate([
             'year' => 'required|integer',
             'month' => 'required|integer|min:1|max:12',
+            'province_id' => 'nullable|exists:m_provinces,id',
+            'regency_id' => 'nullable|exists:m_regencies,id',
+            'district_id' => 'nullable|exists:m_districts,id',
+            'village_id' => 'nullable|exists:m_villages,id',
             'target_annual' => 'required|numeric',
             'realization' => 'required|numeric',
             'fund_source' => 'required|string',
@@ -93,10 +135,65 @@ class RehabLahanController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    /**
+     * Remove the specified resource from storage.
+     */
     public function destroy(RehabLahan $rehabLahan)
     {
         $rehabLahan->delete();
 
         return redirect()->route('rehab-lahan.index')->with('success', 'Data Deleted Successfully');
+    }
+
+    /**
+     * Submit the report for verification.
+     */
+    public function submit(RehabLahan $rehabLahan)
+    {
+        $rehabLahan->update(['status' => 'waiting_kasi']);
+        return redirect()->back()->with('success', 'Laporan berhasil diajukan untuk verifikasi Kasi.');
+    }
+
+    /**
+     * Approve the report.
+     */
+    public function approve(RehabLahan $rehabLahan)
+    {
+        $user = auth()->user();
+
+        if ($user->hasRole('kasi') && $rehabLahan->status === 'waiting_kasi') {
+            $rehabLahan->update([
+                'status' => 'waiting_cdk',
+                'approved_by_kasi_at' => now(),
+            ]);
+            return redirect()->back()->with('success', 'Laporan disetujui dan diteruskan ke KaCDK.');
+        }
+
+        if ($user->hasRole('kacdk') && $rehabLahan->status === 'waiting_cdk') {
+            $rehabLahan->update([
+                'status' => 'final',
+                'approved_by_cdk_at' => now(),
+            ]);
+            return redirect()->back()->with('success', 'Laporan telah disetujui secara final.');
+        }
+
+        return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
+    }
+
+    /**
+     * Reject the report.
+     */
+    public function reject(Request $request, RehabLahan $rehabLahan)
+    {
+        $request->validate([
+            'rejection_note' => 'required|string|max:255',
+        ]);
+
+        $rehabLahan->update([
+            'status' => 'rejected',
+            'rejection_note' => $request->rejection_note,
+        ]);
+
+        return redirect()->back()->with('success', 'Laporan telah ditolak dengan catatan.');
     }
 }

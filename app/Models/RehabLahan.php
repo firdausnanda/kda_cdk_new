@@ -16,6 +16,10 @@ class RehabLahan extends Model
     protected $fillable = [
         'year',
         'month',
+        'province_id',
+        'regency_id',
+        'district_id',
+        'village_id',
         'target_annual',
         'realization',
         'fund_source',
@@ -31,9 +35,34 @@ class RehabLahan extends Model
     /**
      * Get the status badge color (for frontend usage if needed via API resource)
      */
+    public function province_rel()
+    {
+        return $this->belongsTo(Provinces::class, 'province_id');
+    }
+
+    public function regency_rel()
+    {
+        return $this->belongsTo(Regencies::class, 'regency_id');
+    }
+
+    public function district_rel()
+    {
+        return $this->belongsTo(Districts::class, 'district_id');
+    }
+
+    public function village_rel()
+    {
+        return $this->belongsTo(Villages::class, 'village_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function getStatusColorAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'draft' => 'gray',
             'waiting_kasi' => 'yellow',
             'waiting_cdk' => 'blue',

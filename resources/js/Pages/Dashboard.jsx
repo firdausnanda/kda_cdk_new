@@ -26,7 +26,7 @@ ChartJS.register(
     ArcElement
 );
 
-export default function Dashboard({ auth }) {
+export default function Dashboard({ auth, rehabStats }) {
     // Dummy Data for Charts
     const areaChartData = {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
@@ -137,7 +137,7 @@ export default function Dashboard({ auth }) {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500">Rehabilitasi Lahan</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-1">45,200 <span className="text-sm font-normal text-gray-400">Ha</span></p>
+                                <p className="text-2xl font-bold text-gray-900 mt-1">{rehabStats.total} <span className="text-sm font-normal text-gray-400">Ha</span></p>
                             </div>
                             <div className="p-3 bg-primary-50 rounded-lg text-primary-600 shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -145,11 +145,24 @@ export default function Dashboard({ auth }) {
                                 </svg>
                             </div>
                         </div>
-                        <div className="mt-4 flex items-center text-sm text-green-600">
-                            <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                            </svg>
-                            <span>+12.5% dari tahun lalu</span>
+                        <div className={`mt-4 flex items-center text-sm ${rehabStats.growth > 0 ? 'text-green-600' : rehabStats.growth < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                            {rehabStats.growth > 0 ? (
+                                <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            ) : rehabStats.growth < 0 ? (
+                                <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                                </svg>
+                            ) : (
+                                <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
+                                </svg>
+                            )}
+                            <span className="font-bold">
+                                {rehabStats.growth > 0 ? `+${rehabStats.growth}%` : `${rehabStats.growth}%`}
+                            </span>
+                            <span className="ml-1 opacity-70">dari tahun lalu</span>
                         </div>
                     </div>
 

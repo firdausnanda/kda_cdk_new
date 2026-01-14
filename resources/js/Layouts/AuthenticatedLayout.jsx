@@ -9,7 +9,10 @@ export default function Authenticated({ user, header, children }) {
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const [openMenus, setOpenMenus] = useState({});
+    const [openMenus, setOpenMenus] = useState({
+        pembinaan: route().current('rehab-lahan.*'),
+        pembinaan_mobile: route().current('rehab-lahan.*')
+    });
 
     const toggleMenu = (menu) => {
         if (isSidebarCollapsed) {
@@ -61,8 +64,8 @@ export default function Authenticated({ user, header, children }) {
                         <button
                             onClick={() => toggleMenu('pembinaan')}
                             className={`w-full group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
-                                } ${openMenus['pembinaan']
-                                    ? 'bg-white/5 border-white/10 text-white'
+                                } ${openMenus['pembinaan'] || route().current('rehab-lahan.*')
+                                    ? 'bg-white/10 border-white/20 text-white shadow-sm'
                                     : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
                                 }`}
                         >
@@ -81,13 +84,22 @@ export default function Authenticated({ user, header, children }) {
 
                         {!isSidebarCollapsed && openMenus['pembinaan'] && (
                             <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
-                                {['Rehabilitasi Lahan', 'Penghijauan Lingkungan', 'Rehabilitasi Manggrove', 'RHL Teknis', 'Reboisasi Area PS'].map((item) => (
+                                {[
+                                    { name: 'Rehabilitasi Lahan', route: 'rehab-lahan.index', pattern: 'rehab-lahan.*' },
+                                    { name: 'Penghijauan Lingkungan', route: '#', pattern: 'penghijauan.*' },
+                                    { name: 'Rehabilitasi Manggrove', route: '#', pattern: 'mangrove.*' },
+                                    { name: 'RHL Teknis', route: '#', pattern: 'rhl-teknis.*' },
+                                    { name: 'Reboisasi Area PS', route: '#', pattern: 'reboisasi.*' }
+                                ].map((item) => (
                                     <Link
-                                        key={item}
-                                        href="#"
-                                        className="block py-2 text-xs font-medium text-primary-200 hover:text-white transition-colors"
+                                        key={item.name}
+                                        href={item.route !== '#' ? route(item.route) : '#'}
+                                        className={`block py-2 text-xs font-medium transition-colors ${route().current(item.pattern)
+                                            ? 'text-white font-bold'
+                                            : 'text-primary-200 hover:text-white'
+                                            }`}
                                     >
-                                        {item}
+                                        {item.name}
                                     </Link>
                                 ))}
                             </div>
@@ -211,7 +223,10 @@ export default function Authenticated({ user, header, children }) {
                     <div className="space-y-1">
                         <button
                             onClick={() => toggleMenu('pembinaan_mobile')}
-                            className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 transition-all"
+                            className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${openMenus['pembinaan_mobile'] || route().current('rehab-lahan.*')
+                                ? 'bg-white/10 border-white/20 text-white'
+                                : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
+                                }`}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -223,14 +238,23 @@ export default function Authenticated({ user, header, children }) {
                         </button>
                         {openMenus['pembinaan_mobile'] && (
                             <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
-                                {['Rehabilitasi Lahan', 'Penghijauan Lingkungan', 'Rehabilitasi Manggrove', 'RHL Teknis', 'Reboisasi Area PS'].map((item) => (
+                                {[
+                                    { name: 'Rehabilitasi Lahan', route: 'rehab-lahan.index', pattern: 'rehab-lahan.*' },
+                                    { name: 'Penghijauan Lingkungan', route: '#', pattern: 'penghijauan.*' },
+                                    { name: 'Rehabilitasi Manggrove', route: '#', pattern: 'mangrove.*' },
+                                    { name: 'RHL Teknis', route: '#', pattern: 'rhl-teknis.*' },
+                                    { name: 'Reboisasi Area PS', route: '#', pattern: 'reboisasi.*' }
+                                ].map((item) => (
                                     <Link
-                                        key={item}
-                                        href="#"
+                                        key={item.name}
+                                        href={item.route !== '#' ? route(item.route) : '#'}
                                         onClick={() => setShowingNavigationDropdown(false)}
-                                        className="block py-2 text-[13px] font-medium text-primary-300 hover:text-white"
+                                        className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
+                                            ? 'text-white font-bold'
+                                            : 'text-primary-300 hover:text-white'
+                                            }`}
                                     >
-                                        {item}
+                                        {item.name}
                                     </Link>
                                 ))}
                             </div>
