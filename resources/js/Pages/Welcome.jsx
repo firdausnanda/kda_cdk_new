@@ -34,27 +34,27 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 <div className="relative min-h-screen flex items-center">
                     {/* Background Subtle Wash */}
                     <div className="absolute inset-0 z-0 bg-gradient-to-br from-primary-50/50 to-white/80"></div>
-                    
+
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 pt-16">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-                            
+
                             {/* Left Column: Content */}
                             <div className="text-left space-y-6">
                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-100 text-primary-800 text-xs font-semibold tracking-wide">
                                     <span className="w-1.5 h-1.5 rounded-full bg-primary-600"></span>
                                     Rehabilitasi Hutan & Lahan
                                 </div>
-                                
+
                                 <h1 className="font-display font-bold text-4xl sm:text-5xl lg:text-5xl leading-[1.15] text-gray-900 tracking-tight">
                                     Sistem Informasi <br />
                                     <span className="text-primary-700">Kehutanan</span> <br />
                                     Dalam Angka
                                 </h1>
-                                
+
                                 <p className="font-sans text-base sm:text-lg text-gray-500 leading-relaxed max-w-md">
                                     Platform terintegrasi untuk monitoring, pengelolaan, dan pelaporan data statistik kehutanan secara akurat dan realtime.
                                 </p>
-                                
+
                                 <div className="flex flex-col sm:flex-row gap-4 pt-2">
                                     <Link
                                         href={auth.user ? route('dashboard') : route('login')}
@@ -91,17 +91,17 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                 <div className="relative w-full aspect-[4/5] max-w-md mx-auto">
                                     {/* Main Image Container */}
                                     <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl shadow-primary-900/10">
-                                         {/* Abstract Forestry Pattern/Image Placeholder from Unsplash */}
-                                         <div className="absolute inset-0 bg-gray-200">
-                                             <img 
-                                                src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2674&auto=format&fit=crop" 
-                                                alt="Forestry" 
+                                        {/* Abstract Forestry Pattern/Image Placeholder from Unsplash */}
+                                        <div className="absolute inset-0 bg-gray-200">
+                                            <img
+                                                src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2674&auto=format&fit=crop"
+                                                alt="Forestry"
                                                 className="w-full h-full object-cover"
-                                             />
-                                         </div>
-                                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                                            />
+                                        </div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                                     </div>
-                                    
+
                                     {/* Floating stats card */}
                                     <div className="absolute -left-6 bottom-10 bg-white/95 backdrop-blur-sm p-5 rounded-xl shadow-xl border border-white/50 max-w-[240px] transform transition-transform duration-300">
                                         <div className="flex items-center gap-3 mb-3">
@@ -112,7 +112,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                             </div>
                                             <div>
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Rehabilitasi</p>
-                                                <p className="text-base font-bold text-gray-900">85,240 Ha</p>
+                                                <p className="text-base font-bold text-gray-900">50.000++ Ha</p>
                                             </div>
                                         </div>
                                         <div className="w-full bg-gray-100 rounded-full h-1">
@@ -120,7 +120,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                         </div>
                                     </div>
 
-                                     {/* Decorative Elements */}
+                                    {/* Decorative Elements */}
                                     <div className="absolute -right-12 -top-12 w-64 h-64 bg-primary-200/30 rounded-full blur-3xl -z-10"></div>
                                     <div className="absolute -left-12 -bottom-12 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl -z-10"></div>
                                 </div>

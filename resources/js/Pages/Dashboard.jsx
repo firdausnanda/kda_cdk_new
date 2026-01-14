@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -26,15 +27,26 @@ ChartJS.register(
     ArcElement
 );
 
-export default function Dashboard({ auth, rehabStats }) {
-    // Dummy Data for Charts
+export default function Dashboard({ auth, rehabStats, filters, availableYears }) {
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleYearChange = (year) => {
+        setIsLoading(true);
+        router.get(route('dashboard'), { year }, {
+            preserveState: true,
+            replace: true,
+            onFinish: () => setIsLoading(false)
+        });
+    };
+
+    // Chart Data using real monthly data
     const areaChartData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
         datasets: [
             {
                 fill: true,
                 label: 'Rehabilitasi Lahan (Ha)',
-                data: [65, 59, 80, 81, 56, 120, 150],
+                data: rehabStats.monthlyData || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 borderColor: 'rgb(22, 101, 52)', // primary-800
                 backgroundColor: 'rgba(22, 101, 52, 0.2)',
                 tension: 0.4,
@@ -115,8 +127,8 @@ export default function Dashboard({ auth, rehabStats }) {
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-gray-500">Total Luas Wilayah</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-1">125,430 <span className="text-sm font-normal text-gray-400">Ha</span></p>
+                                <p className="text-sm font-medium text-gray-500">Produksi Kayu</p>
+                                <p className="text-2xl font-bold text-gray-900 mt-1">0 <span className="text-sm font-normal text-gray-400">m3</span></p>
                             </div>
                             <div className="p-3 bg-primary-50 rounded-lg text-primary-600 shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -170,8 +182,8 @@ export default function Dashboard({ auth, rehabStats }) {
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-gray-500">Jumlah Bibit</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-1">85,000 <span className="text-sm font-normal text-gray-400">Pcs</span></p>
+                                <p className="text-sm font-medium text-gray-500">Transaksi Ekonomi</p>
+                                <p className="text-2xl font-bold text-gray-900 mt-1">0 <span className="text-sm font-normal text-gray-400">Rp</span></p>
                             </div>
                             <div className="p-3 bg-primary-50 rounded-lg text-primary-600 shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -191,8 +203,8 @@ export default function Dashboard({ auth, rehabStats }) {
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-gray-500">Kelompok Tani</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-1">42 <span className="text-sm font-normal text-gray-400">Unit</span></p>
+                                <p className="text-sm font-medium text-gray-500">Kelompok Tani Hutan</p>
+                                <p className="text-2xl font-bold text-gray-900 mt-1">0 <span className="text-sm font-normal text-gray-400">Kelompok</span></p>
                             </div>
                             <div className="p-3 bg-primary-50 rounded-lg text-primary-600 shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -200,7 +212,7 @@ export default function Dashboard({ auth, rehabStats }) {
                                 </svg>
                             </div>
                         </div>
-                        <div className="mt-4 flex items-center text-sm text-blue-600">
+                        <div className="mt-4 flex items-center text-sm text-green-600">
                             <span>Aktif & Terverifikasi</span>
                         </div>
                     </div>
@@ -211,8 +223,23 @@ export default function Dashboard({ auth, rehabStats }) {
                     {/* Main Chart */}
                     <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
-                            <h3 className="font-bold text-gray-800">Capaian Rehabilitasi Lahan 2024</h3>
-                            <button className="text-sm text-primary-600 hover:text-primary-800 font-medium text-left">Download Laporan</button>
+                            <h3 className="font-bold text-gray-800">Capaian Rehabilitasi Lahan {filters.year}</h3>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-gray-500">Tahun:</span>
+                                    <select
+                                        className="text-sm font-bold border-gray-200 rounded-lg focus:ring-primary-500 focus:border-primary-500 py-1 px-2"
+                                        value={filters.year}
+                                        onChange={(e) => handleYearChange(e.target.value)}
+                                        disabled={isLoading}
+                                    >
+                                        {availableYears.map(year => (
+                                            <option key={year} value={year}>{year}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <button className="text-sm text-primary-600 hover:text-primary-800 font-medium whitespace-nowrap">Download Laporan</button>
+                            </div>
                         </div>
                         <div className="h-64 sm:h-80">
                             <Line options={{ ...chartOptions, maintainAspectRatio: false }} data={areaChartData} />
