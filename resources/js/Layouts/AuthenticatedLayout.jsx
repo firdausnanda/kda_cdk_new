@@ -13,7 +13,6 @@ export default function Authenticated({ user, header, children }) {
         pembinaan: route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*'),
         pembinaan_mobile: route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*')
     });
-    console.log(user);
 
     const toggleMenu = (menu) => {
         if (isSidebarCollapsed) {

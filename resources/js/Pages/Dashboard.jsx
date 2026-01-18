@@ -228,7 +228,7 @@ export default function Dashboard({ auth, rehabStats, filters, availableYears })
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs font-bold text-gray-500">Tahun:</span>
                                     <select
-                                        className="text-sm font-bold border-gray-200 rounded-lg focus:ring-primary-500 focus:border-primary-500 py-1 px-2"
+                                        className="text-sm font-bold border-gray-200 rounded-lg focus:ring-primary-500 focus:border-primary-500 py-1"
                                         value={filters.year}
                                         onChange={(e) => handleYearChange(e.target.value)}
                                         disabled={isLoading}
