@@ -10,13 +10,14 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center h-20">
                             <div className="flex-shrink-0 flex items-center gap-4">
+
                                 {/* Logo Mark - Enhanced */}
-                                <div className="relative group cursor-pointer flex-shrink-0">
-                                    <div className="absolute -inset-0.5 bg-gradient-to-tr from-primary-600 to-primary-400 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
-                                    <div className="relative w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/50 shadow-sm overflow-hidden p-0.5 ring-1 ring-gray-100">
+                                <div className="group cursor-pointer flex-shrink-0">
+                                    <div className="w-12 h-12 flex items-center justify-center p-0.5">
                                         <img src="/img/logo.webp" alt="Logo CDK" className="w-full h-full object-contain" />
                                     </div>
                                 </div>
+
                                 <div className="hidden sm:flex flex-col">
                                     <span className="font-display font-bold text-lg text-gray-900 tracking-tight leading-tight">
                                         Dinas Kehutanan Prov. Jatim
@@ -24,6 +25,13 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                     <span className="text-[10px] uppercase tracking-wider text-primary-700/80 font-bold">
                                         CDK Wilayah Trenggalek
                                     </span>
+                                </div>
+                            </div>
+
+                            {/* Logo Mark - Gerbang Nusantara (Right Side) */}
+                            <div className="group cursor-pointer flex-shrink-0">
+                                <div className="w-32 h-12 flex items-center justify-center p-0.5">
+                                    <img src="/img/logo_gerbang_nusantara.png" alt="Logo Gerbang Nusantara" className="w-full h-full object-contain" />
                                 </div>
                             </div>
                         </div>
