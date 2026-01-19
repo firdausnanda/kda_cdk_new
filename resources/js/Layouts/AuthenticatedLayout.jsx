@@ -10,8 +10,8 @@ export default function Authenticated({ user, header, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [openMenus, setOpenMenus] = useState({
-        pembinaan: route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*'),
-        pembinaan_mobile: route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*'),
+        pembinaan: route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*') || route().current('reboisasi-ps.*'),
+        pembinaan_mobile: route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*') || route().current('reboisasi-ps.*'),
         perlindungan: false,
         perlindungan_mobile: false,
         bina_usaha: false,
@@ -95,7 +95,7 @@ export default function Authenticated({ user, header, children }) {
                                     { name: 'Penghijauan Lingkungan', route: 'penghijauan-lingkungan.index', pattern: 'penghijauan-lingkungan.*' },
                                     { name: 'Rehabilitasi Manggrove', route: 'rehab-manggrove.index', pattern: 'rehab-manggrove.*' },
                                     { name: 'RHL Teknis', route: 'rhl-teknis.index', pattern: 'rhl-teknis.*' },
-                                    { name: 'Reboisasi Area PS', route: '#', pattern: 'reboisasi.*' }
+                                    { name: 'Reboisasi Area PS', route: 'reboisasi-ps.index', pattern: 'reboisasi-ps.*' }
                                 ].map((item) => (
                                     <Link
                                         key={item.name}
@@ -348,7 +348,7 @@ export default function Authenticated({ user, header, children }) {
                                     { name: 'Penghijauan Lingkungan', route: 'penghijauan-lingkungan.index', pattern: 'penghijauan-lingkungan.*' },
                                     { name: 'Rehabilitasi Manggrove', route: 'rehab-manggrove.index', pattern: 'rehab-manggrove.*' },
                                     { name: 'RHL Teknis', route: 'rhl-teknis.index', pattern: 'rhl-teknis.*' },
-                                    { name: 'Reboisasi Area PS', route: '#', pattern: 'reboisasi.*' }
+                                    { name: 'Reboisasi Area PS', route: 'reboisasi-ps.index', pattern: 'reboisasi-ps.*' }
                                 ].map((item) => (
                                     <Link
                                         key={item.name}

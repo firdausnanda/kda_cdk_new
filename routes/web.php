@@ -62,6 +62,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/rhl-teknis/{rhl_teknis}/submit', [RhlTeknisController::class, 'submit'])->name('rhl-teknis.submit');
     Route::post('/rhl-teknis/{rhl_teknis}/approve', [RhlTeknisController::class, 'approve'])->name('rhl-teknis.approve');
     Route::post('/rhl-teknis/{rhl_teknis}/reject', [RhlTeknisController::class, 'reject'])->name('rhl-teknis.reject');
+
+    // Reboisasi Area PS
+    Route::resource('reboisasi-ps', \App\Http\Controllers\ReboisasiPsController::class)->parameters(['reboisasi-ps' => 'reboisasi_ps']);
+    Route::post('/reboisasi-ps/{reboisasi_ps}/submit', [\App\Http\Controllers\ReboisasiPsController::class, 'submit'])->name('reboisasi-ps.submit');
+    Route::post('/reboisasi-ps/{reboisasi_ps}/approve', [\App\Http\Controllers\ReboisasiPsController::class, 'approve'])->name('reboisasi-ps.approve');
+    Route::post('/reboisasi-ps/{reboisasi_ps}/reject', [\App\Http\Controllers\ReboisasiPsController::class, 'reject'])->name('reboisasi-ps.reject');
+
     Route::resource('rehab-manggrove', RehabManggroveController::class);
 });
 
