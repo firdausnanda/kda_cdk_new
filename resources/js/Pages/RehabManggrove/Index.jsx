@@ -311,7 +311,7 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                      <span className="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                         {item.fund_source}
                       </span>
                     </td>

@@ -141,9 +141,9 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
   return (
     <AuthenticatedLayout
       user={auth.user}
-      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">RHL Sipil Teknis (Bangunan KTA)</h2>}
+      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">RHL Sipil Bangunan Konservasi Tanah dan Air</h2>}
     >
-      <Head title="RHL Sipil Teknis" />
+      <Head title="Bangunan Konservasi Tanah dan Air" />
 
       {/* Loading Overlay */}
       {isLoading && (
@@ -167,7 +167,7 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
           <div className="absolute right-0 top-0 h-full w-1/3 bg-white/5 transform skew-x-12 shrink-0"></div>
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h3 className="text-2xl font-bold font-display">Data RHL Sipil Teknis</h3>
+              <h3 className="text-2xl font-bold font-display">Data RHL Teknis Bangunan Konservasi Tanah dan Air</h3>
               <p className="mt-1 text-primary-100 opacity-90 some max-w-xl text-sm">
                 Kelola dan pantau capaian pembangunan sarana teknis konservasi tanah dan air (Bangunan KTA).
               </p>
@@ -276,7 +276,7 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-[10px] font-bold uppercase">
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-[10px] font-bold uppercase whitespace-nowrap">
                           {item.fund_source}
                         </span>
                       </td>
