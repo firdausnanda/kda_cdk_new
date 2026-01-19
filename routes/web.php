@@ -106,6 +106,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/industri-berizin/{industri_berizin}/submit', [\App\Http\Controllers\IndustriBerizinController::class, 'submit'])->name('industri-berizin.submit');
     Route::post('/industri-berizin/{industri_berizin}/approve', [\App\Http\Controllers\IndustriBerizinController::class, 'approve'])->name('industri-berizin.approve');
     Route::post('/industri-berizin/{industri_berizin}/reject', [\App\Http\Controllers\IndustriBerizinController::class, 'reject'])->name('industri-berizin.reject');
+
+    // Realisasi PNBP
+    Route::resource('realisasi-pnbp', \App\Http\Controllers\RealisasiPnbpController::class)->parameters(['realisasi-pnbp' => 'realisasi_pnbp']);
+    Route::post('/realisasi-pnbp/{realisasi_pnbp}/submit', [\App\Http\Controllers\RealisasiPnbpController::class, 'submit'])->name('realisasi-pnbp.submit');
+    Route::post('/realisasi-pnbp/{realisasi_pnbp}/approve', [\App\Http\Controllers\RealisasiPnbpController::class, 'approve'])->name('realisasi-pnbp.approve');
+    Route::post('/realisasi-pnbp/{realisasi_pnbp}/reject', [\App\Http\Controllers\RealisasiPnbpController::class, 'reject'])->name('realisasi-pnbp.reject');
 });
 
 require __DIR__ . '/auth.php';

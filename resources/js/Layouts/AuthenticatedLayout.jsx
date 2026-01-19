@@ -215,7 +215,7 @@ export default function Authenticated({ user, header, children }) {
                                         ]
                                     },
                                     { name: 'Industri Berizin', route: route('industri-berizin.index'), pattern: 'industri-berizin.*' },
-                                    { name: 'Realisasi PNBP', route: '#', pattern: 'bina-usaha.pnbp' }
+                                    { name: 'Realisasi PNBP', route: route('realisasi-pnbp.index'), pattern: 'realisasi-pnbp.*' }
                                 ].map((item) => (
                                     <div key={item.name}>
                                         {item.children ? (
