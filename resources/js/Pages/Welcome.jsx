@@ -19,10 +19,10 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                 </div>
                                 <div className="hidden sm:flex flex-col">
                                     <span className="font-display font-bold text-lg text-gray-900 tracking-tight leading-tight">
-                                        CDK Wilayah Trenggalek
+                                        Dinas Kehutanan Prov. Jatim
                                     </span>
                                     <span className="text-[10px] uppercase tracking-wider text-primary-700/80 font-bold">
-                                        Dinas Kehutanan Prov. Jatim
+                                        CDK Wilayah Trenggalek
                                     </span>
                                 </div>
                             </div>
