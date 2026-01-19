@@ -14,14 +14,14 @@ export default function Authenticated({ user, header, children }) {
         pembinaan_mobile: route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*') || route().current('reboisasi-ps.*'),
         perlindungan: route().current('pengunjung-wisata.*') || route().current('kebakaran-hutan.*'),
         perlindungan_mobile: route().current('pengunjung-wisata.*') || route().current('kebakaran-hutan.*'),
-        bina_usaha: route().current('hasil-hutan-kayu.*') || route().current('bina-usaha.*'),
-        bina_usaha_mobile: route().current('hasil-hutan-kayu.*') || route().current('bina-usaha.*'),
-        hutan_negara: route().current('hasil-hutan-kayu.*', { forest_type: 'Hutan Negara' }) || window.location.search.includes('Hutan%20Negara'),
-        hutan_negara_mobile: route().current('hasil-hutan-kayu.*', { forest_type: 'Hutan Negara' }) || window.location.search.includes('Hutan%20Negara'),
-        hutan_rakyat: route().current('hasil-hutan-kayu.*', { forest_type: 'Hutan Rakyat' }) || window.location.search.includes('Hutan%20Rakyat'),
-        hutan_rakyat_mobile: route().current('hasil-hutan-kayu.*', { forest_type: 'Hutan Rakyat' }) || window.location.search.includes('Hutan%20Rakyat'),
-        perhutanan_sosial: route().current('hasil-hutan-kayu.*', { forest_type: 'Perhutanan Sosial' }) || window.location.search.includes('Perhutanan%20Sosial'),
-        perhutanan_sosial_mobile: route().current('hasil-hutan-kayu.*', { forest_type: 'Perhutanan Sosial' }) || window.location.search.includes('Perhutanan%20Sosial'),
+        bina_usaha: route().current('hasil-hutan-kayu.*') || route().current('hasil-hutan-bukan-kayu.*') || route().current('bina-usaha.*'),
+        bina_usaha_mobile: route().current('hasil-hutan-kayu.*') || route().current('hasil-hutan-bukan-kayu.*') || route().current('bina-usaha.*'),
+        hutan_negara: route().current('hasil-hutan-kayu.*', { forest_type: 'Hutan Negara' }) || route().current('hasil-hutan-bukan-kayu.*', { forest_type: 'Hutan Negara' }) || window.location.search.includes('Hutan%20Negara'),
+        hutan_negara_mobile: route().current('hasil-hutan-kayu.*', { forest_type: 'Hutan Negara' }) || route().current('hasil-hutan-bukan-kayu.*', { forest_type: 'Hutan Negara' }) || window.location.search.includes('Hutan%20Negara'),
+        hutan_rakyat: route().current('hasil-hutan-kayu.*', { forest_type: 'Hutan Rakyat' }) || route().current('hasil-hutan-bukan-kayu.*', { forest_type: 'Hutan Rakyat' }) || window.location.search.includes('Hutan%20Rakyat') || window.location.search.includes('Hutan+Rakyat'),
+        hutan_rakyat_mobile: route().current('hasil-hutan-kayu.*', { forest_type: 'Hutan Rakyat' }) || route().current('hasil-hutan-bukan-kayu.*', { forest_type: 'Hutan Rakyat' }) || window.location.search.includes('Hutan%20Rakyat') || window.location.search.includes('Hutan+Rakyat'),
+        perhutanan_sosial: route().current('hasil-hutan-kayu.*', { forest_type: 'Perhutanan Sosial' }) || route().current('hasil-hutan-bukan-kayu.*', { forest_type: 'Perhutanan Sosial' }) || window.location.search.includes('Perhutanan%20Sosial') || window.location.search.includes('Perhutanan+Sosial'),
+        perhutanan_sosial_mobile: route().current('hasil-hutan-kayu.*', { forest_type: 'Perhutanan Sosial' }) || route().current('hasil-hutan-bukan-kayu.*', { forest_type: 'Perhutanan Sosial' }) || window.location.search.includes('Perhutanan%20Sosial') || window.location.search.includes('Perhutanan+Sosial'),
         pemberdayaan: false,
         pemberdayaan_mobile: false
     });
@@ -195,7 +195,7 @@ export default function Authenticated({ user, header, children }) {
                                         key: 'hutan_negara',
                                         children: [
                                             { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Negara' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: '#' }
+                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Negara' }) }
                                         ]
                                     },
                                     {
@@ -203,7 +203,7 @@ export default function Authenticated({ user, header, children }) {
                                         key: 'hutan_rakyat',
                                         children: [
                                             { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Rakyat' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: '#' }
+                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Rakyat' }) }
                                         ]
                                     },
                                     {
@@ -211,7 +211,7 @@ export default function Authenticated({ user, header, children }) {
                                         key: 'perhutanan_sosial',
                                         children: [
                                             { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Perhutanan Sosial' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: '#' }
+                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Perhutanan Sosial' }) }
                                         ]
                                     },
                                     { name: 'Industri Berizin', route: '#', pattern: 'bina-usaha.industri' },
@@ -488,7 +488,7 @@ export default function Authenticated({ user, header, children }) {
                                         key: 'hutan_negara_mobile',
                                         children: [
                                             { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Negara' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: '#' }
+                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Negara' }) }
                                         ]
                                     },
                                     {
@@ -496,7 +496,7 @@ export default function Authenticated({ user, header, children }) {
                                         key: 'hutan_rakyat_mobile',
                                         children: [
                                             { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Rakyat' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: '#' }
+                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Rakyat' }) }
                                         ]
                                     },
                                     {
@@ -504,7 +504,7 @@ export default function Authenticated({ user, header, children }) {
                                         key: 'perhutanan_sosial_mobile',
                                         children: [
                                             { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Perhutanan Sosial' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: '#' }
+                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Perhutanan Sosial' }) }
                                         ]
                                     },
                                     { name: 'Industri Berizin', route: '#', pattern: 'bina-usaha.industri' },

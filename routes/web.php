@@ -91,6 +91,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/hasil-hutan-kayu/{hasil_hutan_kayu}/submit', [\App\Http\Controllers\HasilHutanKayuController::class, 'submit'])->name('hasil-hutan-kayu.submit');
     Route::post('/hasil-hutan-kayu/{hasil_hutan_kayu}/approve', [\App\Http\Controllers\HasilHutanKayuController::class, 'approve'])->name('hasil-hutan-kayu.approve');
     Route::post('/hasil-hutan-kayu/{hasil_hutan_kayu}/reject', [\App\Http\Controllers\HasilHutanKayuController::class, 'reject'])->name('hasil-hutan-kayu.reject');
+
+    // Hasil Hutan Bukan Kayu
+    Route::get('hasil-hutan-bukan-kayu/export', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'export'])->name('hasil-hutan-bukan-kayu.export');
+    Route::get('hasil-hutan-bukan-kayu/template', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'template'])->name('hasil-hutan-bukan-kayu.template');
+    Route::post('hasil-hutan-bukan-kayu/import', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'import'])->name('hasil-hutan-bukan-kayu.import');
+    Route::resource('hasil-hutan-bukan-kayu', \App\Http\Controllers\HasilHutanBukanKayuController::class)->parameters(['hasil-hutan-bukan-kayu' => 'hasil_hutan_bukan_kayu']);
+    Route::post('/hasil-hutan-bukan-kayu/{hasil_hutan_bukan_kayu}/submit', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'submit'])->name('hasil-hutan-bukan-kayu.submit');
+    Route::post('/hasil-hutan-bukan-kayu/{hasil_hutan_bukan_kayu}/approve', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'approve'])->name('hasil-hutan-bukan-kayu.approve');
+    Route::post('/hasil-hutan-bukan-kayu/{hasil_hutan_bukan_kayu}/reject', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'reject'])->name('hasil-hutan-bukan-kayu.reject');
 });
 
 require __DIR__ . '/auth.php';

@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             BangunanKtaSeeder::class,
             PengelolaWisataSeeder::class,
             KayuSeeder::class,
+            BukanKayuSeeder::class
         ]);
     }
 }
