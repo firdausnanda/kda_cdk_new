@@ -27,6 +27,21 @@ class DatabaseSeeder extends Seeder
             BukanKayuSeeder::class,
             JenisProduksiSeeder::class,
             SkemaPerhutananSosialSeeder::class,
+            RehabLahanSeeder::class,
+            PenghijauanLingkunganSeeder::class,
+            RehabManggroveSeeder::class,
+            RhlTeknisSeeder::class,
+            ReboisasiPsSeeder::class,
+            PengunjungWisataSeeder::class,
+            KebakaranHutanSeeder::class,
+            SkpsSeeder::class,
+            KupsSeeder::class,
+            HasilHutanKayuSeeder::class,
+            HasilHutanBukanKayuSeeder::class,
+            IndustriBerizinSeeder::class,
+            RealisasiPnbpSeeder::class,
+            PerhutananSosialKayuSeeder::class,
+            PerhutananSosialBukanKayuSeeder::class,
         ]);
     }
 }

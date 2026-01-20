@@ -26,6 +26,9 @@ class IndustriBerizin extends Model
         'approved_by_kasi_at',
         'approved_by_cdk_at',
         'rejection_note',
+        'created_by',
+        'updated_by',
+        'deleted_by'
     ];
 
     protected $table = 'industri_berizin';

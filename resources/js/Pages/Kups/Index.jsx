@@ -11,6 +11,7 @@ const MySwal = withReactContent(Swal);
 
 export default function Index({ auth, kups, stats, filters }) {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
+  const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Memproses...');
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -21,15 +22,14 @@ export default function Index({ auth, kups, stats, filters }) {
 
   const debouncedSearch = useCallback(
     debounce((query) => {
-      setIsLoading(true);
-      setLoadingText('Mencari...');
+      setIsSearching(true);
       router.get(
         route('kups.index'),
         { search: query },
         {
           preserveState: true,
           preserveScroll: true,
-          onFinish: () => setIsLoading(false)
+          onFinish: () => setIsSearching(false)
         }
       );
     }, 500),
@@ -193,6 +193,8 @@ export default function Index({ auth, kups, stats, filters }) {
   };
 
   const userCanApprove = (item) => {
+    // Tidak bisa approve jika status sudah finalized atau draft
+    if (item.status === 'finalized' || item.status === 'draft' || item.status === 'rejected') return false;
     if (isAdmin) return true;
     if (canApprove) {
       if (item.status === 'waiting_kasi' && isKasi) return true;
@@ -203,6 +205,8 @@ export default function Index({ auth, kups, stats, filters }) {
   };
 
   const userCanReject = (item) => {
+    // Tidak bisa reject jika status sudah finalized atau draft
+    if (item.status === 'finalized' || item.status === 'draft' || item.status === 'rejected') return false;
     if (isAdmin) return true;
     if (canReject) {
       if (item.status === 'waiting_kasi' && isKasi) return true;
@@ -337,11 +341,19 @@ export default function Index({ auth, kups, stats, filters }) {
                   </div>
                   <input
                     type="text"
-                    className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-200 rounded-lg bg-gray-50 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                    className="block w-full p-2 pl-10 pr-10 text-sm text-gray-900 border border-gray-200 rounded-lg bg-gray-50 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                     placeholder="Cari Komoditas / Kategori..."
                     value={searchTerm}
                     onChange={handleSearch}
                   />
+                  {isSearching && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <svg className="animate-spin h-4 w-4 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="text-sm text-gray-400 font-bold bg-gray-50 px-3 py-1 rounded-full border border-gray-100">

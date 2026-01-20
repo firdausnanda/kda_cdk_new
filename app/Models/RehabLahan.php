@@ -25,13 +25,14 @@ class RehabLahan extends Model
         'target_annual',
         'realization',
         'fund_source',
-        'village',
-        'district',
         'coordinates',
         'status',
         'approved_by_kasi_at',
         'approved_by_cdk_at',
         'rejection_note',
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 
     /**
