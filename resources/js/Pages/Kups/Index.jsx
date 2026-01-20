@@ -161,39 +161,53 @@ export default function Index({ auth, kups, stats, filters }) {
 
   // Helper roles
   const user = auth.user;
-  const isKasi = user.roles.some(r => r.name === 'kasi');
-  const isCdk = user.roles.some(r => r.name === 'cdk');
-  const isAdmin = user.roles.some(r => r.name === 'admin');
+  const userPermissions = user.permissions || [];
+  const isAdmin = user.roles.includes('admin') || (Array.isArray(user.roles) && user.roles.some(r => r.name === 'admin'));
+  const isKasi = user.roles.includes('kasi') || (Array.isArray(user.roles) && user.roles.some(r => r.name === 'kasi'));
+  const isKaCdk = user.roles.includes('kacdk') || (Array.isArray(user.roles) && user.roles.some(r => r.name === 'kacdk'));
 
-  const canEdit = (item) => {
+  const canCreate = userPermissions.includes('pemberdayaan.create') || isAdmin;
+  const canEdit = userPermissions.includes('pemberdayaan.edit') || isAdmin;
+  const canDelete = userPermissions.includes('pemberdayaan.delete') || isAdmin;
+  const canApprove = userPermissions.includes('pemberdayaan.approve') || isAdmin;
+  const canReject = userPermissions.includes('pemberdayaan.approve') || isAdmin;
+  const canSubmit = userPermissions.includes('pemberdayaan.edit') || isAdmin;
+
+  const userCanEdit = (item) => {
     if (isAdmin) return true;
-    if (item.status === 'draft' || item.status === 'rejected') return true;
+    if (canEdit && (item.status === 'draft' || item.status === 'rejected')) return true;
     return false;
   };
 
-  const canDelete = (item) => {
+  const userCanDelete = (item) => {
     if (isAdmin) return true;
-    if (item.status === 'draft' || item.status === 'rejected') return true;
+    if (canDelete && (item.status === 'draft' || item.status === 'rejected')) return true;
     return false;
   };
 
-  const canSubmit = (item) => {
+  const userCanSubmit = (item) => {
     if (isAdmin) return true;
-    if (item.status === 'draft' || item.status === 'rejected') return true;
+    if (canSubmit && (item.status === 'draft' || item.status === 'rejected')) return true;
     return false;
   };
 
-  const canApprove = (item) => {
+  const userCanApprove = (item) => {
     if (isAdmin) return true;
-    if (isKasi && item.status === 'waiting_kasi') return true;
-    if (isCdk && item.status === 'waiting_cdk') return true;
+    if (canApprove) {
+      if (item.status === 'waiting_kasi' && isKasi) return true;
+      if (item.status === 'waiting_cdk' && isKaCdk) return true;
+      return false;
+    }
     return false;
   };
 
-  const canReject = (item) => {
+  const userCanReject = (item) => {
     if (isAdmin) return true;
-    if (isKasi && item.status === 'waiting_kasi') return true;
-    if (isCdk && item.status === 'waiting_cdk') return true;
+    if (canReject) {
+      if (item.status === 'waiting_kasi' && isKasi) return true;
+      if (item.status === 'waiting_cdk' && isKaCdk) return true;
+      return false;
+    }
     return false;
   };
 
@@ -237,14 +251,16 @@ export default function Index({ auth, kups, stats, filters }) {
                   Kelola dan pantau data Kelompok Usaha Perhutanan Sosial di wilayah CDK Trenggalek.
                 </p>
               </div>
-              <Link href={route('kups.create')} className="shrink-0">
-                <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl font-bold text-sm shadow-sm hover:bg-emerald-50 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Input Data Baru
-                </button>
-              </Link>
+              {canCreate && (
+                <Link href={route('kups.create')} className="shrink-0">
+                  <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl font-bold text-sm shadow-sm hover:bg-emerald-50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Input Data Baru
+                  </button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -384,7 +400,7 @@ export default function Index({ auth, kups, stats, filters }) {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex item-center justify-center gap-2">
-                            {canApprove(item) && (
+                            {userCanApprove(item) && (
                               <button
                                 onClick={() => handleApprove(item.id)}
                                 className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
@@ -395,7 +411,7 @@ export default function Index({ auth, kups, stats, filters }) {
                                 </svg>
                               </button>
                             )}
-                            {canReject(item) && (
+                            {userCanReject(item) && (
                               <button
                                 onClick={() => openRejectModal(item.id)}
                                 className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
@@ -406,7 +422,7 @@ export default function Index({ auth, kups, stats, filters }) {
                                 </svg>
                               </button>
                             )}
-                            {canSubmit(item) && (
+                            {userCanSubmit(item) && (
                               <button
                                 onClick={() => handleSubmit(item.id)}
                                 className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors shadow-sm bg-blue-50"
@@ -417,7 +433,7 @@ export default function Index({ auth, kups, stats, filters }) {
                                 </svg>
                               </button>
                             )}
-                            {canEdit(item) && (
+                            {userCanEdit(item) && (
                               <Link
                                 href={route('kups.edit', item.id)}
                                 className="p-2 text-primary-600 hover:bg-primary-100 rounded-lg transition-colors shadow-sm bg-primary-50"
@@ -428,7 +444,7 @@ export default function Index({ auth, kups, stats, filters }) {
                                 </svg>
                               </Link>
                             )}
-                            {canDelete(item) && (
+                            {userCanDelete(item) && (
                               <button
                                 onClick={() => handleDelete(item.id)}
                                 className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"

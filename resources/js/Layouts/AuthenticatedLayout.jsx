@@ -3,7 +3,8 @@ import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 
 export default function Authenticated({ user, header, children }) {
 
@@ -26,6 +27,19 @@ export default function Authenticated({ user, header, children }) {
         pemberdayaan_mobile: route().current('skps.*') || route().current('kups.*')
     });
 
+    const { flash } = usePage().props;
+    const [showFlash, setShowFlash] = useState(false);
+
+    useEffect(() => {
+        if (flash.success || flash.error) {
+            setShowFlash(true);
+            const timer = setTimeout(() => {
+                setShowFlash(false);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
+
     const toggleMenu = (menu) => {
         if (isSidebarCollapsed) {
             setIsSidebarCollapsed(false);
@@ -33,6 +47,16 @@ export default function Authenticated({ user, header, children }) {
         } else {
             setOpenMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
         }
+    };
+
+    const hasPermission = (permission) => {
+        if (!user || !user.permissions) return false;
+        return user.roles.includes('admin') || user.permissions.includes(permission);
+    };
+
+    const hasAnyPermission = (permissions) => {
+        if (!user || !user.permissions) return false;
+        return user.roles.includes('admin') || permissions.some(p => user.permissions.includes(p));
     };
 
     return (
@@ -72,244 +96,277 @@ export default function Authenticated({ user, header, children }) {
                     </div>
 
                     {/* Pembinaan Hutan dan Lahan (Dropdown) */}
-                    <div className="space-y-1">
-                        <button
-                            onClick={() => toggleMenu('pembinaan')}
-                            className={`w-full group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
-                                } ${openMenus['pembinaan'] || route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*')
-                                    ? 'bg-white/10 border-white/20 text-white shadow-sm'
-                                    : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
-                                }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 h-5 w-5 transition-colors ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} ${openMenus['pembinaan'] ? 'text-white' : 'text-primary-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            {!isSidebarCollapsed && (
-                                <>
-                                    <span className="text-sm font-semibold flex-1 text-left">Pembinaan Hutan</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-200 ${openMenus['pembinaan'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </>
-                            )}
-                        </button>
+                    {hasAnyPermission(['rehab.view', 'penghijauan.view']) && (
+                        <div className="space-y-1">
+                            <button
+                                onClick={() => toggleMenu('pembinaan')}
+                                className={`w-full group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
+                                    } ${openMenus['pembinaan'] || route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*')
+                                        ? 'bg-white/10 border-white/20 text-white shadow-sm'
+                                        : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 h-5 w-5 transition-colors ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} ${openMenus['pembinaan'] ? 'text-white' : 'text-primary-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                {!isSidebarCollapsed && (
+                                    <>
+                                        <span className="text-sm font-semibold flex-1 text-left">Pembinaan Hutan</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-200 ${openMenus['pembinaan'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </>
+                                )}
+                            </button>
 
-                        {!isSidebarCollapsed && openMenus['pembinaan'] && (
-                            <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
-                                {[
-                                    { name: 'Rehabilitasi Lahan', route: 'rehab-lahan.index', pattern: 'rehab-lahan.*' },
-                                    { name: 'Penghijauan Lingkungan', route: 'penghijauan-lingkungan.index', pattern: 'penghijauan-lingkungan.*' },
-                                    { name: 'Rehabilitasi Manggrove', route: 'rehab-manggrove.index', pattern: 'rehab-manggrove.*' },
-                                    { name: 'RHL Teknis', route: 'rhl-teknis.index', pattern: 'rhl-teknis.*' },
-                                    { name: 'Reboisasi Area PS', route: 'reboisasi-ps.index', pattern: 'reboisasi-ps.*' }
-                                ].map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.route !== '#' ? route(item.route) : '#'}
-                                        className={`block py-2 text-xs font-medium transition-colors ${route().current(item.pattern)
-                                            ? 'text-white font-bold'
-                                            : 'text-primary-200 hover:text-white'
-                                            }`}
-                                    >
-                                        {item.name}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Perlindungan dan Pelestarian Hutan */}
-                    {/* Perlindungan Hutan (Dropdown) */}
-                    <div className="space-y-1">
-                        <button
-                            onClick={() => toggleMenu('perlindungan')}
-                            className={`w-full group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
-                                } ${openMenus['perlindungan'] || route().current('pengunjung-wisata.*') || route().current('kebakaran-hutan.*')
-                                    ? 'bg-white/10 border-white/20 text-white shadow-sm'
-                                    : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
-                                }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 h-5 w-5 transition-colors ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} ${openMenus['perlindungan'] ? 'text-white' : 'text-primary-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                            {!isSidebarCollapsed && (
-                                <>
-                                    <span className="text-sm font-semibold flex-1 text-left">Perlindungan Hutan</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-200 ${openMenus['perlindungan'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </>
-                            )}
-                        </button>
-
-                        {!isSidebarCollapsed && openMenus['perlindungan'] && (
-                            <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
-                                {[
-                                    { name: 'Pengunjung Objek Wisata', route: route('pengunjung-wisata.index'), pattern: 'pengunjung-wisata.*' },
-                                    { name: 'Kebakaran Hutan', route: route('kebakaran-hutan.index'), pattern: 'kebakaran-hutan.*' }
-                                ].map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.route}
-                                        className={`block py-2 text-xs font-medium transition-colors ${route().current(item.pattern)
-                                            ? 'text-white font-bold'
-                                            : 'text-primary-200 hover:text-white'
-                                            }`}
-                                    >
-                                        {item.name}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Bina Usaha Kehutanan */}
-                    {/* Bina Usaha Kehutanan (Dropdown) */}
-                    <div className="space-y-1">
-                        <button
-                            onClick={() => toggleMenu('bina_usaha')}
-                            className={`w-full group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
-                                } ${openMenus['bina_usaha']
-                                    ? 'bg-white/10 border-white/20 text-white shadow-sm'
-                                    : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
-                                }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 h-5 w-5 transition-colors ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} ${openMenus['bina_usaha'] ? 'text-white' : 'text-primary-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            {!isSidebarCollapsed && (
-                                <>
-                                    <span className="text-sm font-semibold flex-1 text-left">Bina Usaha</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-200 ${openMenus['bina_usaha'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </>
-                            )}
-                        </button>
-
-                        {!isSidebarCollapsed && openMenus['bina_usaha'] && (
-                            <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
-                                {[
-                                    {
-                                        name: 'Hutan Negara',
-                                        key: 'hutan_negara',
-                                        children: [
-                                            { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Negara' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Negara' }) }
-                                        ]
-                                    },
-                                    {
-                                        name: 'Hutan Rakyat',
-                                        key: 'hutan_rakyat',
-                                        children: [
-                                            { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Rakyat' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Rakyat' }) }
-                                        ]
-                                    },
-                                    {
-                                        name: 'Perhutanan Sosial',
-                                        key: 'perhutanan_sosial',
-                                        children: [
-                                            { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Perhutanan Sosial' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Perhutanan Sosial' }) }
-                                        ]
-                                    },
-                                    { name: 'Industri Berizin', route: route('industri-berizin.index'), pattern: 'industri-berizin.*' },
-                                    { name: 'Realisasi PNBP', route: route('realisasi-pnbp.index'), pattern: 'realisasi-pnbp.*' }
-                                ].map((item) => (
-                                    <div key={item.name}>
-                                        {item.children ? (
-                                            <div>
-                                                <button
-                                                    onClick={() => toggleMenu(item.key)}
-                                                    className="flex w-full items-center justify-between py-2 text-xs font-medium text-primary-200 hover:text-white transition-colors"
-                                                >
-                                                    {item.name}
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform duration-200 ${openMenus[item.key] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                    </svg>
-                                                </button>
-                                                {openMenus[item.key] && (
-                                                    <div className="ml-3 space-y-1 border-l border-white/10 pl-3">
-                                                        {item.children.map((child) => {
-                                                            const isActive = child.route !== '#' && window.location.href === child.route;
-                                                            return (
-                                                                <Link
-                                                                    key={child.name}
-                                                                    href={child.route}
-                                                                    className={`block py-1.5 text-xs transition-colors ${isActive
-                                                                        ? 'text-white font-bold'
-                                                                        : 'text-primary-300 hover:text-white'
-                                                                        }`}
-                                                                >
-                                                                    {child.name}
-                                                                </Link>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : (
+                            {!isSidebarCollapsed && openMenus['pembinaan'] && (
+                                <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
+                                    {[
+                                        { name: 'Rehabilitasi Lahan', route: 'rehab-lahan.index', pattern: 'rehab-lahan.*', permission: 'rehab.view' },
+                                        { name: 'Penghijauan Lingkungan', route: 'penghijauan-lingkungan.index', pattern: 'penghijauan-lingkungan.*', permission: 'penghijauan.view' },
+                                        { name: 'Rehabilitasi Manggrove', route: 'rehab-manggrove.index', pattern: 'rehab-manggrove.*', permission: 'rehab.view' },
+                                        { name: 'RHL Teknis', route: 'rhl-teknis.index', pattern: 'rhl-teknis.*', permission: 'rehab.view' },
+                                        { name: 'Reboisasi Area PS', route: 'reboisasi-ps.index', pattern: 'reboisasi-ps.*', permission: 'rehab.view' }
+                                    ]
+                                        .filter(item => hasPermission(item.permission))
+                                        .map((item) => (
                                             <Link
-                                                href={item.route}
-                                                className={`block py-2 text-xs transition-colors ${item.pattern && route().current(item.pattern)
+                                                key={item.name}
+                                                href={item.route !== '#' ? route(item.route) : '#'}
+                                                className={`block py-2 text-xs font-medium transition-colors ${route().current(item.pattern)
                                                     ? 'text-white font-bold'
-                                                    : 'text-primary-200 hover:text-white font-medium'
+                                                    : 'text-primary-200 hover:text-white'
                                                     }`}
                                             >
                                                 {item.name}
                                             </Link>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                                        ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Perlindungan dan Pelestarian Hutan */}
+                    {/* Perlindungan Hutan (Dropdown) */}
+                    {hasPermission('perlindungan.view') && (
+                        <div className="space-y-1">
+                            <button
+                                onClick={() => toggleMenu('perlindungan')}
+                                className={`w-full group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
+                                    } ${openMenus['perlindungan'] || route().current('pengunjung-wisata.*') || route().current('kebakaran-hutan.*')
+                                        ? 'bg-white/10 border-white/20 text-white shadow-sm'
+                                        : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 h-5 w-5 transition-colors ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} ${openMenus['perlindungan'] ? 'text-white' : 'text-primary-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                {!isSidebarCollapsed && (
+                                    <>
+                                        <span className="text-sm font-semibold flex-1 text-left">Perlindungan Hutan</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-200 ${openMenus['perlindungan'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </>
+                                )}
+                            </button>
+
+                            {!isSidebarCollapsed && openMenus['perlindungan'] && (
+                                <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
+                                    {[
+                                        { name: 'Pengunjung Objek Wisata', route: route('pengunjung-wisata.index'), pattern: 'pengunjung-wisata.*' },
+                                        { name: 'Kebakaran Hutan', route: route('kebakaran-hutan.index'), pattern: 'kebakaran-hutan.*' }
+                                    ].map((item) => (
+                                        <Link
+                                            key={item.name}
+                                            href={item.route}
+                                            className={`block py-2 text-xs font-medium transition-colors ${route().current(item.pattern)
+                                                ? 'text-white font-bold'
+                                                : 'text-primary-200 hover:text-white'
+                                                }`}
+                                        >
+                                            {item.name}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Bina Usaha Kehutanan */}
+                    {/* Bina Usaha Kehutanan (Dropdown) */}
+                    {hasPermission('bina-usaha.view') && (
+                        <div className="space-y-1">
+                            <button
+                                onClick={() => toggleMenu('bina_usaha')}
+                                className={`w-full group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
+                                    } ${openMenus['bina_usaha']
+                                        ? 'bg-white/10 border-white/20 text-white shadow-sm'
+                                        : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 h-5 w-5 transition-colors ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} ${openMenus['bina_usaha'] ? 'text-white' : 'text-primary-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                {!isSidebarCollapsed && (
+                                    <>
+                                        <span className="text-sm font-semibold flex-1 text-left">Bina Usaha</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-200 ${openMenus['bina_usaha'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </>
+                                )}
+                            </button>
+
+                            {!isSidebarCollapsed && openMenus['bina_usaha'] && (
+                                <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
+                                    {[
+                                        {
+                                            name: 'Hutan Negara',
+                                            key: 'hutan_negara',
+                                            children: [
+                                                { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Negara' }) },
+                                                { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Negara' }) }
+                                            ]
+                                        },
+                                        {
+                                            name: 'Hutan Rakyat',
+                                            key: 'hutan_rakyat',
+                                            children: [
+                                                { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Rakyat' }) },
+                                                { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Rakyat' }) }
+                                            ]
+                                        },
+                                        {
+                                            name: 'Perhutanan Sosial',
+                                            key: 'perhutanan_sosial',
+                                            children: [
+                                                { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Perhutanan Sosial' }) },
+                                                { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Perhutanan Sosial' }) }
+                                            ]
+                                        },
+                                        { name: 'Industri Berizin', route: route('industri-berizin.index'), pattern: 'industri-berizin.*' },
+                                        { name: 'Realisasi PNBP', route: route('realisasi-pnbp.index'), pattern: 'realisasi-pnbp.*' }
+                                    ].map((item) => (
+                                        <div key={item.name}>
+                                            {item.children ? (
+                                                <div>
+                                                    <button
+                                                        onClick={() => toggleMenu(item.key)}
+                                                        className="flex w-full items-center justify-between py-2 text-xs font-medium text-primary-200 hover:text-white transition-colors"
+                                                    >
+                                                        {item.name}
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform duration-200 ${openMenus[item.key] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </button>
+                                                    {openMenus[item.key] && (
+                                                        <div className="ml-3 space-y-1 border-l border-white/10 pl-3">
+                                                            {item.children.map((child) => {
+                                                                const isActive = child.route !== '#' && window.location.href === child.route;
+                                                                return (
+                                                                    <Link
+                                                                        key={child.name}
+                                                                        href={child.route}
+                                                                        className={`block py-1.5 text-xs transition-colors ${isActive
+                                                                            ? 'text-white font-bold'
+                                                                            : 'text-primary-300 hover:text-white'
+                                                                            }`}
+                                                                    >
+                                                                        {child.name}
+                                                                    </Link>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <Link
+                                                    href={item.route}
+                                                    className={`block py-2 text-xs transition-colors ${item.pattern && route().current(item.pattern)
+                                                        ? 'text-white font-bold'
+                                                        : 'text-primary-200 hover:text-white font-medium'
+                                                        }`}
+                                                >
+                                                    {item.name}
+                                                </Link>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Pemberdayaan Masyarakat */}
                     {/* Pemberdayaan Masyarakat (Dropdown) */}
-                    <div className="space-y-1">
-                        <button
-                            onClick={() => toggleMenu('pemberdayaan')}
-                            className={`w-full group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
-                                } ${openMenus['pemberdayaan']
-                                    ? 'bg-white/10 border-white/20 text-white shadow-sm'
-                                    : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
-                                }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 h-5 w-5 transition-colors ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} ${openMenus['pemberdayaan'] ? 'text-white' : 'text-primary-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            {!isSidebarCollapsed && (
-                                <>
-                                    <span className="text-sm font-semibold flex-1 text-left">Pemberdayaan</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-200 ${openMenus['pemberdayaan'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </>
-                            )}
-                        </button>
+                    {hasPermission('pemberdayaan.view') && (
+                        <div className="space-y-1">
+                            <button
+                                onClick={() => toggleMenu('pemberdayaan')}
+                                className={`w-full group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
+                                    } ${openMenus['pemberdayaan']
+                                        ? 'bg-white/10 border-white/20 text-white shadow-sm'
+                                        : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 h-5 w-5 transition-colors ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} ${openMenus['pemberdayaan'] ? 'text-white' : 'text-primary-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                {!isSidebarCollapsed && (
+                                    <>
+                                        <span className="text-sm font-semibold flex-1 text-left">Pemberdayaan</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-200 ${openMenus['pemberdayaan'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </>
+                                )}
+                            </button>
 
-                        {!isSidebarCollapsed && openMenus['pemberdayaan'] && (
-                            <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
-                                {[
-                                    { name: 'Perkembangan SK PS', route: route('skps.index'), pattern: 'skps.*' },
-                                    { name: 'Perkembangan KUPS', route: route('kups.index'), pattern: 'kups.*' }
-                                ].map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.route}
-                                        className={`block py-2 text-xs font-medium transition-colors ${route().current(item.pattern)
-                                            ? 'text-white font-bold'
-                                            : 'text-primary-200 hover:text-white'
-                                            }`}
-                                    >
-                                        {item.name}
-                                    </Link>
-                                ))}
+                            {!isSidebarCollapsed && openMenus['pemberdayaan'] && (
+                                <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
+                                    {[
+                                        { name: 'Perkembangan SK PS', route: route('skps.index'), pattern: 'skps.*' },
+                                        { name: 'Perkembangan KUPS', route: route('kups.index'), pattern: 'kups.*' }
+                                    ].map((item) => (
+                                        <Link
+                                            key={item.name}
+                                            href={item.route}
+                                            className={`block py-2 text-xs font-medium transition-colors ${route().current(item.pattern)
+                                                ? 'text-white font-bold'
+                                                : 'text-primary-200 hover:text-white'
+                                                }`}
+                                        >
+                                            {item.name}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {hasPermission('users.view') && (
+                        <>
+                            <div className="pt-4 pb-2 px-4 uppercase text-[10px] font-bold text-primary-400 tracking-widest">
+                                {!isSidebarCollapsed ? 'Pengaturan' : '•••'}
                             </div>
-                        )}
-                    </div>
+
+                            <Link
+                                href={route('users.index')}
+                                className={`group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
+                                    } ${route().current('users.*')
+                                        ? 'bg-white/10 border-white/20 text-white shadow-lg'
+                                        : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
+                                    }`}
+                                title={isSidebarCollapsed ? 'Manajemen User' : ''}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 h-5 w-5 transition-colors ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} ${route().current('users.*') ? 'text-white' : 'text-primary-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                {!isSidebarCollapsed && <span className="text-sm font-semibold">Manajemen User</span>}
+                            </Link>
+                        </>
+                    )}
                 </nav>
 
                 {/* Sidebar Footer / Profile */}
@@ -386,163 +443,37 @@ export default function Authenticated({ user, header, children }) {
                     </div>
 
                     {/* Pembinaan Dropdown Mobile */}
-                    <div className="space-y-1">
-                        <button
-                            onClick={() => toggleMenu('pembinaan_mobile')}
-                            className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${openMenus['pembinaan_mobile'] || route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*')
-                                ? 'bg-white/10 border-white/20 text-white'
-                                : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
-                                }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="flex-1 text-left">Pembinaan Hutan</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${openMenus['pembinaan_mobile'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        {openMenus['pembinaan_mobile'] && (
-                            <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
-                                {[
-                                    { name: 'Rehabilitasi Lahan', route: 'rehab-lahan.index', pattern: 'rehab-lahan.*' },
-                                    { name: 'Penghijauan Lingkungan', route: 'penghijauan-lingkungan.index', pattern: 'penghijauan-lingkungan.*' },
-                                    { name: 'Rehabilitasi Manggrove', route: 'rehab-manggrove.index', pattern: 'rehab-manggrove.*' },
-                                    { name: 'RHL Teknis', route: 'rhl-teknis.index', pattern: 'rhl-teknis.*' },
-                                    { name: 'Reboisasi Area PS', route: 'reboisasi-ps.index', pattern: 'reboisasi-ps.*' }
-                                ].map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.route !== '#' ? route(item.route) : '#'}
-                                        onClick={() => setShowingNavigationDropdown(false)}
-                                        className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
-                                            ? 'text-white font-bold'
-                                            : 'text-primary-300 hover:text-white'
-                                            }`}
-                                    >
-                                        {item.name}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Perlindungan Hutan Dropdown Mobile */}
-                    <div className="space-y-1">
-                        <button
-                            onClick={() => toggleMenu('perlindungan_mobile')}
-                            className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${openMenus['perlindungan_mobile'] || route().current('pengunjung-wisata.*') || route().current('kebakaran-hutan.*')
-                                ? 'bg-white/10 border-white/20 text-white'
-                                : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
-                                }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                            <span className="flex-1 text-left">Perlindungan Hutan</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${openMenus['perlindungan_mobile'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        {openMenus['perlindungan_mobile'] && (
-                            <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
-                                {[
-                                    { name: 'Pengunjung Objek Wisata', route: route('pengunjung-wisata.index'), pattern: 'pengunjung-wisata.*' },
-                                    { name: 'Kebakaran Hutan', route: route('kebakaran-hutan.index'), pattern: 'kebakaran-hutan.*' }
-                                ].map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.route}
-                                        onClick={() => setShowingNavigationDropdown(false)}
-                                        className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
-                                            ? 'text-white font-bold'
-                                            : 'text-primary-300 hover:text-white'
-                                            }`}
-                                    >
-                                        {item.name}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Bina Usaha Dropdown Mobile */}
-                    <div className="space-y-1">
-                        <button
-                            onClick={() => toggleMenu('bina_usaha_mobile')}
-                            className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${openMenus['bina_usaha_mobile']
-                                ? 'bg-white/10 border-white/20 text-white'
-                                : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
-                                }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            <span className="flex-1 text-left">Bina Usaha</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${openMenus['bina_usaha_mobile'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        {openMenus['bina_usaha_mobile'] && (
-                            <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
-                                {[
-                                    {
-                                        name: 'Hutan Negara',
-                                        key: 'hutan_negara_mobile',
-                                        children: [
-                                            { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Negara' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Negara' }) }
-                                        ]
-                                    },
-                                    {
-                                        name: 'Hutan Rakyat',
-                                        key: 'hutan_rakyat_mobile',
-                                        children: [
-                                            { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Rakyat' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Rakyat' }) }
-                                        ]
-                                    },
-                                    {
-                                        name: 'Perhutanan Sosial',
-                                        key: 'perhutanan_sosial_mobile',
-                                        children: [
-                                            { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Perhutanan Sosial' }) },
-                                            { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Perhutanan Sosial' }) }
-                                        ]
-                                    },
-                                    { name: 'Industri Berizin', route: '#', pattern: 'bina-usaha.industri' },
-                                    { name: 'Realisasi PNBP', route: '#', pattern: 'bina-usaha.pnbp' }
-                                ].map((item) => (
-                                    <div key={item.name}>
-                                        {item.children ? (
-                                            <div>
-                                                <button
-                                                    onClick={() => toggleMenu(item.key)}
-                                                    className="flex w-full items-center justify-between py-2 text-[13px] font-medium text-primary-300 hover:text-white transition-colors"
-                                                >
-                                                    {item.name}
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform duration-200 ${openMenus[item.key] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                    </svg>
-                                                </button>
-                                                {openMenus[item.key] && (
-                                                    <div className="ml-3 space-y-1 border-l border-white/10 pl-3">
-                                                        {item.children.map((child) => (
-                                                            <Link
-                                                                key={child.name}
-                                                                href={child.route}
-                                                                onClick={() => setShowingNavigationDropdown(false)}
-                                                                className="block py-1.5 text-xs text-primary-400 hover:text-white transition-colors"
-                                                            >
-                                                                {child.name}
-                                                            </Link>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : (
+                    {hasAnyPermission(['rehab.view', 'penghijauan.view']) && (
+                        <div className="space-y-1">
+                            <button
+                                onClick={() => toggleMenu('pembinaan_mobile')}
+                                className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${openMenus['pembinaan_mobile'] || route().current('rehab-lahan.*') || route().current('penghijauan-lingkungan.*') || route().current('rehab-manggrove.*') || route().current('rhl-teknis.*')
+                                    ? 'bg-white/10 border-white/20 text-white'
+                                    : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span className="flex-1 text-left">Pembinaan Hutan</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${openMenus['pembinaan_mobile'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {openMenus['pembinaan_mobile'] && (
+                                <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
+                                    {[
+                                        { name: 'Rehabilitasi Lahan', route: 'rehab-lahan.index', pattern: 'rehab-lahan.*', permission: 'rehab.view' },
+                                        { name: 'Penghijauan Lingkungan', route: 'penghijauan-lingkungan.index', pattern: 'penghijauan-lingkungan.*', permission: 'penghijauan.view' },
+                                        { name: 'Rehabilitasi Manggrove', route: 'rehab-manggrove.index', pattern: 'rehab-manggrove.*', permission: 'rehab.view' },
+                                        { name: 'RHL Teknis', route: 'rhl-teknis.index', pattern: 'rhl-teknis.*', permission: 'rehab.view' },
+                                        { name: 'Reboisasi Area PS', route: 'reboisasi-ps.index', pattern: 'reboisasi-ps.*', permission: 'rehab.view' }
+                                    ]
+                                        .filter(item => hasPermission(item.permission))
+                                        .map((item) => (
                                             <Link
-                                                href={item.route}
+                                                key={item.name}
+                                                href={item.route !== '#' ? route(item.route) : '#'}
                                                 onClick={() => setShowingNavigationDropdown(false)}
                                                 className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
                                                     ? 'text-white font-bold'
@@ -551,55 +482,211 @@ export default function Authenticated({ user, header, children }) {
                                             >
                                                 {item.name}
                                             </Link>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                                        ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Perlindungan Hutan Dropdown Mobile */}
+                    {hasPermission('perlindungan.view') && (
+                        <div className="space-y-1">
+                            <button
+                                onClick={() => toggleMenu('perlindungan_mobile')}
+                                className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${openMenus['perlindungan_mobile'] || route().current('pengunjung-wisata.*') || route().current('kebakaran-hutan.*')
+                                    ? 'bg-white/10 border-white/20 text-white'
+                                    : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                <span className="flex-1 text-left">Perlindungan Hutan</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${openMenus['perlindungan_mobile'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {openMenus['perlindungan_mobile'] && (
+                                <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
+                                    {[
+                                        { name: 'Pengunjung Objek Wisata', route: route('pengunjung-wisata.index'), pattern: 'pengunjung-wisata.*' },
+                                        { name: 'Kebakaran Hutan', route: route('kebakaran-hutan.index'), pattern: 'kebakaran-hutan.*' }
+                                    ].map((item) => (
+                                        <Link
+                                            key={item.name}
+                                            href={item.route}
+                                            onClick={() => setShowingNavigationDropdown(false)}
+                                            className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
+                                                ? 'text-white font-bold'
+                                                : 'text-primary-300 hover:text-white'
+                                                }`}
+                                        >
+                                            {item.name}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Bina Usaha Dropdown Mobile */}
+                    {hasPermission('bina-usaha.view') && (
+                        <div className="space-y-1">
+                            <button
+                                onClick={() => toggleMenu('bina_usaha_mobile')}
+                                className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${openMenus['bina_usaha_mobile']
+                                    ? 'bg-white/10 border-white/20 text-white'
+                                    : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                <span className="flex-1 text-left">Bina Usaha</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${openMenus['bina_usaha_mobile'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {openMenus['bina_usaha_mobile'] && (
+                                <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
+                                    {[
+                                        {
+                                            name: 'Hutan Negara',
+                                            key: 'hutan_negara_mobile',
+                                            children: [
+                                                { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Negara' }) },
+                                                { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Negara' }) }
+                                            ]
+                                        },
+                                        {
+                                            name: 'Hutan Rakyat',
+                                            key: 'hutan_rakyat_mobile',
+                                            children: [
+                                                { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Hutan Rakyat' }) },
+                                                { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Hutan Rakyat' }) }
+                                            ]
+                                        },
+                                        {
+                                            name: 'Perhutanan Sosial',
+                                            key: 'perhutanan_sosial_mobile',
+                                            children: [
+                                                { name: 'Hasil Hutan Kayu', route: route('hasil-hutan-kayu.index', { forest_type: 'Perhutanan Sosial' }) },
+                                                { name: 'Hasil Hutan Bukan Kayu', route: route('hasil-hutan-bukan-kayu.index', { forest_type: 'Perhutanan Sosial' }) }
+                                            ]
+                                        },
+                                        { name: 'Industri Berizin', route: '#', pattern: 'bina-usaha.industri' },
+                                        { name: 'Realisasi PNBP', route: '#', pattern: 'bina-usaha.pnbp' }
+                                    ].map((item) => (
+                                        <div key={item.name}>
+                                            {item.children ? (
+                                                <div>
+                                                    <button
+                                                        onClick={() => toggleMenu(item.key)}
+                                                        className="flex w-full items-center justify-between py-2 text-[13px] font-medium text-primary-300 hover:text-white transition-colors"
+                                                    >
+                                                        {item.name}
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform duration-200 ${openMenus[item.key] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </button>
+                                                    {openMenus[item.key] && (
+                                                        <div className="ml-3 space-y-1 border-l border-white/10 pl-3">
+                                                            {item.children.map((child) => (
+                                                                <Link
+                                                                    key={child.name}
+                                                                    href={child.route}
+                                                                    onClick={() => setShowingNavigationDropdown(false)}
+                                                                    className="block py-1.5 text-xs text-primary-400 hover:text-white transition-colors"
+                                                                >
+                                                                    {child.name}
+                                                                </Link>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <Link
+                                                    href={item.route}
+                                                    onClick={() => setShowingNavigationDropdown(false)}
+                                                    className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
+                                                        ? 'text-white font-bold'
+                                                        : 'text-primary-300 hover:text-white'
+                                                        }`}
+                                                >
+                                                    {item.name}
+                                                </Link>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Pemberdayaan Dropdown Mobile */}
-                    <div className="space-y-1">
-                        <button
-                            onClick={() => toggleMenu('pemberdayaan_mobile')}
-                            className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${openMenus['pemberdayaan_mobile']
-                                ? 'bg-white/10 border-white/20 text-white'
-                                : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
-                                }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            <span className="flex-1 text-left">Pemberdayaan</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${openMenus['pemberdayaan_mobile'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        {openMenus['pemberdayaan_mobile'] && (
-                            <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
-                                {[
-                                    { name: 'Perkembangan SK PS', route: route('skps.index'), pattern: 'skps.*' },
-                                    { name: 'Perkembangan KUPS', route: route('kups.index'), pattern: 'kups.*' }
-                                ].map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.route}
-                                        onClick={() => setShowingNavigationDropdown(false)}
-                                        className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
-                                            ? 'text-white font-bold'
-                                            : 'text-primary-300 hover:text-white'
-                                            }`}
-                                    >
-                                        {item.name}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    {hasPermission('pemberdayaan.view') && (
+                        <div className="space-y-1">
+                            <button
+                                onClick={() => toggleMenu('pemberdayaan_mobile')}
+                                className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${openMenus['pemberdayaan_mobile']
+                                    ? 'bg-white/10 border-white/20 text-white'
+                                    : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                <span className="flex-1 text-left">Pemberdayaan</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${openMenus['pemberdayaan_mobile'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {openMenus['pemberdayaan_mobile'] && (
+                                <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
+                                    {[
+                                        { name: 'Perkembangan SK PS', route: route('skps.index'), pattern: 'skps.*' },
+                                        { name: 'Perkembangan KUPS', route: route('kups.index'), pattern: 'kups.*' }
+                                    ].map((item) => (
+                                        <Link
+                                            key={item.name}
+                                            href={item.route}
+                                            onClick={() => setShowingNavigationDropdown(false)}
+                                            className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
+                                                ? 'text-white font-bold'
+                                                : 'text-primary-300 hover:text-white'
+                                                }`}
+                                        >
+                                            {item.name}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                    <div className="pt-4 pb-2 px-4 uppercase text-[10px] font-bold text-primary-400 tracking-widest">
-                        Pengaturan
-                    </div>
+                    {hasPermission('users.view') && (
+                        <>
+                            <div className="pt-4 pb-2 px-4 uppercase text-[10px] font-bold text-primary-400 tracking-widest">
+                                Pengaturan
+                            </div>
+
+                            <Link
+                                href={route('users.index')}
+                                onClick={() => setShowingNavigationDropdown(false)}
+                                className={`flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${route().current('users.*')
+                                    ? 'bg-white/10 border-white/20 text-white'
+                                    : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                Manajemen User
+                            </Link>
+                        </>
+                    )}
+
+
 
                     <Link
                         href={route('profile.edit')}
@@ -752,6 +839,30 @@ export default function Authenticated({ user, header, children }) {
 
                 {/* Main Content */}
                 <main className="flex-1 relative overflow-auto focus:outline-none p-4 sm:p-6 lg:p-8">
+                    {/* Flash Messages */}
+                    {flash.success && showFlash && (
+                        <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl relative shadow-sm flex items-start" role="alert">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="block sm:inline text-sm font-medium">{flash.success}</span>
+                            <button onClick={() => setShowFlash(false)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
+                                <svg className="fill-current h-6 w-6 text-green-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z" /></svg>
+                            </button>
+                        </div>
+                    )}
+                    {flash.error && showFlash && (
+                        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl relative shadow-sm flex items-start" role="alert">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="block sm:inline text-sm font-medium">{flash.error}</span>
+                            <button onClick={() => setShowFlash(false)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
+                                <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z" /></svg>
+                            </button>
+                        </div>
+                    )}
+
                     {children}
                 </main>
             </div>

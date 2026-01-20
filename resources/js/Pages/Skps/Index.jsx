@@ -14,10 +14,37 @@ export default function Index({ auth, datas, stats }) {
   const [loadingText, setLoadingText] = useState('Memproses...');
   const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
 
-  const isOperator = auth.user.roles.some(role => ['admin', 'pelaksana', 'pk', 'peh'].includes(role));
-  const isKasi = auth.user.roles.includes('kasi');
-  const isKaCDK = auth.user.roles.includes('kacdk');
-  const isAdmin = auth.user.roles.includes('admin');
+  const user = auth.user;
+  const userPermissions = user.permissions || [];
+  const isAdmin = user.roles.includes('admin') || (Array.isArray(user.roles) && user.roles.some(r => r.name === 'admin'));
+  const isKasi = user.roles.includes('kasi') || (Array.isArray(user.roles) && user.roles.some(r => r.name === 'kasi'));
+  const isKaCdk = user.roles.includes('kacdk') || (Array.isArray(user.roles) && user.roles.some(r => r.name === 'kacdk'));
+
+  const canCreate = userPermissions.includes('pemberdayaan.create') || isAdmin;
+  const canEdit = userPermissions.includes('pemberdayaan.edit') || isAdmin;
+  const canDelete = userPermissions.includes('pemberdayaan.delete') || isAdmin;
+  const canApprove = userPermissions.includes('pemberdayaan.approve') || isAdmin;
+  const canReject = userPermissions.includes('pemberdayaan.approve') || isAdmin;
+  const canSubmit = userPermissions.includes('pemberdayaan.edit') || isAdmin;
+
+  // Helper for approval stages if needed, or just use canApprove
+  const userCanApprove = (item) => {
+    if (isAdmin) return true;
+    if (canApprove) {
+      if (item.status === 'waiting_kasi' && isKasi) return true;
+      if (item.status === 'waiting_cdk' && isKaCdk) return true;
+    }
+    return false;
+  };
+
+  const userCanReject = (item) => {
+    if (isAdmin) return true;
+    if (canReject) {
+      if (item.status === 'waiting_kasi' && isKasi) return true;
+      if (item.status === 'waiting_cdk' && isKaCdk) return true;
+    }
+    return false;
+  };
 
   const handleDelete = (id) => {
     MySwal.fire({
@@ -178,14 +205,16 @@ export default function Index({ auth, datas, stats }) {
                 Kelola dan pantau data SK Perhutanan Sosial di wilayah CDK Trenggalek.
               </p>
             </div>
-            <Link href={route('skps.create')} className="shrink-0">
-              <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-primary-700 rounded-xl font-bold text-sm shadow-sm hover:bg-primary-50 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Input Data Baru
-              </button>
-            </Link>
+            {canCreate && (
+              <Link href={route('skps.create')} className="shrink-0">
+                <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-primary-700 rounded-xl font-bold text-sm shadow-sm hover:bg-primary-50 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Input Data Baru
+                </button>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -282,7 +311,8 @@ export default function Index({ auth, datas, stats }) {
                       <td className="px-6 py-4 text-center">
                         <div className="flex justify-center gap-2">
                           {/* Submit Button for Operators */}
-                          {((isOperator || isAdmin) && (item.status === 'draft' || item.status === 'rejected')) && (
+                          {/* Submit Button */}
+                          {(canSubmit && (item.status === 'draft' || item.status === 'rejected')) && (
                             <button
                               onClick={() => handleSubmit(item.id)}
                               className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors shadow-sm bg-blue-50"
@@ -294,76 +324,52 @@ export default function Index({ auth, datas, stats }) {
                             </button>
                           )}
 
-                          {/* Verify & Reject for Kasi / Admin */}
-                          {(isKasi || isAdmin) && item.status === 'waiting_kasi' && (
-                            <>
-                              <button
-                                onClick={() => handleVerify(item.id)}
-                                className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
-                                title="Setujui Laporan"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => handleReject(item.id)}
-                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
-                                title="Tolak Laporan"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </>
+                          {/* Verify & Reject */}
+                          {userCanApprove(item) && (
+                            <button
+                              onClick={() => handleVerify(item.id)}
+                              className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
+                              title="Setujui Laporan"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </button>
                           )}
-
-                          {/* Verify & Reject for KaCDK / Admin */}
-                          {(isKaCDK || isAdmin) && item.status === 'waiting_cdk' && (
-                            <>
-                              <button
-                                onClick={() => handleVerify(item.id)}
-                                className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
-                                title="Setujui Laporan"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => handleReject(item.id)}
-                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
-                                title="Tolak Laporan"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                              </button>
-                            </>
+                          {userCanReject(item) && (
+                            <button
+                              onClick={() => handleReject(item.id)}
+                              className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
+                              title="Tolak Laporan"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
                           )}
 
                           {/* Edit & Delete */}
-                          {((isOperator || isAdmin) && (item.status === 'draft' || item.status === 'rejected' || isAdmin)) && (
-                            <>
-                              <Link
-                                href={route('skps.edit', item.id)}
-                                className="p-2 text-primary-600 hover:bg-primary-100 rounded-lg transition-colors shadow-sm bg-primary-50"
-                                title="Edit Data"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                              </Link>
-                              <button
-                                onClick={() => handleDelete(item.id)}
-                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
-                                title="Hapus Data"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </>
+                          {(canEdit && (item.status === 'draft' || item.status === 'rejected')) && (
+                            <Link
+                              href={route('skps.edit', item.id)}
+                              className="p-2 text-primary-600 hover:bg-primary-100 rounded-lg transition-colors shadow-sm bg-primary-50"
+                              title="Edit Data"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                            </Link>
+                          )}
+                          {(canDelete && (item.status === 'draft' || item.status === 'rejected')) && (
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
+                              title="Hapus Data"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
                           )}
                         </div>
                       </td>

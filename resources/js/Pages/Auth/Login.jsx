@@ -9,7 +9,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
+        username: '',
         password: '',
         remember: false,
     });
@@ -35,21 +35,21 @@ export default function Login({ status, canResetPassword }) {
 
             <form onSubmit={submit} className="space-y-6">
                 <div>
-                    <InputLabel htmlFor="email" value="Username" className="text-gray-900 font-bold !text-gray-900" />
+                    <InputLabel htmlFor="username" value="Username" className="text-gray-900 font-bold !text-gray-900" />
 
                     <TextInput
-                        id="email"
+                        id="username"
                         type="text"
-                        name="email"
-                        value={data.email}
+                        name="username"
+                        value={data.username}
                         className="mt-2 block w-full rounded-xl border-gray-300 bg-white text-gray-900 focus:border-primary-500 focus:ring-primary-500 py-3 text-base shadow-sm"
                         autoComplete="username"
                         isFocused={true}
                         placeholder="Masukkan Username"
-                        onChange={(e) => setData('email', e.target.value)}
+                        onChange={(e) => setData('username', e.target.value)}
                     />
 
-                    <InputError message={errors.email} className="mt-2" />
+                    <InputError message={errors.username} className="mt-2" />
                 </div>
 
                 <div className="mt-4">

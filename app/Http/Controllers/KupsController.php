@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Auth;
 
 class KupsController extends Controller
 {
+  public function __construct()
+  {
+    $this->middleware('permission:pemberdayaan.view')->only(['index', 'show']);
+    $this->middleware('permission:pemberdayaan.create')->only(['create', 'store']);
+    $this->middleware('permission:pemberdayaan.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:pemberdayaan.delete')->only(['destroy']);
+  }
+
   public function index(Request $request)
   {
     $query = Kups::with(['province', 'regency', 'district']);

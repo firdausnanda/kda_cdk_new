@@ -9,6 +9,15 @@ use Inertia\Inertia;
 
 class RehabManggroveController extends Controller
 {
+  public function __construct()
+  {
+    $this->middleware('permission:rehab.view')->only(['index', 'show']);
+    $this->middleware('permission:rehab.create')->only(['create', 'store']);
+    $this->middleware('permission:rehab.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:rehab.delete')->only(['destroy']);
+    $this->middleware('permission:rehab.approve')->only(['verify', 'approve', 'reject']);
+  }
+
   public function index(Request $request)
   {
     $selectedYear = $request->query('year', date('Y'));

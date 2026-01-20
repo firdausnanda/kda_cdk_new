@@ -13,6 +13,14 @@ class SkpsController extends Controller
   /**
    * Display a listing of the resource.
    */
+  public function __construct()
+  {
+    $this->middleware('permission:pemberdayaan.view')->only(['index', 'show']);
+    $this->middleware('permission:pemberdayaan.create')->only(['create', 'store']);
+    $this->middleware('permission:pemberdayaan.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:pemberdayaan.delete')->only(['destroy']);
+  }
+
   public function index(Request $request)
   {
     $datas = Skps::query()

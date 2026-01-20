@@ -9,6 +9,15 @@ use Inertia\Inertia;
 
 class PenghijauanLingkunganController extends Controller
 {
+  public function __construct()
+  {
+    $this->middleware('permission:penghijauan.view')->only(['index', 'show']);
+    $this->middleware('permission:penghijauan.create')->only(['create', 'store']);
+    $this->middleware('permission:penghijauan.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:penghijauan.delete')->only(['destroy']);
+    $this->middleware('permission:penghijauan.approve')->only(['verify', 'approve', 'reject']);
+  }
+
   public function index(Request $request)
   {
     $selectedYear = $request->query('year', date('Y'));

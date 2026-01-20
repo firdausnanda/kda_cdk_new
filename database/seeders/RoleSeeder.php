@@ -40,9 +40,13 @@ class RoleSeeder extends Seeder
             ],
         ];
 
+        $allPermissions = \Spatie\Permission\Models\Permission::all();
+
         foreach ($roles as $role) {
-            Role::create([
+            $createdRole = Role::firstOrCreate([
                 'name' => $role['name'],
+                'guard_name' => 'web',
+            ], [
                 'description' => $role['description'],
             ]);
         }

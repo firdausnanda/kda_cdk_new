@@ -11,6 +11,16 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
   const { flash } = usePage().props;
   const [year, setYear] = useState(filters.year || new Date().getFullYear());
 
+  const isAdmin = auth.user.roles.includes('admin');
+  const isKasi = auth.user.roles.includes('kasi');
+  const isKaCdk = auth.user.roles.includes('kacdk');
+  const userPermissions = auth.user.permissions || [];
+
+  const canCreate = userPermissions.includes('bina-usaha.create') || isAdmin;
+  const canEdit = userPermissions.includes('bina-usaha.edit') || isAdmin;
+  const canDelete = userPermissions.includes('bina-usaha.delete') || isAdmin;
+  const canApprove = userPermissions.includes('bina-usaha.approve') || isAdmin;
+
   const yearOptions = available_years?.length > 0 ? available_years : [new Date().getFullYear()];
 
   useEffect(() => {
@@ -164,38 +174,39 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
     }
   };
 
-  const hasRole = (roleName) => {
-    return auth.user.roles.some(r => (typeof r === 'string' ? r === roleName : r.name === roleName));
-  };
-
   const userCanEdit = (item) => {
-    if (hasRole('admin')) return true;
-    if (item.status === 'draft' || item.status === 'rejected') return true;
+    if (isAdmin) return true;
+    if (canEdit && (item.status === 'draft' || item.status === 'rejected')) return true;
     return false;
   };
 
   const userCanDelete = (item) => {
-    if (hasRole('admin')) return true;
-    if (item.status === 'draft') return true;
+    if (isAdmin) return true;
+    if (canDelete && (item.status === 'draft' || item.status === 'rejected')) return true;
     return false;
   };
 
   const userCanSubmit = (item) => {
-    if (hasRole('admin') && item.status === 'draft') return true;
-    return item.status === 'draft' || item.status === 'rejected';
+    if (isAdmin && item.status === 'draft') return true;
+    if (canEdit && (item.status === 'draft' || item.status === 'rejected')) return true;
+    return false;
   };
 
   const userCanApprove = (item) => {
-    if (hasRole('admin')) return item.status === 'waiting_kasi' || item.status === 'waiting_cdk';
-    if (hasRole('kasi') && item.status === 'waiting_kasi') return true;
-    if (hasRole('kacdk') && item.status === 'waiting_cdk') return true;
+    if (isAdmin) return item.status === 'waiting_kasi' || item.status === 'waiting_cdk';
+    if (canApprove) {
+      if (item.status === 'waiting_kasi' && isKasi) return true;
+      if (item.status === 'waiting_cdk' && isKaCdk) return true;
+    }
     return false;
   };
 
   const userCanReject = (item) => {
-    if (hasRole('admin')) return item.status === 'waiting_kasi' || item.status === 'waiting_cdk';
-    if (hasRole('kasi') && item.status === 'waiting_kasi') return true;
-    if (hasRole('kacdk') && item.status === 'waiting_cdk') return true;
+    if (isAdmin) return item.status === 'waiting_kasi' || item.status === 'waiting_cdk';
+    if (canApprove) {
+      if (item.status === 'waiting_kasi' && isKasi) return true;
+      if (item.status === 'waiting_cdk' && isKaCdk) return true;
+    }
     return false;
   };
 
@@ -246,14 +257,16 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
               </p>
             </div>
             <div className="flex gap-2">
-              <Link href={route('realisasi-pnbp.create')} className="shrink-0">
-                <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl font-bold text-sm shadow-sm hover:bg-emerald-50 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Input Data Baru
-                </button>
-              </Link>
+              {canCreate && (
+                <Link href={route('realisasi-pnbp.create')} className="shrink-0">
+                  <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl font-bold text-sm shadow-sm hover:bg-emerald-50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Input Data Baru
+                  </button>
+                </Link>
+              )}
             </div>
           </div>
 

@@ -13,10 +13,15 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
   const [loadingText, setLoadingText] = useState('Memproses...');
   const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
 
-  const isOperator = auth.user.roles.some(role => ['admin', 'pelaksana', 'pk', 'peh'].includes(role));
-  const isKasi = auth.user.roles.includes('kasi');
-  const isKaCDK = auth.user.roles.includes('kacdk');
   const isAdmin = auth.user.roles.includes('admin');
+  const isKasi = auth.user.roles.includes('kasi');
+  const isKaCdk = auth.user.roles.includes('kacdk');
+  const userPermissions = auth.user.permissions || [];
+
+  const canCreate = userPermissions.includes('rehab.create') || isAdmin;
+  const canEdit = userPermissions.includes('rehab.edit') || isAdmin;
+  const canDelete = userPermissions.includes('rehab.delete') || isAdmin;
+  const canApprove = userPermissions.includes('rehab.approve') || isAdmin;
 
   const handleYearChange = (year) => {
     setLoadingText('Sinkronisasi Tahun...');
@@ -172,14 +177,16 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                 Kelola dan pantau capaian pembangunan sarana teknis konservasi tanah dan air (Bangunan KTA).
               </p>
             </div>
-            <Link href={route('rhl-teknis.create')} className="shrink-0">
-              <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl font-bold text-sm shadow-sm hover:bg-emerald-50 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Input Data RHL Teknis
-              </button>
-            </Link>
+            {canCreate && (
+              <Link href={route('rhl-teknis.create')} className="shrink-0">
+                <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl font-bold text-sm shadow-sm hover:bg-emerald-50 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Input Data RHL Teknis
+                </button>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -292,7 +299,7 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                       <td className="px-6 py-4 text-center">
                         <div className="flex justify-center gap-2">
                           {/* Submit Button */}
-                          {((isOperator || isAdmin) && (item.status === 'draft' || item.status === 'rejected')) && (
+                          {(canEdit && (item.status === 'draft' || item.status === 'rejected')) && (
                             <button
                               onClick={() => handleSubmit(item.id)}
                               className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors bg-blue-50"
@@ -304,33 +311,57 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                             </button>
                           )}
 
-                          {/* Verify/Approve Actions */}
-                          {(isKasi || isAdmin) && item.status === 'waiting_kasi' && (
-                            <button
-                              onClick={() => handleVerify(item.id)}
-                              className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors bg-emerald-50"
-                              title="Setujui (Kasi)"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </button>
+                          {/* Verify & Reject for Kasi */}
+                          {(canApprove && (isKasi || isAdmin) && item.status === 'waiting_kasi') && (
+                            <>
+                              <button
+                                onClick={() => handleVerify(item.id)}
+                                className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
+                                title="Setujui Laporan"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleReject(item.id)}
+                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
+                                title="Tolak Laporan"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </>
                           )}
 
-                          {(isKaCDK || isAdmin) && item.status === 'waiting_cdk' && (
-                            <button
-                              onClick={() => handleVerify(item.id)}
-                              className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors bg-emerald-50"
-                              title="Setujui Final (KaCDK)"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </button>
+                          {/* Verify & Reject for KaCDK */}
+                          {(canApprove && (isKaCdk || isAdmin) && item.status === 'waiting_cdk') && (
+                            <>
+                              <button
+                                onClick={() => handleVerify(item.id)}
+                                className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors bg-emerald-50"
+                                title="Setujui Final (KaCDK)"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleReject(item.id)}
+                                className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors bg-red-50"
+                                title="Tolak Laporan"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </>
                           )}
 
                           {/* Reject Action */}
-                          {(((isKasi || isAdmin) && item.status === 'waiting_kasi') || ((isKaCDK || isAdmin) && item.status === 'waiting_cdk')) && (
+                          {/* This section is now redundant as reject buttons are included in Kasi and KaCDK sections */}
+                          {/* {(canApprove && (item.status === 'waiting_kasi' || item.status === 'waiting_cdk')) && (
                             <button
                               onClick={() => handleReject(item.id)}
                               className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors bg-red-50"
@@ -343,7 +374,7 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                           )}
 
                           {/* Edit/Delete */}
-                          {((isOperator || isAdmin) && (item.status === 'draft' || item.status === 'rejected' || isAdmin)) && (
+                          {((canEdit && (item.status === 'draft' || item.status === 'rejected')) || isAdmin) && (
                             <>
                               <Link
                                 href={route('rhl-teknis.edit', item.id)}
@@ -353,14 +384,16 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                 </svg>
                               </Link>
-                              <button
-                                onClick={() => handleDelete(item.id)}
-                                className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors bg-red-50"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
+                              {(canDelete || isAdmin) && (
+                                <button
+                                  onClick={() => handleDelete(item.id)}
+                                  className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors bg-red-50"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              )}
                             </>
                           )}
                         </div>

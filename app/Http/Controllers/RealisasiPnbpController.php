@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\DB;
 
 class RealisasiPnbpController extends Controller
 {
+  public function __construct()
+  {
+    $this->middleware('permission:bina-usaha.view')->only(['index', 'show']);
+    $this->middleware('permission:bina-usaha.create')->only(['create', 'store']);
+    $this->middleware('permission:bina-usaha.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:bina-usaha.delete')->only(['destroy']);
+  }
+
   public function index(Request $request)
   {
     $selectedYear = $request->query('year', date('Y'));

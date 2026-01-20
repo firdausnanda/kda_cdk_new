@@ -10,6 +10,15 @@ use Illuminate\Support\Facades\DB;
 
 class KebakaranHutanController extends Controller
 {
+  public function __construct()
+  {
+    $this->middleware('permission:perlindungan.view')->only(['index', 'show']);
+    $this->middleware('permission:perlindungan.create')->only(['create', 'store']);
+    $this->middleware('permission:perlindungan.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:perlindungan.delete')->only(['destroy']);
+    $this->middleware('permission:perlindungan.approve')->only(['verify', 'approve', 'reject']);
+  }
+
   public function index(Request $request)
   {
     $selectedYear = $request->query('year', date('Y'));
