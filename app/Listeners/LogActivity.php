@@ -14,7 +14,10 @@ class LogActivity
   {
     activity()
       ->causedBy($event->user)
-      ->withProperties(['ip' => request()->ip(), 'agent' => request()->userAgent()])
+      ->withProperties([
+        'ip' => request()->getClientIp(),
+        'agent' => request()->header('User-Agent'),
+      ])
       ->log('logged in');
   }
 
