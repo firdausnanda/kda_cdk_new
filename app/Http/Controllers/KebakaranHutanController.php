@@ -38,6 +38,15 @@ class KebakaranHutanController extends Controller
       ->when($selectedYear, function ($query, $year) {
         return $query->where('kebakaran_hutan.year', $year);
       })
+      ->when($request->search, function ($query, $search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('m_villages.name', 'like', "%{$search}%")
+            ->orWhere('m_districts.name', 'like', "%{$search}%")
+            ->orWhere('m_regencies.name', 'like', "%{$search}%")
+            ->orWhere('m_pengelola_wisata.name', 'like', "%{$search}%")
+            ->orWhere('kebakaran_hutan.area_function', 'like', "%{$search}%");
+        });
+      })
       ->with(['creator', 'regency', 'district', 'village', 'pengelolaWisata'])
       ->latest('kebakaran_hutan.created_at')
       ->paginate(10)

@@ -1,11 +1,13 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage, router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { debounce } from 'lodash';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 import Pagination from '@/Components/Pagination';
+import TextInput from '@/Components/TextInput';
 
 export default function Index({ auth, datas, filters, stats, available_years }) {
   const { flash } = usePage().props;
@@ -58,6 +60,28 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
       preserveScroll: true,
       onFinish: () => setIsLoading(false)
     });
+  };
+
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+
+  const handleSearch = useCallback(
+    debounce((value) => {
+      router.get(
+        route('realisasi-pnbp.index'),
+        { year: year, search: value },
+        {
+          preserveState: true,
+          replace: true,
+          preserveScroll: true
+        }
+      );
+    }, 500),
+    [year]
+  );
+
+  const onSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    handleSearch(e.target.value);
   };
 
   const handleDelete = (id) => {
@@ -291,6 +315,17 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                 <svg className="h-4 w-4 text-emerald-100" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                 </svg>
+              </div>
+
+              {/* Search Input */}
+              <div className="max-w-xs w-full ml-auto md:ml-4">
+                <TextInput
+                  type="text"
+                  className="w-full text-sm bg-emerald-900/30 border-emerald-500/30 text-white placeholder-emerald-200/70 focus:ring-emerald-400 focus:border-emerald-400"
+                  placeholder="Cari Hasil Hutan/Lokasi..."
+                  value={searchTerm}
+                  onChange={onSearchChange}
+                />
               </div>
             </div>
           </div>

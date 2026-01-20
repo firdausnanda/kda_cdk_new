@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { debounce } from 'lodash';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
 import { router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
+import TextInput from '@/Components/TextInput';
+import Pagination from '@/Components/Pagination';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
@@ -78,10 +81,32 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
   const handleYearChange = (e) => {
     const selectedYear = e.target.value;
     setYear(selectedYear);
-    router.get(route('hasil-hutan-bukan-kayu.index'), { forest_type, year: selectedYear }, {
+    router.get(route('hasil-hutan-bukan-kayu.index'), { forest_type, year: selectedYear, search: searchTerm }, {
       preserveState: true,
       preserveScroll: true,
     });
+  };
+
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+
+  const handleSearch = useCallback(
+    debounce((value) => {
+      router.get(
+        route('hasil-hutan-bukan-kayu.index'),
+        { forest_type, year: year, search: value },
+        {
+          preserveState: true,
+          replace: true,
+          preserveScroll: true
+        }
+      );
+    }, 500),
+    [forest_type, year]
+  );
+
+  const onSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    handleSearch(e.target.value);
   };
 
   const handleDelete = (id) => {
@@ -349,7 +374,7 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-1">
               <h3 className="font-bold text-gray-800">Daftar Laporan</h3>
               <div className="h-6 w-px bg-gray-200"></div>
               <div className="h-6 w-px bg-gray-200"></div>
@@ -365,6 +390,15 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
                     <option key={y} value={y}>{y}</option>
                   ))}
                 </select>
+              </div>
+              <div className="max-w-xs w-full ml-auto md:ml-4">
+                <TextInput
+                  type="text"
+                  className="w-full text-sm"
+                  placeholder="Cari Komoditas/Lokasi..."
+                  value={searchTerm}
+                  onChange={onSearchChange}
+                />
               </div>
             </div>
             <div className="text-sm text-gray-400 font-bold bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
@@ -514,6 +548,9 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
               </tbody>
             </table>
           </div>
+        </div>
+        <div className="px-6 py-4 border-t border-gray-100">
+          <Pagination links={datas.links} />
         </div>
       </div>
       <Modal show={showImportModal} onClose={() => setShowImportModal(false)}>

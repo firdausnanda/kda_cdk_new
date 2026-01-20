@@ -32,6 +32,13 @@ class RealisasiPnbpController extends Controller
       ->when($selectedYear, function ($query, $year) {
         return $query->where('realisasi_pnbp.year', $year);
       })
+      ->when($request->search, function ($query, $search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('types_of_forest_products', 'like', "%{$search}%")
+            ->orWhere('m_regencies.name', 'like', "%{$search}%")
+            ->orWhere('m_districts.name', 'like', "%{$search}%");
+        });
+      })
       ->with(['creator', 'regency', 'district'])
       ->latest('realisasi_pnbp.created_at')
       ->paginate(10)

@@ -33,6 +33,13 @@ class SkpsController extends Controller
         'm_districts.name as district_name',
         'm_skema_perhutanan_sosial.name as skema_name'
       )
+      ->when($request->search, function ($query, $search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('m_regencies.name', 'like', "%{$search}%")
+            ->orWhere('m_districts.name', 'like', "%{$search}%")
+            ->orWhere('m_skema_perhutanan_sosial.name', 'like', "%{$search}%");
+        });
+      })
       ->with(['creator', 'regency', 'district', 'skema'])
       ->latest('skps.created_at')
       ->paginate(10)

@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { debounce } from 'lodash';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
+import TextInput from '@/Components/TextInput';
 import { router } from '@inertiajs/react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -13,6 +15,28 @@ export default function Index({ auth, datas, stats }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Memproses...');
   const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleSearch = useCallback(
+    debounce((value) => {
+      router.get(
+        route('skps.index'),
+        { search: value },
+        {
+          preserveState: true,
+          replace: true,
+          preserveScroll: true
+        }
+      );
+    }, 500),
+    []
+  );
+
+  const onSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    handleSearch(e.target.value);
+  };
 
   const user = auth.user;
   const userPermissions = user.permissions || [];
@@ -215,6 +239,15 @@ export default function Index({ auth, datas, stats }) {
                 </button>
               </Link>
             )}
+            <div className="max-w-xs w-full ml-auto md:ml-4">
+              <TextInput
+                type="text"
+                className="w-full text-sm"
+                placeholder="Cari Lokasi/Skema..."
+                value={searchTerm}
+                onChange={onSearchChange}
+              />
+            </div>
           </div>
         </div>
 

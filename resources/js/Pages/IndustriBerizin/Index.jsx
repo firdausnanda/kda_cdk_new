@@ -1,7 +1,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage, router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { debounce } from 'lodash';
 import Select from 'react-select';
+import TextInput from '@/Components/TextInput';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
@@ -56,6 +58,28 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
       preserveScroll: true,
       onFinish: () => setIsLoading(false)
     });
+  };
+
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+
+  const handleSearch = useCallback(
+    debounce((value) => {
+      router.get(
+        route('industri-berizin.index'),
+        { year: year, search: value },
+        {
+          preserveState: true,
+          replace: true,
+          preserveScroll: true
+        }
+      );
+    }, 500),
+    [year]
+  );
+
+  const onSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    handleSearch(e.target.value);
   };
 
   const handleDelete = (id) => {
@@ -304,6 +328,17 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                 </svg>
               </div>
             </div>
+
+            {/* Search Input */}
+            <div className="max-w-xs w-full">
+              <TextInput
+                type="text"
+                className="w-full text-sm bg-emerald-900/30 border-emerald-500/30 text-white placeholder-emerald-200/70 focus:ring-emerald-400 focus:border-emerald-400"
+                placeholder="Cari Industri/Lokasi..."
+                value={searchTerm}
+                onChange={onSearchChange}
+              />
+            </div>
           </div>
         </div>
 
@@ -464,8 +499,8 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
           </div>
           <Pagination links={datas.links} />
         </div>
-      </div>
-    </AuthenticatedLayout>
+      </div >
+    </AuthenticatedLayout >
   );
 
 }

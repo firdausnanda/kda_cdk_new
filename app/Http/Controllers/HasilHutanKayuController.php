@@ -38,6 +38,13 @@ class HasilHutanKayuController extends Controller
       ->when($selectedYear, function ($query, $year) {
         return $query->where('hasil_hutan_kayu.year', $year);
       })
+      ->when($request->search, function ($query, $search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('m_kayu.name', 'like', "%{$search}%")
+            ->orWhere('m_regencies.name', 'like', "%{$search}%")
+            ->orWhere('m_districts.name', 'like', "%{$search}%");
+        });
+      })
 
       ->with(['creator', 'regency', 'district', 'kayu'])
       ->latest('hasil_hutan_kayu.created_at')

@@ -35,6 +35,14 @@ class RehabLahanController extends Controller
             ->when($selectedYear, function ($query, $year) {
                 return $query->where('rehab_lahan.year', $year);
             })
+            ->when($request->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('m_villages.name', 'like', "%{$search}%")
+                        ->orWhere('m_districts.name', 'like', "%{$search}%")
+                        ->orWhere('m_regencies.name', 'like', "%{$search}%")
+                        ->orWhere('rehab_lahan.fund_source', 'like', "%{$search}%");
+                });
+            })
             ->with(['creator', 'regency_rel', 'district_rel', 'village_rel'])
             ->latest('rehab_lahan.created_at')
             ->paginate(10)

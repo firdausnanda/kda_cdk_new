@@ -35,6 +35,15 @@ class IndustriBerizinController extends Controller
       ->when($selectedYear, function ($query, $year) {
         return $query->where('industri_berizin.year', $year);
       })
+      ->when($request->search, function ($query, $search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('m_jenis_produksi.name', 'like', "%{$search}%")
+            ->orWhere('industri_berizin.phhk_pbhh', 'like', "%{$search}%")
+            ->orWhere('industri_berizin.phhbk_pbphh', 'like', "%{$search}%")
+            ->orWhere('m_regencies.name', 'like', "%{$search}%")
+            ->orWhere('m_districts.name', 'like', "%{$search}%");
+        });
+      })
       ->with(['creator', 'regency', 'district', 'jenis_produksi'])
       ->latest('industri_berizin.created_at')
       ->paginate(10)

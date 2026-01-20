@@ -6,6 +6,7 @@ use App\Models\HasilHutanKayu;
 use App\Models\Kups;
 use App\Models\RealisasiPnbp;
 use App\Models\RehabLahan;
+use App\Models\Skps;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -157,6 +158,160 @@ class DashboardController extends Controller
             ],
             'availableYears' => $availableYears,
             'recentActivities' => $activities
+        ]);
+    }
+
+    public function publicDashboard(Request $request)
+    {
+        $currentYear = $request->input('year', date('Y'));
+
+        // Generate last 5 years
+        $thisYear = date('Y');
+        $availableYears = range($thisYear, $thisYear - 4);
+
+        // --- 1. Pembinaan Hutan (Rehab Lahan) ---
+        $rehabTotal = RehabLahan::where('year', $currentYear)
+            ->sum('realization');
+
+        $rehabChart = RehabLahan::where('year', $currentYear)
+            ->selectRaw('month, sum(realization) as total')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('total', 'month');
+
+        // --- 2. Perlindungan Hutan ---
+        // Kebakaran
+        $kebakaranStats = \App\Models\KebakaranHutan::where('year', $currentYear)
+            ->where('status', 'final')
+            ->selectRaw('SUM(number_of_fires) as total_kejadian, SUM(fire_area) as total_area')
+            ->first();
+
+        $kebakaranMonthlyStats = \App\Models\KebakaranHutan::where('year', $currentYear)
+            ->where('status', 'final')
+            ->selectRaw('month, SUM(number_of_fires) as total')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('total', 'month');
+
+        // Wisata
+        $wisataStats = \App\Models\PengunjungWisata::where('year', $currentYear)
+            ->where('status', 'final')
+            ->selectRaw('SUM(number_of_visitors) as total_visitors, SUM(gross_income) as total_income')
+            ->first();
+
+        $wisataMonthlyStats = \App\Models\PengunjungWisata::where('year', $currentYear)
+            ->where('status', 'final')
+            ->selectRaw('month, SUM(number_of_visitors) as total')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('total', 'month');
+
+        // --- 3. Bina Usaha (Expanded) ---
+        // Kayu Stats
+        $kayuStats = HasilHutanKayu::where('year', $currentYear)
+            ->where('status', 'final')
+            ->selectRaw('forest_type, SUM(annual_volume_target) as total_volume')
+            ->groupBy('forest_type')
+            ->pluck('total_volume', 'forest_type');
+
+        $kayuMonthlyStats = HasilHutanKayu::where('year', $currentYear)
+            ->where('status', 'final')
+            ->selectRaw('month, SUM(annual_volume_target) as total')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('total', 'month');
+
+        $kayuCommodityStats = HasilHutanKayu::join('m_kayu', 'hasil_hutan_kayu.id_kayu', '=', 'm_kayu.id')
+            ->where('hasil_hutan_kayu.year', $currentYear)
+            ->where('hasil_hutan_kayu.status', 'final')
+            ->selectRaw('m_kayu.name as commodity, SUM(hasil_hutan_kayu.annual_volume_target) as total')
+            ->groupBy('m_kayu.name')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->pluck('total', 'commodity');
+
+        // Bukan Kayu Stats
+        $bukanKayuStats = \App\Models\HasilHutanBukanKayu::where('year', $currentYear)
+            ->where('status', 'final')
+            ->selectRaw('forest_type, SUM(annual_volume_target) as total_production')
+            ->groupBy('forest_type')
+            ->pluck('total_production', 'forest_type');
+
+        $bukanKayuMonthlyStats = \App\Models\HasilHutanBukanKayu::where('year', $currentYear)
+            ->where('status', 'final')
+            ->selectRaw('month, SUM(annual_volume_target) as total')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('total', 'month');
+
+        $bukanKayuCommodityStats = \App\Models\HasilHutanBukanKayu::join('m_bukan_kayu', 'hasil_hutan_bukan_kayu.id_bukan_kayu', '=', 'm_bukan_kayu.id')
+            ->where('hasil_hutan_bukan_kayu.year', $currentYear)
+            ->where('hasil_hutan_bukan_kayu.status', 'final')
+            ->selectRaw('m_bukan_kayu.name as commodity, SUM(hasil_hutan_bukan_kayu.annual_volume_target) as total')
+            ->groupBy('m_bukan_kayu.name')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->pluck('total', 'commodity');
+
+        $industriCount = \App\Models\IndustriBerizin::count();
+
+        $pnbpTotal = RealisasiPnbp::where('year', $currentYear)
+            ->where('status', 'final')
+            ->get()
+            ->sum(function ($row) {
+                return (float) str_replace(['Rp', '.', ' '], '', $row->number_of_psdh) +
+                    (float) str_replace(['Rp', '.', ' '], '', $row->number_of_dbhdr);
+            });
+
+        // --- 4. Pemberdayaan Masyarakat (KUPS & SKPS) ---
+        $kupsStats = [
+            'total' => Kups::count(),
+            'active' => Kups::where('status', '!=', 'inactive')->count(),
+            'bg_colors' => [
+                'Blue' => 'rgba(54, 162, 235, 0.7)',
+                'Silver' => 'rgba(201, 203, 207, 0.7)',
+                'Gold' => 'rgba(255, 205, 86, 0.7)',
+                'Platinum' => 'rgba(75, 192, 192, 0.7)',
+            ], // Defining colors for frontend usage/consistency if needed, or just send data
+            'classes' => Kups::select('category', DB::raw('count(*) as total'))
+                ->groupBy('category')
+                ->get()
+                ->pluck('total', 'category')
+        ];
+
+        $skpsStats = Skps::count();
+
+        return Inertia::render('Public/PublicDashboard', [
+            'currentYear' => $currentYear,
+            'availableYears' => $availableYears,
+            'stats' => [
+                'pembinaan' => [
+                    'rehab_total' => (float) $rehabTotal,
+                    'rehab_chart' => $rehabChart,
+                ],
+                'perlindungan' => [
+                    'kebakaran_kejadian' => (int) ($kebakaranStats->total_kejadian ?? 0),
+                    'kebakaran_area' => (float) ($kebakaranStats->total_area ?? 0),
+                    'kebakaranMonthly' => $kebakaranMonthlyStats,
+                    'wisata_visitors' => (int) ($wisataStats->total_visitors ?? 0),
+                    'wisata_income' => (float) ($wisataStats->total_income ?? 0),
+                    'wisataMonthly' => $wisataMonthlyStats,
+                ],
+                'bina_usaha' => [
+                    'kayu' => $kayuStats,
+                    'kayuMonthly' => $kayuMonthlyStats,
+                    'kayuCommodity' => $kayuCommodityStats,
+                    'bukanKayu' => $bukanKayuStats,
+                    'bukanKayuMonthly' => $bukanKayuMonthlyStats,
+                    'bukanKayuCommodity' => $bukanKayuCommodityStats,
+                    'industri' => $industriCount,
+                    'pnbp' => $pnbpTotal,
+                ],
+                'pemberdayaan' => [
+                    'kups' => $kupsStats,
+                    'skps' => $skpsStats,
+                ]
+            ]
         ]);
     }
 }

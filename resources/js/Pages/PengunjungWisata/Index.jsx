@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { debounce } from 'lodash';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
 import { router } from '@inertiajs/react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+
+import TextInput from '@/Components/TextInput';
+import Pagination from '@/Components/Pagination';
 
 const MySwal = withReactContent(Swal);
 
@@ -24,14 +28,36 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
   const canDelete = userPermissions.includes('perlindungan.delete') || isAdmin;
   const canApprove = userPermissions.includes('perlindungan.approve') || isAdmin;
 
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+
   const handleYearChange = (year) => {
     setLoadingText('Sinkronisasi Tahun...');
     setIsLoading(true);
-    router.get(route('pengunjung-wisata.index'), { year }, {
+    router.get(route('pengunjung-wisata.index'), { year, search: searchTerm }, {
       preserveState: true,
       replace: true,
       onFinish: () => setIsLoading(false)
     });
+  };
+
+  const handleSearch = useCallback(
+    debounce((value) => {
+      router.get(
+        route('pengunjung-wisata.index'),
+        { search: value, year: filters.year },
+        {
+          preserveState: true,
+          replace: true,
+          preserveScroll: true
+        }
+      );
+    }, 500),
+    [filters.year]
+  );
+
+  const onSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    handleSearch(e.target.value);
   };
 
   const handleDelete = (id) => {
@@ -258,7 +284,7 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
         {/* Table Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-1">
               <h3 className="font-bold text-gray-800">Daftar Laporan Pengunjung</h3>
               <div className="h-6 w-px bg-gray-200"></div>
               <div className="flex items-center gap-2">
@@ -273,8 +299,17 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
                   ))}
                 </select>
               </div>
+              <div className="max-w-xs w-full ml-auto md:ml-4">
+                <TextInput
+                  type="text"
+                  className="w-full text-sm"
+                  placeholder="Cari Pengelola Wisata..."
+                  value={searchTerm}
+                  onChange={onSearchChange}
+                />
+              </div>
             </div>
-            <div className="text-sm text-gray-400 font-bold bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+            <div className="text-sm text-gray-400 font-bold bg-gray-50 px-3 py-1 rounded-full border border-gray-100 shrink-0">
               {datas.total} Data Item
             </div>
           </div>
@@ -433,6 +468,9 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="px-6 py-4 border-t border-gray-100">
+            <Pagination links={datas.links} />
           </div>
         </div>
       </div>

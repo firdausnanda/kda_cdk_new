@@ -68,7 +68,13 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                         href={auth.user ? route('dashboard') : route('login')}
                                         className="px-6 py-3 rounded-full bg-primary-700 text-white font-semibold text-sm hover:bg-primary-800 shadow-lg shadow-primary-700/20 transition-all duration-300 transform hover:-translate-y-0.5 text-center"
                                     >
-                                        {auth.user ? 'Dashboard' : 'Masuk sekarang'}
+                                        {auth.user ? 'Masuk Admin Panel' : 'Masuk sekarang'}
+                                    </Link>
+                                    <Link
+                                        href={route('public.dashboard')}
+                                        className="px-6 py-3 rounded-full bg-white text-primary-700 border border-primary-200 font-semibold text-sm hover:bg-primary-50 transition-all duration-300 transform hover:-translate-y-0.5 text-center"
+                                    >
+                                        Dashboard Kehutanan
                                     </Link>
                                 </div>
 

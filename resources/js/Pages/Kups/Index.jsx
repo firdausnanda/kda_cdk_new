@@ -5,6 +5,7 @@ import { debounce } from 'lodash';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import Modal from '@/Components/Modal';
+import Pagination from '@/Components/Pagination';
 
 const MySwal = withReactContent(Swal);
 
@@ -478,22 +479,8 @@ export default function Index({ auth, kups, stats, filters }) {
             </div>
 
             {/* Pagination */}
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-              {kups.links && kups.links.length > 3 && (
-                <div className="flex flex-wrap gap-1 justify-center">
-                  {kups.links.map((link, key) => (
-                    <Link
-                      key={key}
-                      href={link.url}
-                      className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all ${link.active
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                        } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      dangerouslySetInnerHTML={{ __html: link.label }}
-                    />
-                  ))}
-                </div>
-              )}
+            <div className="px-6 py-4 border-t border-gray-100">
+              <Pagination links={kups.links} />
             </div>
           </div>
         </div>

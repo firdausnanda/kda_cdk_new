@@ -31,11 +31,17 @@ class KupsController extends Controller
       $search = $request->search;
       $query->where(function ($q) use ($search) {
         $q->where('commodity', 'like', "%{$search}%")
-          ->orWhere('category', 'like', "%{$search}%");
+          ->orWhere('category', 'like', "%{$search}%")
+          ->orWhereHas('regency', function ($q2) use ($search) {
+            $q2->where('name', 'like', "%{$search}%");
+          })
+          ->orWhereHas('district', function ($q2) use ($search) {
+            $q2->where('name', 'like', "%{$search}%");
+          });
       });
     }
 
-    $kups = $query->latest()->paginate(10)->appends($request->all());
+    $kups = $query->latest()->paginate(10)->withQueryString();
 
     // Calculate Stats
     $stats = [

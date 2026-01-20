@@ -26,6 +26,11 @@ class PengunjungWisataController extends Controller
       ->when($selectedYear, function ($query, $year) {
         return $query->where('year', $year);
       })
+      ->when($request->search, function ($query, $search) {
+        $query->whereHas('pengelolaWisata', function ($q) use ($search) {
+          $q->where('name', 'like', "%{$search}%");
+        });
+      })
       ->latest('created_at')
       ->paginate(10)
       ->withQueryString();
