@@ -237,7 +237,7 @@ export default function PublicDashboard({ currentYear, availableYears, stats }) 
                   }}
                 />
               </div>
-              <Link href="/" className="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200 transition-colors">
+              <Link href="/" className="hidden sm:inline-flex px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200 transition-colors">
                 Kembali
               </Link>
             </div>
