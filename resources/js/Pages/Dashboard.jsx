@@ -233,7 +233,15 @@ export default function Dashboard({ auth, stats, chartData, filters, availableYe
                                         ))}
                                     </select>
                                 </div>
-                                <button className="text-sm text-primary-600 hover:text-primary-800 font-medium whitespace-nowrap">Download Laporan</button>
+                                <a
+                                    href={route('dashboard.export-rehab-lahan', { year: filters.year })}
+                                    className="text-sm text-primary-600 hover:text-primary-800 font-medium whitespace-nowrap inline-flex items-center gap-1"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    Download Laporan
+                                </a>
                             </div>
                         </div>
                         <div className="h-64 sm:h-80">
@@ -251,20 +259,22 @@ export default function Dashboard({ auth, stats, chartData, filters, availableYe
                                         labels: kupsChart.labels,
                                         datasets: [{
                                             data: kupsChart.data,
-                                            backgroundColor: [
-                                                'rgba(59, 130, 246, 0.8)', // Blue
-                                                'rgba(168, 85, 247, 0.8)', // Purple
-                                                'rgba(234, 179, 8, 0.8)',  // Yellow/Gold
-                                                'rgba(239, 68, 68, 0.8)',  // Red
-                                                'rgba(34, 197, 94, 0.8)',  // Green
-                                            ],
-                                            borderColor: [
-                                                'rgba(59, 130, 246, 1)',
-                                                'rgba(168, 85, 247, 1)',
-                                                'rgba(234, 179, 8, 1)',
-                                                'rgba(239, 68, 68, 1)',
-                                                'rgba(34, 197, 94, 1)',
-                                            ],
+                                            backgroundColor: kupsChart.labels.map(label => {
+                                                const l = label.toLowerCase();
+                                                if (l.includes('gold') || l.includes('emas')) return 'rgba(234, 179, 8, 0.8)'; // Yellow-500
+                                                if (l.includes('platinum')) return 'rgba(100, 116, 139, 0.8)'; // Slate-500
+                                                if (l.includes('silver') || l.includes('perak')) return 'rgba(156, 163, 175, 0.8)'; // Gray-400
+                                                if (l.includes('blue') || l.includes('biru')) return 'rgba(59, 130, 246, 0.8)'; // Blue-500
+                                                return 'rgba(34, 197, 94, 0.8)'; // Green-500 (Default)
+                                            }),
+                                            borderColor: kupsChart.labels.map(label => {
+                                                const l = label.toLowerCase();
+                                                if (l.includes('gold') || l.includes('emas')) return 'rgba(234, 179, 8, 1)';
+                                                if (l.includes('platinum')) return 'rgba(100, 116, 139, 1)';
+                                                if (l.includes('silver') || l.includes('perak')) return 'rgba(156, 163, 175, 1)';
+                                                if (l.includes('blue') || l.includes('biru')) return 'rgba(59, 130, 246, 1)';
+                                                return 'rgba(34, 197, 94, 1)';
+                                            }),
                                             borderWidth: 1,
                                         }]
                                     }}
@@ -277,24 +287,31 @@ export default function Dashboard({ auth, stats, chartData, filters, availableYe
                             )}
                         </div>
                         <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
-                            {kupsChart && kupsChart.labels && kupsChart.labels.map((label, index) => (
-                                <div key={label} className="flex justify-between items-center text-sm">
-                                    <div className="flex items-center">
-                                        <span className="w-3 h-3 rounded-full mr-2 shrink-0" style={{
-                                            backgroundColor: ['rgba(59, 130, 246, 0.8)', 'rgba(168, 85, 247, 0.8)', 'rgba(234, 179, 8, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(34, 197, 94, 0.8)'][index % 5]
-                                        }}></span>
-                                        <span className="text-gray-600 capitalize">{label.replace(/_/g, ' ')}</span>
+                            {kupsChart && kupsChart.labels && kupsChart.labels.map((label, index) => {
+                                const l = label.toLowerCase();
+                                let color = 'rgba(34, 197, 94, 0.8)';
+                                if (l.includes('gold') || l.includes('emas')) color = 'rgba(234, 179, 8, 0.8)';
+                                else if (l.includes('platinum')) color = 'rgba(100, 116, 139, 0.8)';
+                                else if (l.includes('silver') || l.includes('perak')) color = 'rgba(156, 163, 175, 0.8)';
+                                else if (l.includes('blue') || l.includes('biru')) color = 'rgba(59, 130, 246, 0.8)';
+
+                                return (
+                                    <div key={label} className="flex justify-between items-center text-sm">
+                                        <div className="flex items-center">
+                                            <span className="w-3 h-3 rounded-full mr-2 shrink-0" style={{ backgroundColor: color }}></span>
+                                            <span className="text-gray-600 capitalize">{label.replace(/_/g, ' ')}</span>
+                                        </div>
+                                        <span className="font-medium text-gray-900">{kupsChart.data[index]}</span>
                                     </div>
-                                    <span className="font-medium text-gray-900">{kupsChart.data[index]}</span>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
 
                 {/* Recent Activity Table */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <div className="p-6 border-b border-gray-100 bg-gray-50/50">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-primary-100 rounded-lg text-primary-600">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -303,7 +320,6 @@ export default function Dashboard({ auth, stats, chartData, filters, availableYe
                             </div>
                             <h3 className="font-bold text-gray-800 text-lg">Aktivitas Terbaru</h3>
                         </div>
-                        <button className="text-sm text-primary-600 hover:text-primary-800 font-medium whitespace-nowrap px-4 py-2 hover:bg-primary-50 rounded-lg transition-colors">Lihat Semua</button>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-gray-500 min-w-[600px] sm:min-w-0">

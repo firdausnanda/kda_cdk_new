@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Models\Activity;
+use App\Exports\RehabLahanExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DashboardController extends Controller
 {
@@ -313,5 +315,16 @@ class DashboardController extends Controller
                 ]
             ]
         ]);
+    }
+
+    /**
+     * Export Rehabilitasi Lahan data to Excel
+     */
+    public function exportRehabLahan(Request $request)
+    {
+        $year = $request->input('year', date('Y'));
+        $filename = 'laporan-rehabilitasi-lahan-' . $year . '-' . date('Y-m-d') . '.xlsx';
+
+        return Excel::download(new RehabLahanExport($year), $filename);
     }
 }

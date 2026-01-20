@@ -174,47 +174,7 @@ export default function Index({ auth, kups, stats, filters }) {
   const canReject = userPermissions.includes('pemberdayaan.approve') || isAdmin;
   const canSubmit = userPermissions.includes('pemberdayaan.edit') || isAdmin;
 
-  const userCanEdit = (item) => {
-    if (isAdmin) return true;
-    if (canEdit && (item.status === 'draft' || item.status === 'rejected')) return true;
-    return false;
-  };
 
-  const userCanDelete = (item) => {
-    if (isAdmin) return true;
-    if (canDelete && (item.status === 'draft' || item.status === 'rejected')) return true;
-    return false;
-  };
-
-  const userCanSubmit = (item) => {
-    if (isAdmin) return true;
-    if (canSubmit && (item.status === 'draft' || item.status === 'rejected')) return true;
-    return false;
-  };
-
-  const userCanApprove = (item) => {
-    // Tidak bisa approve jika status sudah finalized atau draft
-    if (item.status === 'finalized' || item.status === 'draft' || item.status === 'rejected') return false;
-    if (isAdmin) return true;
-    if (canApprove) {
-      if (item.status === 'waiting_kasi' && isKasi) return true;
-      if (item.status === 'waiting_cdk' && isKaCdk) return true;
-      return false;
-    }
-    return false;
-  };
-
-  const userCanReject = (item) => {
-    // Tidak bisa reject jika status sudah finalized atau draft
-    if (item.status === 'finalized' || item.status === 'draft' || item.status === 'rejected') return false;
-    if (isAdmin) return true;
-    if (canReject) {
-      if (item.status === 'waiting_kasi' && isKasi) return true;
-      if (item.status === 'waiting_cdk' && isKaCdk) return true;
-      return false;
-    }
-    return false;
-  };
 
   return (
     <AuthenticatedLayout
@@ -413,60 +373,91 @@ export default function Index({ auth, kups, stats, filters }) {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex item-center justify-center gap-2">
-                            {userCanApprove(item) && (
-                              <button
-                                onClick={() => handleApprove(item.id)}
-                                className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
-                                title="Setujui"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                              </button>
-                            )}
-                            {userCanReject(item) && (
-                              <button
-                                onClick={() => openRejectModal(item.id)}
-                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
-                                title="Tolak"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            )}
-                            {userCanSubmit(item) && (
+                            {/* Submit Button */}
+                            {(canEdit && (item.status === 'draft' || item.status === 'rejected')) && (
                               <button
                                 onClick={() => handleSubmit(item.id)}
                                 className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors shadow-sm bg-blue-50"
-                                title="Submit"
+                                title="Kirim ke Pimpinan"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 9l3 3m0 0l-3 3m3-3H9" />
                                 </svg>
                               </button>
                             )}
-                            {userCanEdit(item) && (
-                              <Link
-                                href={route('kups.edit', item.id)}
-                                className="p-2 text-primary-600 hover:bg-primary-100 rounded-lg transition-colors shadow-sm bg-primary-50"
-                                title="Edit"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                              </Link>
+
+                            {/* Verify & Reject for Kasi */}
+                            {(canApprove && (isKasi || isAdmin) && item.status === 'waiting_kasi') && (
+                              <>
+                                <button
+                                  onClick={() => handleApprove(item.id)}
+                                  className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
+                                  title="Setujui Laporan"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => openRejectModal(item.id)}
+                                  className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
+                                  title="Tolak Laporan"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </>
                             )}
-                            {userCanDelete(item) && (
-                              <button
-                                onClick={() => handleDelete(item.id)}
-                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
-                                title="Hapus"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
+
+                            {/* Verify & Reject for KaCDK */}
+                            {(canApprove && (isKaCdk || isAdmin) && item.status === 'waiting_cdk') && (
+                              <>
+                                <button
+                                  onClick={() => handleApprove(item.id)}
+                                  className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
+                                  title="Setujui Laporan"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => openRejectModal(item.id)}
+                                  className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
+                                  title="Tolak Laporan"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </button>
+                              </>
+                            )}
+
+                            {/* Edit & Delete */}
+                            {((canEdit && (item.status === 'draft' || item.status === 'rejected')) || isAdmin) && (
+                              <>
+                                <Link
+                                  href={route('kups.edit', item.id)}
+                                  className="p-2 text-primary-600 hover:bg-primary-100 rounded-lg transition-colors shadow-sm bg-primary-50"
+                                  title="Edit Data"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                  </svg>
+                                </Link>
+                                {(canDelete || isAdmin) && (
+                                  <button
+                                    onClick={() => handleDelete(item.id)}
+                                    className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
+                                    title="Hapus Data"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>
