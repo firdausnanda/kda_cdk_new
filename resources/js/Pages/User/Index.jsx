@@ -12,6 +12,12 @@ export default function Index({ auth, users, filters }) {
     const [loadingText, setLoadingText] = useState('Memproses...');
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
 
+    const isAdmin = auth.user.roles.includes('admin');
+    const userPermissions = auth.user.permissions || [];
+    const canCreate = userPermissions.includes('users.create') || isAdmin;
+    const canEdit = userPermissions.includes('users.edit') || isAdmin;
+    const canDelete = userPermissions.includes('users.delete') || isAdmin;
+
     // Debounced search handler
     const handleSearch = useCallback(
         debounce((query) => {
@@ -73,6 +79,29 @@ export default function Index({ auth, users, filters }) {
                     onError: () => setIsLoading(false),
                     onFinish: () => setIsLoading(false)
                 });
+            }
+        });
+    };
+
+    const handleImpersonate = (userId, userName) => {
+        MySwal.fire({
+            title: 'Konfirmasi Login',
+            text: `Anda akan login sebagai ${userName}. Lanjutkan?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#f59e0b',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Login',
+            cancelButtonText: 'Batal',
+            customClass: {
+                title: 'font-bold text-gray-900',
+                popup: 'rounded-3xl shadow-2xl border-none',
+                confirmButton: 'rounded-xl font-bold px-6 py-2.5',
+                cancelButton: 'rounded-xl font-bold px-6 py-2.5'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = route('impersonate', userId);
             }
         });
     };
@@ -227,6 +256,18 @@ export default function Index({ auth, users, filters }) {
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>
                                                 </button>
+
+                                                {isAdmin && auth.user.id !== user.id && (
+                                                    <button
+                                                        onClick={() => handleImpersonate(user.id, user.name)}
+                                                        className="p-2 bg-white text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all duration-200 border border-transparent hover:border-amber-100 shadow-sm hover:shadow-md"
+                                                        title="Login Sebagai User Ini"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                                                        </svg>
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

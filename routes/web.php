@@ -125,7 +125,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/kups/{kups}/approve', [\App\Http\Controllers\KupsController::class, 'approve'])->name('kups.approve');
     Route::post('/kups/{kups}/reject', [\App\Http\Controllers\KupsController::class, 'reject'])->name('kups.reject');
     // User Management
+    // User Management
     Route::resource('users', \App\Http\Controllers\UserController::class);
+
+    // Impersonation Routes
+    Route::impersonate();
 });
 
 require __DIR__ . '/auth.php';
