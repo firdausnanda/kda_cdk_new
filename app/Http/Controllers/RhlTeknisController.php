@@ -192,4 +192,30 @@ class RhlTeknisController extends Controller
 
     return redirect()->back()->with('success', 'Laporan telah ditolak dengan catatan.');
   }
+
+  public function export(Request $request)
+  {
+    $year = $request->query('year');
+    return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\RhlTeknisExport($year), 'rhl-teknis-' . date('Y-m-d') . '.xlsx');
+  }
+
+  public function template()
+  {
+    return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\RhlTeknisTemplateExport, 'template_import_rhl_teknis.xlsx');
+  }
+
+  public function import(Request $request)
+  {
+    $request->validate(['file' => 'required|mimes:xlsx,csv,xls']);
+    $import = new \App\Imports\RhlTeknisImport();
+    try {
+      \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('file'));
+    } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+      return redirect()->back()->with('import_errors', $e->failures());
+    }
+    if ($import->failures()->isNotEmpty()) {
+      return redirect()->back()->with('import_errors', $import->failures());
+    }
+    return redirect()->back()->with('success', 'Data berhasil diimport.');
+  }
 }

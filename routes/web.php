@@ -52,36 +52,58 @@ Route::middleware('auth')->group(function () {
     Route::post('/rehab-lahan/{rehab_lahan}/submit', [RehabLahanController::class, 'submit'])->name('rehab-lahan.submit');
     Route::post('/rehab-lahan/{rehab_lahan}/approve', [RehabLahanController::class, 'approve'])->name('rehab-lahan.approve');
     Route::post('/rehab-lahan/{rehab_lahan}/reject', [RehabLahanController::class, 'reject'])->name('rehab-lahan.reject');
+    Route::get('rehab-lahan/export', [RehabLahanController::class, 'export'])->name('rehab-lahan.export');
+    Route::get('rehab-lahan/template', [RehabLahanController::class, 'template'])->name('rehab-lahan.template');
+    Route::post('rehab-lahan/import', [RehabLahanController::class, 'import'])->name('rehab-lahan.import');
     Route::resource('rehab-lahan', RehabLahanController::class);
 
     Route::post('/penghijauan-lingkungan/{penghijauan_lingkungan}/submit', [PenghijauanLingkunganController::class, 'submit'])->name('penghijauan-lingkungan.submit');
     Route::post('/penghijauan-lingkungan/{penghijauan_lingkungan}/approve', [PenghijauanLingkunganController::class, 'approve'])->name('penghijauan-lingkungan.approve');
     Route::post('/penghijauan-lingkungan/{penghijauan_lingkungan}/reject', [PenghijauanLingkunganController::class, 'reject'])->name('penghijauan-lingkungan.reject');
+    Route::get('penghijauan-lingkungan/export', [PenghijauanLingkunganController::class, 'export'])->name('penghijauan-lingkungan.export');
+    Route::get('penghijauan-lingkungan/template', [PenghijauanLingkunganController::class, 'template'])->name('penghijauan-lingkungan.template');
+    Route::post('penghijauan-lingkungan/import', [PenghijauanLingkunganController::class, 'import'])->name('penghijauan-lingkungan.import');
     Route::resource('penghijauan-lingkungan', PenghijauanLingkunganController::class);
 
     Route::post('/rehab-manggrove/{rehab_manggrove}/submit', [RehabManggroveController::class, 'submit'])->name('rehab-manggrove.submit');
     Route::post('/rehab-manggrove/{rehab_manggrove}/approve', [RehabManggroveController::class, 'approve'])->name('rehab-manggrove.approve');
     Route::post('/rehab-manggrove/{rehab_manggrove}/reject', [RehabManggroveController::class, 'reject'])->name('rehab-manggrove.reject');
+    Route::get('rehab-manggrove/export', [RehabManggroveController::class, 'export'])->name('rehab-manggrove.export');
+    Route::get('rehab-manggrove/template', [RehabManggroveController::class, 'template'])->name('rehab-manggrove.template');
+    Route::post('rehab-manggrove/import', [RehabManggroveController::class, 'import'])->name('rehab-manggrove.import');
 
     // RHL Teknis
+    Route::get('rhl-teknis/export', [RhlTeknisController::class, 'export'])->name('rhl-teknis.export');
+    Route::get('rhl-teknis/template', [RhlTeknisController::class, 'template'])->name('rhl-teknis.template');
+    Route::post('rhl-teknis/import', [RhlTeknisController::class, 'import'])->name('rhl-teknis.import');
     Route::resource('rhl-teknis', RhlTeknisController::class)->parameters(['rhl-teknis' => 'rhl_teknis']);
     Route::post('/rhl-teknis/{rhl_teknis}/submit', [RhlTeknisController::class, 'submit'])->name('rhl-teknis.submit');
     Route::post('/rhl-teknis/{rhl_teknis}/approve', [RhlTeknisController::class, 'approve'])->name('rhl-teknis.approve');
     Route::post('/rhl-teknis/{rhl_teknis}/reject', [RhlTeknisController::class, 'reject'])->name('rhl-teknis.reject');
 
     // Reboisasi Area PS
+    Route::get('reboisasi-ps/export', [\App\Http\Controllers\ReboisasiPsController::class, 'export'])->name('reboisasi-ps.export');
+    Route::get('reboisasi-ps/template', [\App\Http\Controllers\ReboisasiPsController::class, 'template'])->name('reboisasi-ps.template');
+    Route::post('reboisasi-ps/import', [\App\Http\Controllers\ReboisasiPsController::class, 'import'])->name('reboisasi-ps.import');
     Route::resource('reboisasi-ps', \App\Http\Controllers\ReboisasiPsController::class)->parameters(['reboisasi-ps' => 'reboisasi_ps']);
     Route::post('/reboisasi-ps/{reboisasi_ps}/submit', [\App\Http\Controllers\ReboisasiPsController::class, 'submit'])->name('reboisasi-ps.submit');
     Route::post('/reboisasi-ps/{reboisasi_ps}/approve', [\App\Http\Controllers\ReboisasiPsController::class, 'approve'])->name('reboisasi-ps.approve');
     Route::post('/reboisasi-ps/{reboisasi_ps}/reject', [\App\Http\Controllers\ReboisasiPsController::class, 'reject'])->name('reboisasi-ps.reject');
 
+
     // Pengunjung Objek Wisata
+    Route::get('pengunjung-wisata/export', [\App\Http\Controllers\PengunjungWisataController::class, 'export'])->name('pengunjung-wisata.export');
+    Route::get('pengunjung-wisata/template', [\App\Http\Controllers\PengunjungWisataController::class, 'template'])->name('pengunjung-wisata.template');
+    Route::post('pengunjung-wisata/import', [\App\Http\Controllers\PengunjungWisataController::class, 'import'])->name('pengunjung-wisata.import');
     Route::resource('pengunjung-wisata', \App\Http\Controllers\PengunjungWisataController::class)->parameters(['pengunjung-wisata' => 'pengunjung_wisata']);
     Route::post('/pengunjung-wisata/{pengunjung_wisata}/submit', [\App\Http\Controllers\PengunjungWisataController::class, 'submit'])->name('pengunjung-wisata.submit');
     Route::post('/pengunjung-wisata/{pengunjung_wisata}/approve', [\App\Http\Controllers\PengunjungWisataController::class, 'approve'])->name('pengunjung-wisata.approve');
     Route::post('/pengunjung-wisata/{pengunjung_wisata}/reject', [\App\Http\Controllers\PengunjungWisataController::class, 'reject'])->name('pengunjung-wisata.reject');
 
     // Kebakaran Hutan
+    Route::get('kebakaran-hutan/export', [\App\Http\Controllers\KebakaranHutanController::class, 'export'])->name('kebakaran-hutan.export');
+    Route::get('kebakaran-hutan/template', [\App\Http\Controllers\KebakaranHutanController::class, 'template'])->name('kebakaran-hutan.template');
+    Route::post('kebakaran-hutan/import', [\App\Http\Controllers\KebakaranHutanController::class, 'import'])->name('kebakaran-hutan.import');
     Route::resource('kebakaran-hutan', \App\Http\Controllers\KebakaranHutanController::class)->parameters(['kebakaran-hutan' => 'kebakaran_hutan']);
     Route::post('/kebakaran-hutan/{kebakaran_hutan}/submit', [\App\Http\Controllers\KebakaranHutanController::class, 'submit'])->name('kebakaran-hutan.submit');
     Route::post('/kebakaran-hutan/{kebakaran_hutan}/approve', [\App\Http\Controllers\KebakaranHutanController::class, 'approve'])->name('kebakaran-hutan.approve');
