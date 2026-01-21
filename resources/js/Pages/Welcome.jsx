@@ -59,7 +59,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                 <div className="mb-10 relative">
                                     <div className="absolute -left-10 -top-10 w-40 h-40 bg-emerald-100/50 rounded-full blur-3xl -z-10"></div>
 
-                                    <h1 className="font-display font-black sm:text-7xl lg:text-8xl leading-none tracking-tighter mb-6">
+                                    <h1 className="text-5xl font-display font-black sm:text-7xl lg:text-8xl leading-none tracking-tighter mb-6">
                                         <span className="text-yellow-500 drop-shadow-sm font-semibold">
                                             SMART
                                         </span>
@@ -118,43 +118,67 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                 </div>
                             </div>
 
-                            {/* Right Column: Visual/Abstract Forestry Styling */}
-                            <div className="relative hidden lg:block">
-                                <div className="relative w-full aspect-[4/5] max-w-md mx-auto">
-                                    {/* Main Image Container */}
-                                    <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl shadow-primary-900/10">
-                                        {/* Abstract Forestry Pattern/Image Placeholder from Unsplash */}
-                                        <div className="absolute inset-0 bg-gray-200">
-                                            <img
-                                                src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2674&auto=format&fit=crop"
-                                                alt="Forestry"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                            {/* Right Column: Visual Composition */}
+                            <div className="relative hidden lg:block h-full">
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] -z-10">
+                                    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-emerald-50/60 fill-current opacity-70 animate-[pulse_4s_ease-in-out_infinite]">
+                                        <path transform="translate(100 100)" d="M42.7,-72.8C54.6,-67.2,63.1,-54.6,70.9,-42.2C78.7,-29.8,85.8,-17.6,83.9,-6.3C82,5,71.1,15.4,61.8,24.8C52.5,34.2,44.9,42.5,36,50.4C27.1,58.3,16.9,65.8,5.1,68.8C-6.7,71.8,-20.1,70.3,-32.1,64.3C-44.1,58.3,-54.7,47.8,-62.8,35.6C-70.9,23.4,-76.5,9.5,-75.4,-3.9C-74.3,-17.3,-66.5,-30.2,-56.3,-40.4C-46.1,-50.6,-33.5,-58.1,-20.7,-62.9C-7.9,-67.7,6.3,-69.8,20.4,-71.8C34.5,-73.8,48.6,-75.7,42.7,-72.8Z" />
+                                    </svg>
+                                </div>
+
+                                <div className="relative w-full max-w-md mx-auto aspect-[4/5] mt-8">
+                                    {/* Decorative Pattern Grid */}
+                                    <div className="absolute -top-8 -right-8 w-32 h-32 opacity-20">
+                                        <svg className="w-full h-full text-emerald-800" fill="currentColor" viewBox="0 0 100 100">
+                                            <pattern id="grid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                                                <circle cx="2" cy="2" r="2" />
+                                            </pattern>
+                                            <rect width="100" height="100" fill="url(#grid)" />
+                                        </svg>
                                     </div>
 
-                                    {/* Floating stats card */}
-                                    <div className="absolute -left-6 bottom-10 bg-white/95 backdrop-blur-sm p-5 rounded-xl shadow-xl border border-white/50 max-w-[240px] transform transition-transform duration-300">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+                                    {/* Main Image */}
+                                    <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl shadow-emerald-900/10 z-10 group">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/80 via-transparent to-transparent z-10 opacity-90 transition-opacity duration-300 group-hover:opacity-100"></div>
+                                        <img
+                                            src="/img/hutan_indonesia.jpeg"
+                                            alt="Hutan Indonesia"
+                                            className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
+                                        />
+
+                                        {/* Bottom Caption on Image */}
+                                        <div className="absolute bottom-8 left-8 right-8 z-20 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="w-8 h-1 bg-yellow-500 rounded-full"></div>
+                                                <span className="text-emerald-100 text-xs font-bold tracking-widest uppercase">Wilayah Kerja</span>
+                                            </div>
+                                            <h3 className="text-white font-display font-bold text-2xl leading-tight">
+                                                CDK Wilayah <br /> Trenggalek
+                                            </h3>
+                                        </div>
+                                    </div>
+
+                                    {/* Stats Glass Card */}
+                                    <div className="absolute top-12 -left-6 z-30 perspective-1000 hover:z-40">
+                                        <div className="flex items-center gap-4 bg-white/90 backdrop-blur-xl p-4 pr-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 transform transition-all duration-300 hover:scale-105 hover:shadow-emerald-900/20">
+                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                             </div>
                                             <div>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Rehabilitasi</p>
-                                                <p className="text-base font-bold text-gray-900">50.000++ Ha</p>
+                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Data Validasi</p>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-2xl font-black text-gray-800">100%</span>
+                                                    <span className="flex h-2 w-2 relative">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="w-full bg-gray-100 rounded-full h-1">
-                                            <div className="bg-primary-600 h-1 rounded-full" style={{ width: '75%' }}></div>
                                         </div>
                                     </div>
 
-                                    {/* Decorative Elements */}
-                                    <div className="absolute -right-12 -top-12 w-64 h-64 bg-primary-200/30 rounded-full blur-3xl -z-10"></div>
-                                    <div className="absolute -left-12 -bottom-12 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl -z-10"></div>
                                 </div>
                             </div>
                         </div>
