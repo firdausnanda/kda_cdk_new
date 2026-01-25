@@ -2,8 +2,6 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';
-import Select from 'react-select';
-import TextInput from '@/Components/TextInput';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import Modal from '@/Components/Modal';
@@ -12,9 +10,8 @@ import SecondaryButton from '@/Components/SecondaryButton';
 const MySwal = withReactContent(Swal);
 import Pagination from '@/Components/Pagination';
 
-export default function Index({ auth, datas, filters, stats, available_years }) {
+export default function Index({ auth, datas, stats }) {
   const { flash } = usePage().props;
-  const [year, setYear] = useState(filters.year || new Date().getFullYear());
 
   const isAdmin = auth.user.roles.includes('admin');
   const isKasi = auth.user.roles.includes('kasi');
@@ -25,8 +22,6 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
   const canEdit = userPermissions.includes('bina-usaha.edit') || isAdmin;
   const canDelete = userPermissions.includes('bina-usaha.delete') || isAdmin;
   const canApprove = userPermissions.includes('bina-usaha.approve') || isAdmin;
-
-  const yearOptions = available_years?.length > 0 ? available_years : [new Date().getFullYear()];
 
   useEffect(() => {
     if (flash?.success) {
@@ -60,22 +55,12 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
     }
   }, [flash]);
 
-  const handleYearChange = (e) => {
-    const newYear = e.target.value;
-    setYear(newYear);
-    setLoadingText('Sinkronisasi Tahun...');
-    setIsLoading(true);
-    router.get(route('industri-berizin.index'), { year: newYear }, {
-      preserveState: true,
-      preserveScroll: true,
-      onFinish: () => setIsLoading(false)
-    });
-  };
-
-  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importFile, setImportFile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('Memproses...');
 
   const handleImportSubmit = (e) => {
     e.preventDefault();
@@ -83,7 +68,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
     setLoadingText('Mengimport Data...');
     setIsLoading(true);
     setShowImportModal(false);
-    router.post(route('industri-berizin.import'), { file: importFile }, {
+    router.post(route('pbphh.import'), { file: importFile }, {
       forceFormData: true,
       onFinish: () => {
         setIsLoading(false);
@@ -95,8 +80,8 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
   const handleSearch = useCallback(
     debounce((value) => {
       router.get(
-        route('industri-berizin.index'),
-        { year: year, search: value },
+        route('pbphh.index'),
+        { search: value },
         {
           preserveState: true,
           replace: true,
@@ -106,7 +91,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
         }
       );
     }, 500),
-    [year]
+    []
   );
 
   const onSearchChange = (e) => {
@@ -128,7 +113,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
       if (result.isConfirmed) {
         setLoadingText('Menghapus Data...');
         setIsLoading(true);
-        router.delete(route('industri-berizin.destroy', id), {
+        router.delete(route('pbphh.destroy', id), {
           preserveScroll: true,
           onFinish: () => setIsLoading(false)
         });
@@ -148,7 +133,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
       if (result.isConfirmed) {
         setLoadingText('Mengajukan Laporan...');
         setIsLoading(true);
-        router.post(route('industri-berizin.submit', id), {}, {
+        router.post(route('pbphh.submit', id), {}, {
           preserveScroll: true,
           onFinish: () => setIsLoading(false)
         });
@@ -159,7 +144,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
   const handleApprove = (id, currentStatus) => {
     const nextStep = currentStatus === 'waiting_kasi' ? 'KaCDK' : 'Final';
     MySwal.fire({
-      title: 'Setuji Laporan?',
+      title: 'Setujui Laporan?',
       text: `Laporan akan disetujui dan diteruskan ke ${nextStep}.`,
       icon: 'warning',
       showCancelButton: true,
@@ -170,7 +155,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
       if (result.isConfirmed) {
         setLoadingText('Memverifikasi...');
         setIsLoading(true);
-        router.post(route('industri-berizin.approve', id), {}, {
+        router.post(route('pbphh.approve', id), {}, {
           preserveScroll: true,
           onFinish: () => setIsLoading(false)
         });
@@ -201,7 +186,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
       if (result.isConfirmed) {
         setLoadingText('Memproses Penolakan...');
         setIsLoading(true);
-        router.post(route('industri-berizin.reject', id), {
+        router.post(route('pbphh.reject', id), {
           rejection_note: result.value
         }, {
           preserveScroll: true,
@@ -255,39 +240,22 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
     return false;
   };
 
-  // Refined userCanApprove to match other modules' exact logic if possible.
-  // In other modules:
-  // Kasi (waiting_kasi) -> verify/reject
-  // KaCDK (waiting_cdk) -> verify/reject
-  // The 'approve' permission is general. 
-  // So:
-  const userCanApproveAction = (item) => {
-    if (canApprove) {
-      if (item.status === 'waiting_kasi') return true;
-      if (item.status === 'waiting_cdk') return true;
-    }
-    return false;
-  };
-  // I will use `userCanApproveAction` logic inside `userCanApprove` but keep the name.
-
-  // ... existing imports ...
-  // Need to add state for loading and loadingText if not present
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingText, setLoadingText] = useState('Memproses...');
-
-  // ... existing handlers (handleDelete, handleSubmit, etc) ...
-
-  const getHeaderColor = () => {
-    return 'from-emerald-800 to-emerald-600';
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
   };
 
   return (
     <>
       <AuthenticatedLayout
         user={auth.user}
-        header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Industri Berizin</h2>}
+        header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">PBPHH</h2>}
       >
-        <Head title="Industri Berizin" />
+        <Head title="PBPHH" />
 
         {/* Fixed Loading Overlay */}
         {isLoading && (
@@ -315,18 +283,18 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
         <div className={`space-y-6 transition-all duration-700 ease-in-out ${isLoading ? 'opacity-30 blur-md grayscale-[0.5] pointer-events-none' : 'opacity-100 blur-0'}`}>
 
           {/* Modern Header Section */}
-          <div className={`bg-gradient-to-r ${getHeaderColor()} rounded-2xl p-8 text-white shadow-lg relative overflow-hidden`}>
+          <div className="bg-gradient-to-r from-emerald-800 to-emerald-600 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
             <div className="absolute right-0 top-0 h-full w-1/3 bg-white/5 transform skew-x-12 shrink-0"></div>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h3 className="text-2xl font-bold font-display">Data Industri Berizin</h3>
+                <h3 className="text-2xl font-bold font-display">Data PBPHH</h3>
                 <p className="mt-1 text-emerald-100 opacity-90 max-w-xl text-sm">
-                  Kelola data industri berizin, PHHK/PBHH, dan jenis produksi.
+                  Kelola data Penatausahaan Hasil Hutan dan Industri Berizin.
                 </p>
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => window.location.href = route('industri-berizin.export', { year: filters.year })}
+                  onClick={() => window.location.href = route('pbphh.export')}
                   className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 text-emerald-100 rounded-xl font-bold text-sm shadow-sm hover:bg-emerald-800 transition-colors border border-emerald-600/50"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -344,7 +312,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                   Import
                 </button>
                 {canCreate && (
-                  <Link href={route('industri-berizin.create')} className="shrink-0">
+                  <Link href={route('pbphh.create')} className="shrink-0">
                     <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl font-bold text-sm shadow-sm hover:bg-emerald-50 transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -357,29 +325,6 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 relative z-10 w-full">
-              {/* Year Filter */}
-              <div className="relative group shrink-0 w-full sm:w-48">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-20">
-                  <svg className="h-5 w-5 text-emerald-100 group-hover:text-white transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <select
-                  value={year}
-                  onChange={handleYearChange}
-                  className="w-full pl-11 pr-10 py-3 bg-white/10 backdrop-blur-md text-white text-sm rounded-xl border border-white/20 focus:ring-2 focus:ring-white/30 focus:border-white/30 font-medium shadow-sm transition-all hover:bg-white/20 cursor-pointer appearance-none outline-none"
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y} className="text-gray-900 bg-white">{y}</option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none z-20">
-                  <svg className="h-4 w-4 text-emerald-100" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-
               {/* Search Input */}
               <div className="relative w-full sm:max-w-md group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-20">
@@ -390,7 +335,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                 <input
                   type="text"
                   className="w-full pl-11 pr-10 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder-emerald-100/70 focus:ring-2 focus:ring-white/30 focus:border-white/30 rounded-xl shadow-sm transition-all hover:bg-white/20"
-                  placeholder="Cari Industri, Jenis Produksi..."
+                  placeholder="Cari Nama Industri, Nomor Izin..."
                   value={searchTerm}
                   onChange={onSearchChange}
                 />
@@ -411,10 +356,10 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
             {/* Total Data */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
               <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-emerald-50 to-transparent rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider relative z-10">Total Data</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider relative z-10">Total Industri</p>
               <div className="flex items-baseline gap-2 mt-2 relative z-10">
                 <span className="text-3xl font-black text-gray-900 tracking-tight">{stats.total_count}</span>
-                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Laporan</span>
+                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Data</span>
               </div>
             </div>
 
@@ -431,16 +376,17 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
 
           {/* Data Table */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* ... Table content same as before but wrapped appropriately ... */}
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
                   <tr>
-                    <th className="px-6 py-4 font-bold tracking-wider w-[200px]">Waktu & Lokasi</th>
-                    <th className="px-6 py-4 font-bold tracking-wider">PHHK/PBHH</th>
-                    <th className="px-6 py-4 font-bold tracking-wider">PHHBK/PBPHH</th>
+                    <th className="px-6 py-4 font-bold tracking-wider">Nama Industri</th>
+                    <th className="px-6 py-4 font-bold tracking-wider">Nomor Izin</th>
+                    <th className="px-6 py-4 font-bold tracking-wider">Lokasi</th>
+                    <th className="px-6 py-4 font-bold tracking-wider">Nilai Investasi</th>
+                    <th className="px-6 py-4 font-bold tracking-wider">Tenaga Kerja</th>
+                    <th className="px-6 py-4 font-bold tracking-wider">Kondisi</th>
                     <th className="px-6 py-4 font-bold tracking-wider">Jenis Produksi</th>
-                    <th className="px-6 py-4 font-bold tracking-wider">Input Oleh</th>
                     <th className="px-6 py-4 font-bold tracking-wider">Status</th>
                     <th className="px-6 py-4 font-bold tracking-wider text-right">Aksi</th>
                   </tr>
@@ -449,35 +395,44 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                   {datas.data.length > 0 ? (
                     datas.data.map((item, index) => (
                       <tr key={index} className="hover:bg-gray-50/50 transition-colors group">
-                        {/* ... table rows ... */}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex flex-col gap-1.5">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 w-fit">
-                              {new Date(0, item.month - 1).toLocaleString('id-ID', { month: 'short' })} {item.year}
-                            </span>
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold text-gray-700 leading-tight">{item.district?.name || '-'}</span>
-                              <span className="text-[10px] text-gray-400 leading-tight">{item.regency?.name || '-'}</span>
-                            </div>
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-gray-900">{item.name}</div>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            {item.creator?.name || 'Unknown'} • {new Date(item.created_at).toLocaleDateString('id-ID')}
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-medium text-gray-900">{item.phhk_pbhh}</td>
-                        <td className="px-6 py-4 font-medium text-gray-900">{item.phhbk_pbphh}</td>
+                        <td className="px-6 py-4">
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                            {item.number}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-gray-700 leading-tight">{item.district?.name || '-'}</span>
+                            <span className="text-[10px] text-gray-400 leading-tight">{item.regency?.name || '-'}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-medium text-gray-900">{formatCurrency(item.investment_value)}</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                            {item.number_of_workers} Orang
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {item.present_condition ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                              Beroperasi
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-red-50 text-red-700 border border-red-100">
+                              Tidak Beroperasi
+                            </span>
+                          )}
+                        </td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
                             {item.jenis_produksi?.name || '-'}
                           </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 border border-slate-200 shrink-0">
-                              {item.creator?.name?.substring(0, 2).toUpperCase() || '??'}
-                            </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-bold text-gray-900 truncate leading-none">{item.creator?.name || 'Unknown'}</span>
-                              <span className="text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-tight">{new Date(item.created_at).toLocaleDateString('id-ID')}</span>
-                            </div>
-                          </div>
                         </td>
                         <td className="px-6 py-4">
                           {getStatusBadge(item.status)}
@@ -524,7 +479,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                             )}
                             {userCanEdit(item) && (
                               <Link
-                                href={route('industri-berizin.edit', item.id)}
+                                href={route('pbphh.edit', item.id)}
                                 className="p-2 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors shadow-sm bg-amber-50"
                                 title="Edit Data"
                               >
@@ -550,8 +505,8 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center text-gray-500 bg-gray-50/20 italic">
-                        Belum ada data industri berizin yang ditemukan.
+                      <td colSpan="9" className="px-6 py-12 text-center text-gray-500 bg-gray-50/20 italic">
+                        Belum ada data PBPHH yang ditemukan.
                       </td>
                     </tr>
                   )}
@@ -560,14 +515,14 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
             </div>
             <Pagination links={datas.links} />
           </div>
-        </div >
-      </AuthenticatedLayout >
+        </div>
+      </AuthenticatedLayout>
 
       {/* Import Modal */}
       <Modal show={showImportModal} onClose={() => setShowImportModal(false)}>
         <form onSubmit={handleImportSubmit} className="p-0 overflow-hidden">
           <div className="p-6 bg-slate-50 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">Import Data Industri Berizin</h2>
+            <h2 className="text-lg font-bold text-gray-900">Import Data PBPHH</h2>
             <button type="button" onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -580,7 +535,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
               <div className="flex-1">
                 <h3 className="text-sm font-bold text-gray-900 mb-1">Unduh Template</h3>
                 <p className="text-xs text-gray-500 mb-3 leading-relaxed">Gunakan template yang telah disediakan untuk memastikan format data sesuai.</p>
-                <button type="button" onClick={() => window.location.href = route('industri-berizin.template')} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
+                <button type="button" onClick={() => window.location.href = route('pbphh.template')} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>

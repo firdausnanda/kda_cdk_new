@@ -8,20 +8,21 @@ import { useState, useEffect } from 'react';
 import Select from 'react-select';
 import axios from 'axios';
 
-export default function Create({ auth, jenis_produksi_list, provinces, regencies }) {
-  const { data, setData, post, processing, errors } = useForm({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-    province_id: 35,
-    regency_id: '',
-    district_id: '',
-    phhk_pbhh: '',
-    phhbk_pbphh: '',
-    id_jenis_produksi: '',
+export default function Edit({ auth, data: item, jenis_produksi_list }) {
+  const { data, setData, patch, processing, errors } = useForm({
+    name: item.name || '',
+    number: item.number || '',
+    province_id: item.province_id || 35,
+    regency_id: item.regency_id || '',
+    district_id: item.district_id || '',
+    investment_value: item.investment_value || '',
+    number_of_workers: item.number_of_workers || '',
+    present_condition: item.present_condition ?? true,
+    id_jenis_produksi: item.id_jenis_produksi || '',
   });
 
-  const [regencyOptions, setRegencyOptions] = useState([]);
-  const [districtOptions, setDistrictOptions] = useState([]);
+  const [regencies, setRegencies] = useState([]);
+  const [districts, setDistricts] = useState([]);
 
   const [loadingRegencies, setLoadingRegencies] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
@@ -36,45 +37,30 @@ export default function Create({ auth, jenis_produksi_list, provinces, regencies
       .join(' ');
   };
 
-  // Populate Regencies on Data Load (since Province is 35)
+  // Initial load: Regencies
   useEffect(() => {
-    if (regencies && regencies.length > 0) {
-      setRegencyOptions(regencies
-        .filter(r => /(TRENGGALEK|KEDIRI|TULUNGAGUNG)/i.test(r.name))
-        .map(r => ({
-          value: r.id,
-          label: formatLabel(r.name)
-        }))
-      );
-    } else {
-      // Fallback fetch if not passed
-      setLoadingRegencies(true);
-      if (typeof route !== 'undefined') {
-        axios.get(route('locations.regencies', 35))
-          .then(res => {
-            setRegencyOptions(res.data
-              .filter(i => /(TRENGGALEK|KEDIRI|TULUNGAGUNG)/i.test(i.name))
-              .map(i => ({
-                value: i.id,
-                label: formatLabel(i.name)
-              }))
-            );
-            setLoadingRegencies(false);
-          })
-          .catch(() => setLoadingRegencies(false));
-      }
-    }
-  }, [regencies]);
+    setLoadingRegencies(true);
+    axios.get(route('locations.regencies', 35))
+      .then(res => {
+        setRegencies(res.data
+          .filter(i => /(TRENGGALEK|KEDIRI|TULUNGAGUNG)/i.test(i.name))
+          .map(i => ({
+            value: i.id,
+            label: formatLabel(i.name)
+          })));
+        setLoadingRegencies(false);
+      })
+      .catch(() => setLoadingRegencies(false));
+  }, []);
 
   // Load Districts when Regency changes
   useEffect(() => {
     if (data.regency_id) {
       setLoadingDistricts(true);
-      setDistrictOptions([]);
       if (typeof route !== 'undefined') {
         axios.get(route('locations.districts', data.regency_id))
           .then(res => {
-            setDistrictOptions(res.data.map(i => ({
+            setDistricts(res.data.map(i => ({
               value: i.id,
               label: formatLabel(i.name)
             })));
@@ -83,13 +69,13 @@ export default function Create({ auth, jenis_produksi_list, provinces, regencies
           .catch(() => setLoadingDistricts(false));
       }
     } else {
-      setDistrictOptions([]);
+      setDistricts([]);
     }
   }, [data.regency_id]);
 
   const submit = (e) => {
     e.preventDefault();
-    post(route('industri-berizin.store'));
+    patch(route('pbphh.update', item.id));
   };
 
   const selectStyles = {
@@ -178,13 +164,13 @@ export default function Create({ auth, jenis_produksi_list, provinces, regencies
   return (
     <AuthenticatedLayout
       user={auth.user}
-      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Tambah Data Industri Berizin</h2>}
+      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Edit Data PBPHH</h2>}
     >
-      <Head title="Tambah Data - Industri Berizin" />
+      <Head title="Edit PBPHH" />
 
       <div className="max-w-4xl mx-auto">
         <Link
-          href={route('industri-berizin.index')}
+          href={route('pbphh.index')}
           className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-800 transition-colors mb-6 group"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -195,9 +181,9 @@ export default function Create({ auth, jenis_produksi_list, provinces, regencies
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-8 border-b border-gray-100 bg-gray-50/50">
-            <h3 className="text-xl font-bold text-gray-900">Formulir Data Baru</h3>
+            <h3 className="text-xl font-bold text-gray-900">Formulir Edit Data</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Lengkapi informasi industri berizin di bawah ini.
+              Perbarui informasi PBPHH di bawah ini.
             </p>
           </div>
 
@@ -205,35 +191,52 @@ export default function Create({ auth, jenis_produksi_list, provinces, regencies
             <form onSubmit={submit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <div className="md:col-span-2">
-                  <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 border-b border-emerald-100 pb-2">Informasi Waktu & Lokasi</h4>
+                  <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 border-b border-emerald-100 pb-2">Informasi Industri</h4>
                 </div>
 
-                <div>
-                  <InputLabel htmlFor="year" value="Tahun Laporan" className="text-gray-700 font-bold mb-2" />
+                <div className="md:col-span-2">
+                  <InputLabel htmlFor="name" value="Nama Industri" className="text-gray-700 font-bold mb-2" />
                   <TextInput
-                    id="year"
-                    type="number"
+                    id="name"
+                    type="text"
                     className="w-full"
-                    value={data.year}
-                    onChange={(e) => setData('year', e.target.value)}
+                    value={data.name}
+                    onChange={(e) => setData('name', e.target.value)}
                     required
+                    placeholder="Masukkan nama industri"
                   />
-                  <InputError message={errors.year} className="mt-2" />
+                  <InputError message={errors.name} className="mt-2" />
                 </div>
 
                 <div>
-                  <InputLabel htmlFor="month" value="Bulan Laporan" className="text-gray-700 font-bold mb-2" />
-                  <select
-                    id="month"
-                    className="w-full bg-gray-50 border-gray-200 focus:bg-white focus:border-emerald-500 focus:ring-emerald-500 rounded-xl shadow-sm transition-all duration-200 py-[11px] text-sm disabled:bg-gray-100/50 disabled:text-gray-400 disabled:border-gray-100 disabled:cursor-not-allowed"
-                    value={data.month}
-                    onChange={(e) => setData('month', e.target.value)}
-                  >
-                    {[...Array(12)].map((_, i) => (
-                      <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('id-ID', { month: 'long' })}</option>
-                    ))}
-                  </select>
-                  <InputError message={errors.month} className="mt-2" />
+                  <InputLabel htmlFor="number" value="Nomor Izin" className="text-gray-700 font-bold mb-2" />
+                  <TextInput
+                    id="number"
+                    type="text"
+                    className="w-full"
+                    value={data.number}
+                    onChange={(e) => setData('number', e.target.value)}
+                    required
+                    placeholder="Masukkan nomor izin"
+                  />
+                  <InputError message={errors.number} className="mt-2" />
+                </div>
+
+                <div>
+                  <InputLabel htmlFor="id_jenis_produksi" value="Jenis Produksi" className="text-gray-700 font-bold mb-2" />
+                  <Select
+                    options={jenis_produksi_list.map(k => ({ value: k.id, label: k.name }))}
+                    onChange={(opt) => setData('id_jenis_produksi', opt?.value || '')}
+                    value={jenis_produksi_list.find(k => k.id === data.id_jenis_produksi) ? { value: data.id_jenis_produksi, label: jenis_produksi_list.find(k => k.id === data.id_jenis_produksi).name } : null}
+                    placeholder="Pilih Jenis Produksi..."
+                    styles={selectStyles}
+                    isClearable
+                  />
+                  <InputError message={errors.id_jenis_produksi} className="mt-2" />
+                </div>
+
+                <div className="md:col-span-2 mt-4">
+                  <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 border-b border-emerald-100 pb-2">Lokasi</h4>
                 </div>
 
                 {/* Location Selects */}
@@ -249,8 +252,9 @@ export default function Create({ auth, jenis_produksi_list, provinces, regencies
                 <div>
                   <InputLabel value="Kabupaten" className="text-gray-700 font-bold mb-2" />
                   <Select
-                    options={regencyOptions}
+                    options={regencies}
                     isLoading={loadingRegencies}
+                    value={regencies.find(r => r.value == data.regency_id) || (item.regency ? { value: item.regency_id, label: formatLabel(item.regency.name) } : null)}
                     onChange={(opt) => {
                       setData((prev) => ({
                         ...prev,
@@ -268,9 +272,10 @@ export default function Create({ auth, jenis_produksi_list, provinces, regencies
                 <div>
                   <InputLabel value="Kecamatan" className="text-gray-700 font-bold mb-2" />
                   <Select
-                    options={districtOptions}
+                    options={districts}
                     isLoading={loadingDistricts}
                     isDisabled={!data.regency_id}
+                    value={districts.find(d => d.value == data.district_id) || (item.district ? { value: item.district_id, label: formatLabel(item.district.name) } : null)}
                     onChange={(opt) => {
                       setData((prev) => ({
                         ...prev,
@@ -280,61 +285,83 @@ export default function Create({ auth, jenis_produksi_list, provinces, regencies
                     placeholder="Pilih Kecamatan..."
                     styles={selectStyles}
                     isClearable
-                    value={districtOptions.find(opt => opt.value === data.district_id) || null}
                   />
                   <InputError message={errors.district_id} className="mt-2" />
                 </div>
 
                 <div className="md:col-span-2 mt-4">
-                  <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 border-b border-emerald-100 pb-2">Detail Produksi Industri</h4>
+                  <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 border-b border-emerald-100 pb-2">Detail Investasi & Tenaga Kerja</h4>
                 </div>
 
                 <div>
-                  <InputLabel htmlFor="phhk_pbhh" value="PHHK / PBHH" className="text-gray-700 font-bold mb-2" />
-                  <TextInput
-                    id="phhk_pbhh"
-                    type="text"
-                    className="w-full"
-                    value={data.phhk_pbhh}
-                    onChange={(e) => setData('phhk_pbhh', e.target.value)}
-                    required
-                    placeholder="Masukkan nilai PHHK/PBHH"
-                  />
-                  <InputError message={errors.phhk_pbhh} className="mt-2" />
+                  <InputLabel htmlFor="investment_value" value="Nilai Investasi (Rp)" className="text-gray-700 font-bold mb-2" />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 font-bold">Rp</span>
+                    </div>
+                    <TextInput
+                      id="investment_value"
+                      type="text"
+                      className="w-full pl-10"
+                      value={new Intl.NumberFormat('id-ID').format(data.investment_value)}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setData('investment_value', val);
+                      }}
+                      required
+                      placeholder="0"
+                    />
+                  </div>
+                  <InputError message={errors.investment_value} className="mt-2" />
                 </div>
 
                 <div>
-                  <InputLabel htmlFor="phhbk_pbphh" value="PHHBK / PBPHH" className="text-gray-700 font-bold mb-2" />
+                  <InputLabel htmlFor="number_of_workers" value="Jumlah Tenaga Kerja" className="text-gray-700 font-bold mb-2" />
                   <TextInput
-                    id="phhbk_pbphh"
-                    type="text"
+                    id="number_of_workers"
+                    type="number"
                     className="w-full"
-                    value={data.phhbk_pbphh}
-                    onChange={(e) => setData('phhbk_pbphh', e.target.value)}
+                    value={data.number_of_workers}
+                    onChange={(e) => setData('number_of_workers', e.target.value)}
                     required
-                    placeholder="Masukkan nilai PHHBK/PBPHH"
+                    placeholder="Masukkan jumlah tenaga kerja"
+                    min="0"
                   />
-                  <InputError message={errors.phhbk_pbphh} className="mt-2" />
+                  <InputError message={errors.number_of_workers} className="mt-2" />
                 </div>
 
-                <div className="md:col-span-2">
-                  <InputLabel htmlFor="id_jenis_produksi" value="Jenis Produksi" className="text-gray-700 font-bold mb-2" />
-                  <Select
-                    options={jenis_produksi_list.map(k => ({ value: k.id, label: k.name }))}
-                    onChange={(opt) => setData('id_jenis_produksi', opt?.value || '')}
-                    placeholder="Pilih Jenis Produksi..."
-                    styles={selectStyles}
-                    menuPlacement="top"
-                    isClearable
-                  />
-                  <InputError message={errors.id_jenis_produksi} className="mt-2" />
+                <div>
+                  <InputLabel htmlFor="present_condition" value="Kondisi Saat Ini" className="text-gray-700 font-bold mb-2" />
+                  <div className="flex gap-4 mt-2">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="present_condition"
+                        checked={data.present_condition === true}
+                        onChange={() => setData('present_condition', true)}
+                        className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                      />
+                      <span className="ml-2 text-sm font-medium text-gray-700">Beroperasi</span>
+                    </label>
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="present_condition"
+                        checked={data.present_condition === false}
+                        onChange={() => setData('present_condition', false)}
+                        className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                      />
+                      <span className="ml-2 text-sm font-medium text-gray-700">Tidak Beroperasi</span>
+                    </label>
+                  </div>
+                  <InputError message={errors.present_condition} className="mt-2" />
                 </div>
 
               </div>
 
               <div className="pt-6 border-t border-gray-100 flex items-center justify-end gap-4">
                 <Link
-                  href={route('industri-berizin.index')}
+                  href={route('pbphh.index')}
                   className="px-6 py-2.5 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   Batal
@@ -343,7 +370,7 @@ export default function Create({ auth, jenis_produksi_list, provinces, regencies
                   className="px-8 py-3 bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-900/20 transition-all transform active:scale-95"
                   loading={processing}
                 >
-                  {processing ? 'Menyimpan...' : 'Simpan Data'}
+                  {processing ? 'Menyimpan...' : 'Perbarui Data'}
                 </PrimaryButton>
               </div>
             </form>

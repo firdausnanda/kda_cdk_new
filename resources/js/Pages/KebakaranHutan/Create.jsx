@@ -340,9 +340,9 @@ export default function Create({ auth, pengelolaWisata }) {
                   <InputLabel htmlFor="area_function" value="Fungsi Kawasan" className="text-gray-700 font-bold mb-2" />
                   <Select
                     options={[
+                      { value: 'Hutan Konservasi (HK)', label: 'Hutan Konservasi (HK)' },
                       { value: 'Hutan Lindung (HL)', label: 'Hutan Lindung (HL)' },
-                      { value: 'Hutan Produksi (HP)', label: 'Hutan Produksi (HP)' },
-                      { value: 'Hutan Konversi/Dialihfungsikan (HK)', label: 'Hutan Konversi/Dialihfungsikan (HK)' }
+                      { value: 'Hutan Produksi (HP)', label: 'Hutan Produksi (HP)' }
                     ]}
                     onChange={(opt) => setData('area_function', opt?.value || '')}
                     placeholder="Pilih Fungsi Kawasan..."

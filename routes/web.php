@@ -129,14 +129,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/hasil-hutan-bukan-kayu/{hasil_hutan_bukan_kayu}/approve', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'approve'])->name('hasil-hutan-bukan-kayu.approve');
     Route::post('/hasil-hutan-bukan-kayu/{hasil_hutan_bukan_kayu}/reject', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'reject'])->name('hasil-hutan-bukan-kayu.reject');
 
-    // Industri Berizin
-    Route::get('industri-berizin/export', [\App\Http\Controllers\IndustriBerizinController::class, 'export'])->name('industri-berizin.export');
-    Route::get('industri-berizin/template', [\App\Http\Controllers\IndustriBerizinController::class, 'template'])->name('industri-berizin.template');
-    Route::post('industri-berizin/import', [\App\Http\Controllers\IndustriBerizinController::class, 'import'])->name('industri-berizin.import');
-    Route::resource('industri-berizin', \App\Http\Controllers\IndustriBerizinController::class)->parameters(['industri-berizin' => 'industri_berizin']);
-    Route::post('/industri-berizin/{industri_berizin}/submit', [\App\Http\Controllers\IndustriBerizinController::class, 'submit'])->name('industri-berizin.submit');
-    Route::post('/industri-berizin/{industri_berizin}/approve', [\App\Http\Controllers\IndustriBerizinController::class, 'approve'])->name('industri-berizin.approve');
-    Route::post('/industri-berizin/{industri_berizin}/reject', [\App\Http\Controllers\IndustriBerizinController::class, 'reject'])->name('industri-berizin.reject');
+    // PBPHH
+    Route::get('pbphh/export', [\App\Http\Controllers\PbphhController::class, 'export'])->name('pbphh.export');
+    Route::get('pbphh/template', [\App\Http\Controllers\PbphhController::class, 'template'])->name('pbphh.template');
+    Route::post('pbphh/import', [\App\Http\Controllers\PbphhController::class, 'import'])->name('pbphh.import');
+    Route::resource('pbphh', \App\Http\Controllers\PbphhController::class);
+    Route::post('/pbphh/{pbphh}/submit', [\App\Http\Controllers\PbphhController::class, 'submit'])->name('pbphh.submit');
+    Route::post('/pbphh/{pbphh}/approve', [\App\Http\Controllers\PbphhController::class, 'approve'])->name('pbphh.approve');
+    Route::post('/pbphh/{pbphh}/reject', [\App\Http\Controllers\PbphhController::class, 'reject'])->name('pbphh.reject');
 
     // Realisasi PNBP
     Route::get('realisasi-pnbp/export', [\App\Http\Controllers\RealisasiPnbpController::class, 'export'])->name('realisasi-pnbp.export');

@@ -62,9 +62,9 @@ export default function Create({ auth, sumberDana, bangunanKta }) {
   return (
     <AuthenticatedLayout
       user={auth.user}
-      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Input Data RHL Sipil Teknis</h2>}
+      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Input Data RHL Bangunan Konservasi Tanah dan Air</h2>}
     >
-      <Head title="Input RHL Teknis" />
+      <Head title="Input RHL Bangunan Konservasi Tanah dan Air" />
 
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

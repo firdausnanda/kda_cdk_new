@@ -18,13 +18,11 @@ return new class extends Migration {
             // Lokasi
             $table->unsignedBigInteger('province_id');
             $table->unsignedBigInteger('regency_id');
-            $table->unsignedBigInteger('district_id');
 
             $table->string('types_of_forest_products');
+            $table->string('id_pengelola_wisata');
             $table->string('pnbp_target');
-            $table->string('number_of_psdh');
-            $table->string('number_of_dbhdr');
-
+            $table->string('pnbp_realization');
 
             // Status & Approval
             $table->string('status')->default('draft'); // draft, waiting_kasi, waiting_cdk, finalized, rejected

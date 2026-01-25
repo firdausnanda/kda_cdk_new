@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\RealisasiPnbp;
+use App\Models\PengelolaWisata;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -24,11 +25,9 @@ class RealisasiPnbpController extends Controller
 
     $datas = RealisasiPnbp::query()
       ->leftJoin('m_regencies', 'realisasi_pnbp.regency_id', '=', 'm_regencies.id')
-      ->leftJoin('m_districts', 'realisasi_pnbp.district_id', '=', 'm_districts.id')
       ->select(
         'realisasi_pnbp.*',
-        'm_regencies.name as regency_name',
-        'm_districts.name as district_name'
+        'm_regencies.name as regency_name'
       )
       ->when($selectedYear, function ($query, $year) {
         return $query->where('realisasi_pnbp.year', $year);
@@ -36,11 +35,10 @@ class RealisasiPnbpController extends Controller
       ->when($request->search, function ($query, $search) {
         $query->where(function ($q) use ($search) {
           $q->where('types_of_forest_products', 'like', "%{$search}%")
-            ->orWhere('m_regencies.name', 'like', "%{$search}%")
-            ->orWhere('m_districts.name', 'like', "%{$search}%");
+            ->orWhere('m_regencies.name', 'like', "%{$search}%");
         });
       })
-      ->with(['creator', 'regency', 'district'])
+      ->with(['creator', 'regency', 'pengelola_wisata'])
       ->latest('realisasi_pnbp.created_at')
       ->paginate(10)
       ->withQueryString();
@@ -76,7 +74,8 @@ class RealisasiPnbpController extends Controller
   {
     return Inertia::render('RealisasiPnbp/Create', [
       'provinces' => DB::table('m_provinces')->where('id', '35')->get(),
-      'regencies' => DB::table('m_regencies')->where('province_id', '35')->get()
+      'regencies' => DB::table('m_regencies')->where('province_id', '35')->get(),
+      'pengelola_wisata' => PengelolaWisata::all(),
     ]);
   }
 
@@ -87,11 +86,10 @@ class RealisasiPnbpController extends Controller
       'month' => 'required|integer|min:1|max:12',
       'province_id' => 'required|exists:m_provinces,id',
       'regency_id' => 'required|exists:m_regencies,id',
-      'district_id' => 'required|exists:m_districts,id',
+      'id_pengelola_wisata' => 'required|exists:m_pengelola_wisata,id',
       'types_of_forest_products' => 'required|string',
       'pnbp_target' => 'required|string',
-      'number_of_psdh' => 'required|string',
-      'number_of_dbhdr' => 'required|string',
+      'pnbp_realization' => 'required|string',
     ]);
 
     RealisasiPnbp::create($validated);
@@ -103,10 +101,10 @@ class RealisasiPnbpController extends Controller
   public function edit(RealisasiPnbp $realisasiPnbp)
   {
     return Inertia::render('RealisasiPnbp/Edit', [
-      'data' => $realisasiPnbp->load(['regency', 'district']),
+      'data' => $realisasiPnbp->load(['regency']),
       'provinces' => DB::table('m_provinces')->where('id', '35')->get(),
       'regencies' => DB::table('m_regencies')->where('province_id', '35')->get(),
-      'districts' => DB::table('m_districts')->where('regency_id', $realisasiPnbp->regency_id)->get(),
+      'pengelola_wisata' => PengelolaWisata::all(),
     ]);
   }
 
@@ -117,11 +115,10 @@ class RealisasiPnbpController extends Controller
       'month' => 'required|integer|min:1|max:12',
       'province_id' => 'required|exists:m_provinces,id',
       'regency_id' => 'required|exists:m_regencies,id',
-      'district_id' => 'required|exists:m_districts,id',
+      'id_pengelola_wisata' => 'required|exists:m_pengelola_wisata,id',
       'types_of_forest_products' => 'required|string',
       'pnbp_target' => 'required|string',
-      'number_of_psdh' => 'required|string',
-      'number_of_dbhdr' => 'required|string',
+      'pnbp_realization' => 'required|string',
     ]);
 
     $realisasiPnbp->update($validated);

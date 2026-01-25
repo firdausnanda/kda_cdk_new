@@ -9,18 +9,19 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Wildside\Userstamps\Userstamps;
 
-class IndustriBerizin extends Model
+class Pbphh extends Model
 {
     use HasFactory, Userstamps, SoftDeletes, LogsActivity;
 
     protected $fillable = [
-        'year',
-        'month',
+        'name',
+        'number',
         'province_id',
         'regency_id',
         'district_id',
-        'phhk_pbhh',
-        'phhbk_pbphh',
+        'investment_value',
+        'number_of_workers',
+        'present_condition',
         'id_jenis_produksi',
         'status',
         'approved_by_kasi_at',
@@ -31,7 +32,7 @@ class IndustriBerizin extends Model
         'deleted_by'
     ];
 
-    protected $table = 'industri_berizin';
+    protected $table = 'pbphh';
 
     public function province()
     {

@@ -71,8 +71,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
                                     <div className="relative pl-6 border-l-4 border-emerald-500/30 py-1">
                                         <h2 className="font-sans font-bold text-xl sm:text-2xl text-gray-700 leading-snug tracking-tight">
-                                            System for <span className="text-emerald-700">Monitoring Analysis</span> <br />
-                                            Real Time – Kehutanan
+                                            Sistem Monitoring <span className="text-emerald-700">Analisis Real Time</span> <br />
+                                            Data Kehutanan
                                         </h2>
                                     </div>
                                 </div>
@@ -92,7 +92,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                         href={route('public.dashboard')}
                                         className="px-6 py-3 rounded-full bg-white text-primary-700 border border-primary-200 font-semibold text-sm hover:bg-primary-50 transition-all duration-300 transform hover:-translate-y-0.5 text-center"
                                     >
-                                        Dashboard Kehutanan
+                                        Dashboard Infografis
                                     </Link>
                                 </div>
 

@@ -2,7 +2,7 @@
 
 namespace App\Imports;
 
-use App\Models\IndustriBerizin;
+use App\Models\Pbphh;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToModel;
@@ -11,19 +11,20 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
 
-class IndustriBerizinImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
+class PbphhImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
 {
   use SkipsFailures;
 
   public function rules(): array
   {
     return [
-      'tahun' => 'required|numeric',
-      'bulan_angka_1_12' => 'required|numeric|min:1|max:12',
+      'nama_industri' => 'required|string',
+      'nomor_izin' => 'required|string',
       'nama_kabupatenkota' => 'required|string',
       'nama_kecamatan' => 'required|string',
-      'phhkpbhh' => 'required|string',
-      'phhbkpbphh' => 'required|string',
+      'nilai_investasi' => 'required|numeric|min:0',
+      'jumlah_tenaga_kerja' => 'required|numeric|min:0',
+      'kondisi_saat_ini' => 'required|in:Aktif,aktif,Tidak Aktif,tidak aktif,1,0,true,false',
       'nama_jenis_produksi' => 'required|string',
     ];
   }
@@ -31,15 +32,20 @@ class IndustriBerizinImport implements ToModel, WithHeadingRow, WithValidation, 
   public function customValidationMessages()
   {
     return [
+      'nama_industri.required' => 'Nama Industri harus diisi.',
+      'nomor_izin.required' => 'Nomor Izin harus diisi.',
       'nama_kabupatenkota.required' => 'Nama Kabupaten/Kota harus diisi.',
       'nama_kecamatan.required' => 'Nama Kecamatan harus diisi.',
+      'nilai_investasi.required' => 'Nilai Investasi harus diisi.',
+      'jumlah_tenaga_kerja.required' => 'Jumlah Tenaga Kerja harus diisi.',
+      'kondisi_saat_ini.required' => 'Kondisi Saat Ini harus diisi.',
       'nama_jenis_produksi.required' => 'Nama Jenis Produksi harus diisi.',
     ];
   }
 
   public function model(array $row)
   {
-    if (!isset($row['tahun']))
+    if (!isset($row['nama_industri']))
       return null;
 
     // Look up regency by name
@@ -85,14 +91,19 @@ class IndustriBerizinImport implements ToModel, WithHeadingRow, WithValidation, 
       return null;
     }
 
-    return new IndustriBerizin([
-      'year' => $row['tahun'],
-      'month' => $row['bulan_angka_1_12'],
+    // Parse present_condition
+    $condition = strtolower(trim($row['kondisi_saat_ini']));
+    $presentCondition = in_array($condition, ['aktif', '1', 'true']) ? true : false;
+
+    return new Pbphh([
+      'name' => $row['nama_industri'],
+      'number' => $row['nomor_izin'],
       'province_id' => $regency->province_id,
       'regency_id' => $regency->id,
       'district_id' => $district->id,
-      'phhk_pbhh' => $row['phhkpbhh'],
-      'phhbk_pbphh' => $row['phhbkpbphh'],
+      'investment_value' => (int) $row['nilai_investasi'],
+      'number_of_workers' => (int) $row['jumlah_tenaga_kerja'],
+      'present_condition' => $presentCondition,
       'id_jenis_produksi' => $jenisProduksi->id,
       'status' => 'draft',
       'created_by' => Auth::id(),

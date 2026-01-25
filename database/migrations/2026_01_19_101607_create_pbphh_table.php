@@ -10,19 +10,20 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('industri_berizin', function (Blueprint $table) {
+        Schema::create('pbphh', function (Blueprint $table) {
             $table->id();
-            $table->year('year');
-            $table->tinyInteger('month');
 
             // Lokasi
             $table->unsignedBigInteger('province_id');
             $table->unsignedBigInteger('regency_id');
             $table->unsignedBigInteger('district_id');
 
-            $table->string('phhk_pbhh');
-            $table->string('phhbk_pbphh');
+            $table->string('name');
+            $table->string('number');
             $table->unsignedBigInteger('id_jenis_produksi');
+            $table->string('investment_value');
+            $table->integer('number_of_workers');
+            $table->boolean('present_condition'); // true, false
 
             // Status & Approval
             $table->string('status')->default('draft'); // draft, waiting_kasi, waiting_cdk, finalized, rejected
@@ -44,6 +45,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('industri_berizin');
+        Schema::dropIfExists('pbphh');
     }
 };

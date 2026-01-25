@@ -12,6 +12,8 @@ class RealisasiPnbpSeeder extends Seeder
    */
   public function run(): void
   {
-    RealisasiPnbp::factory(100)->create();
+    if (RealisasiPnbp::count() == 0) {
+      RealisasiPnbp::factory(100)->create();
+    }
   }
 }

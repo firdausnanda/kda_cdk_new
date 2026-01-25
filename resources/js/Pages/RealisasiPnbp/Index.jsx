@@ -274,9 +274,9 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
     <>
       <AuthenticatedLayout
         user={auth.user}
-        header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Realisasi PNBP</h2>}
+        header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">PNBP</h2>}
       >
-        <Head title="Realisasi PNBP" />
+        <Head title="PNBP" />
 
         {/* Fixed Loading Overlay */}
         {isLoading && (
@@ -308,9 +308,9 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
             <div className="absolute right-0 top-0 h-full w-1/3 bg-white/5 transform skew-x-12 shrink-0"></div>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h3 className="text-2xl font-bold font-display">Data Realisasi PNBP</h3>
+                <h3 className="text-2xl font-bold font-display">Data PNBP</h3>
                 <p className="mt-1 text-emerald-100 opacity-90 max-w-xl text-sm">
-                  Kelola data realisasi PNBP, jenis hasil hutan, target, dan realisasi.
+                  Kelola data Penerimaan Negara Bukan Pajak dari hasil hutan.
                 </p>
               </div>
               <div className="flex gap-2">
@@ -425,10 +425,10 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                 <thead className="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
                   <tr>
                     <th className="px-6 py-4 font-bold tracking-wider w-[200px]">Waktu & Lokasi</th>
+                    <th className="px-6 py-4 font-bold tracking-wider whitespace-nowrap">Pengelola</th>
                     <th className="px-6 py-4 font-bold tracking-wider whitespace-nowrap">Jenis Hasil Hutan</th>
                     <th className="px-6 py-4 font-bold tracking-wider whitespace-nowrap text-right">Target PNBP</th>
-                    <th className="px-6 py-4 font-bold tracking-wider whitespace-nowrap text-right">Jumlah PSDH</th>
-                    <th className="px-6 py-4 font-bold tracking-wider whitespace-nowrap text-right">Jumlah DBHDR</th>
+                    <th className="px-6 py-4 font-bold tracking-wider whitespace-nowrap text-right">Realisasi PNBP</th>
 
                     <th className="px-6 py-4 font-bold tracking-wider whitespace-nowrap">Status</th>
                     <th className="px-6 py-4 font-bold tracking-wider text-center whitespace-nowrap">Aksi</th>
@@ -450,17 +450,14 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                                 <span>{item.regency.name}</span>
                               </>}
                             </div>
-                          </div>
                         </td>
+                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{item.pengelola_wisata?.name}</td>
                         <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{item.types_of_forest_products}</td>
                         <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-right">
                           {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.pnbp_target)}
                         </td>
                         <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-right">
-                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.number_of_psdh)}
-                        </td>
-                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-right">
-                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.number_of_dbhdr)}
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.pnbp_realization)}
                         </td>
 
                         <td className="px-6 py-4">
@@ -535,7 +532,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                   ) : (
                     <tr>
                       <td colSpan="7" className="px-6 py-12 text-center text-gray-500 bg-gray-50/20 italic">
-                        Belum ada data realisasi PNBP yang ditemukan.
+                        Belum ada data PNBP yang ditemukan.
                       </td>
                     </tr>
                   )}
@@ -551,7 +548,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
       <Modal show={showImportModal} onClose={() => setShowImportModal(false)}>
         <form onSubmit={handleImportSubmit} className="p-0 overflow-hidden">
           <div className="p-6 bg-slate-50 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">Import Data Realisasi PNBP</h2>
+            <h2 className="text-lg font-bold text-gray-900">Import Data PNBP</h2>
             <button type="button" onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -18,11 +18,10 @@ class RealisasiPnbp extends Model
         "month",
         "province_id",
         "regency_id",
-        "district_id",
+        "id_pengelola_wisata",
         "types_of_forest_products",
         "pnbp_target",
-        "number_of_psdh",
-        "number_of_dbhdr",
+        "pnbp_realization",
         "status",
         "approved_by_kasi_at",
         "approved_by_cdk_at",
@@ -44,10 +43,11 @@ class RealisasiPnbp extends Model
         return $this->belongsTo(Regencies::class);
     }
 
-    public function district()
+    public function pengelola_wisata()
     {
-        return $this->belongsTo(Districts::class);
+        return $this->belongsTo(PengelolaWisata::class, 'id_pengelola_wisata', 'id');
     }
+
 
     public function getActivitylogOptions(): LogOptions
     {

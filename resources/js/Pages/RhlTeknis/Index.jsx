@@ -191,7 +191,7 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
     <>
       <AuthenticatedLayout
         user={auth.user}
-        header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">RHL Sipil Bangunan Konservasi Tanah dan Air</h2>}
+        header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">RHL Bangunan Konservasi Tanah dan Air</h2>}
       >
         <Head title="Bangunan Konservasi Tanah dan Air" />
 
@@ -217,7 +217,7 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
             <div className="absolute right-0 top-0 h-full w-1/3 bg-white/5 transform skew-x-12 shrink-0"></div>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h3 className="text-2xl font-bold font-display">Data RHL Teknis Bangunan Konservasi Tanah dan Air</h3>
+                <h3 className="text-2xl font-bold font-display">Data RHL Bangunan Konservasi Tanah dan Air</h3>
                 <p className="mt-1 text-primary-100 opacity-90 some max-w-xl text-sm">
                   Kelola dan pantau capaian pembangunan sarana teknis konservasi tanah dan air (Bangunan KTA).
                 </p>
@@ -235,7 +235,7 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                   <Link href={route('rhl-teknis.create')} className="shrink-0">
                     <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl font-bold text-sm shadow-sm hover:bg-emerald-50 transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                      Input Data RHL Teknis
+                      Input Data Baru
                     </button>
                   </Link>
                 </div>
@@ -267,7 +267,7 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div className="flex items-center gap-4 flex-1">
-                <h3 className="font-bold text-gray-800">Daftar Laporan Sipil Teknis</h3>
+                <h3 className="font-bold text-gray-800">Daftar Laporan</h3>
                 <div className="h-6 w-px bg-gray-200"></div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-gray-400 uppercase">Tahun:</span>

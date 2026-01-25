@@ -268,9 +268,9 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
   return (
     <AuthenticatedLayout
       user={auth.user}
-      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Hasil Hutan Kayu - {forest_type}</h2>}
+      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Produksi dari {forest_type} - Hasil Hutan Kayu</h2>}
     >
-      <Head title={`Hasil Hutan Kayu - ${forest_type}`} />
+      <Head title={`Produksi dari ${forest_type} - Hasil Hutan Kayu`} />
 
       {/* Fixed Loading Overlay */}
       {isLoading && (
@@ -298,9 +298,9 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
           <div className="absolute right-0 top-0 h-full w-1/3 bg-white/5 transform skew-x-12 shrink-0"></div>
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h3 className="text-2xl font-bold font-display">Data Hasil Hutan Kayu</h3>
+              <h3 className="text-2xl font-bold font-display">Produksi dari {forest_type}</h3>
               <p className="mt-1 text-emerald-100 opacity-90 max-w-xl text-sm">
-                Kelola data hasil hutan kayu untuk kategori {forest_type}.
+                Kelola data hasil hutan kayu dari kategori {forest_type}.
               </p>
             </div>
             <div className="flex gap-2">

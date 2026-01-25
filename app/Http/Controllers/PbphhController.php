@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\IndustriBerizin;
+use App\Models\Pbphh;
 use App\Models\JenisProduksi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 
-class IndustriBerizinController extends Controller
+class PbphhController extends Controller
 {
   use \App\Traits\HandlesImportFailures;
   public function __construct()
@@ -21,65 +21,45 @@ class IndustriBerizinController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
-
-    $datas = IndustriBerizin::query()
-      ->leftJoin('m_regencies', 'industri_berizin.regency_id', '=', 'm_regencies.id')
-      ->leftJoin('m_districts', 'industri_berizin.district_id', '=', 'm_districts.id')
-      ->leftJoin('m_jenis_produksi', 'industri_berizin.id_jenis_produksi', '=', 'm_jenis_produksi.id')
+    $datas = Pbphh::query()
+      ->leftJoin('m_regencies', 'pbphh.regency_id', '=', 'm_regencies.id')
+      ->leftJoin('m_districts', 'pbphh.district_id', '=', 'm_districts.id')
+      ->leftJoin('m_jenis_produksi', 'pbphh.id_jenis_produksi', '=', 'm_jenis_produksi.id')
       ->select(
-        'industri_berizin.*',
+        'pbphh.*',
         'm_regencies.name as regency_name',
         'm_districts.name as district_name',
         'm_jenis_produksi.name as jenis_produksi_name'
       )
-      ->when($selectedYear, function ($query, $year) {
-        return $query->where('industri_berizin.year', $year);
-      })
       ->when($request->search, function ($query, $search) {
         $query->where(function ($q) use ($search) {
-          $q->where('m_jenis_produksi.name', 'like', "%{$search}%")
-            ->orWhere('industri_berizin.phhk_pbhh', 'like', "%{$search}%")
-            ->orWhere('industri_berizin.phhbk_pbphh', 'like', "%{$search}%")
+          $q->where('pbphh.name', 'like', "%{$search}%")
+            ->orWhere('pbphh.number', 'like', "%{$search}%")
+            ->orWhere('m_jenis_produksi.name', 'like', "%{$search}%")
             ->orWhere('m_regencies.name', 'like', "%{$search}%")
             ->orWhere('m_districts.name', 'like', "%{$search}%");
         });
       })
       ->with(['creator', 'regency', 'district', 'jenis_produksi'])
-      ->latest('industri_berizin.created_at')
+      ->latest('pbphh.created_at')
       ->paginate(10)
       ->withQueryString();
 
     // Stats
     $stats = [
-      'total_count' => IndustriBerizin::when($selectedYear, fn($q) => $q->where('year', $selectedYear))->count(),
-      'verified_count' => IndustriBerizin::where('status', 'final')
-        ->when($selectedYear, fn($q) => $q->where('year', $selectedYear))
-        ->count(),
+      'total_count' => Pbphh::count(),
+      'verified_count' => Pbphh::where('status', 'final')->count(),
     ];
 
-    // Available Years
-    $availableYears = IndustriBerizin::distinct()
-      ->orderBy('year', 'desc')
-      ->pluck('year');
-
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
-
-    return Inertia::render('IndustriBerizin/Index', [
+    return Inertia::render('Pbphh/Index', [
       'datas' => $datas,
       'stats' => $stats,
-      'available_years' => $availableYears,
-      'filters' => [
-        'year' => $selectedYear,
-      ],
     ]);
   }
 
   public function create()
   {
-    return Inertia::render('IndustriBerizin/Create', [
+    return Inertia::render('Pbphh/Create', [
       'jenis_produksi_list' => JenisProduksi::all(),
       'provinces' => DB::table('m_provinces')->where('id', '35')->get(),
       'regencies' => DB::table('m_regencies')->where('province_id', '35')->get()
@@ -89,80 +69,82 @@ class IndustriBerizinController extends Controller
   public function store(Request $request)
   {
     $validated = $request->validate([
-      'year' => 'required|integer|digits:4',
-      'month' => 'required|integer|min:1|max:12',
+      'name' => 'required|string|max:255',
+      'number' => 'required|string|max:255',
       'province_id' => 'required|exists:m_provinces,id',
       'regency_id' => 'required|exists:m_regencies,id',
       'district_id' => 'required|exists:m_districts,id',
-      'phhk_pbhh' => 'required|string',
-      'phhbk_pbphh' => 'required|string',
+      'investment_value' => 'required|integer|min:0',
+      'number_of_workers' => 'required|integer|min:0',
+      'present_condition' => 'required|boolean',
       'id_jenis_produksi' => 'required|exists:m_jenis_produksi,id',
     ]);
 
-    IndustriBerizin::create($validated);
+    Pbphh::create($validated);
 
-    return redirect()->route('industri-berizin.index')
+    return redirect()->route('pbphh.index')
       ->with('success', 'Data berhasil ditambahkan');
   }
 
-  public function edit(IndustriBerizin $industriBerizin)
+  public function edit(Pbphh $pbphh)
   {
-    return Inertia::render('IndustriBerizin/Edit', [
-      'data' => $industriBerizin->load(['jenis_produksi', 'regency', 'district']),
+    return Inertia::render('Pbphh/Edit', [
+      'data' => $pbphh->load(['jenis_produksi', 'regency', 'district']),
       'jenis_produksi_list' => JenisProduksi::all(),
       'provinces' => DB::table('m_provinces')->where('id', '35')->get(),
       'regencies' => DB::table('m_regencies')->where('province_id', '35')->get(),
-      'districts' => DB::table('m_districts')->where('regency_id', $industriBerizin->regency_id)->get(),
+      'districts' => DB::table('m_districts')->where('regency_id', $pbphh->regency_id)->get(),
     ]);
   }
 
-  public function update(Request $request, IndustriBerizin $industriBerizin)
+  public function update(Request $request, Pbphh $pbphh)
   {
     $validated = $request->validate([
-      'year' => 'required|integer|digits:4',
-      'month' => 'required|integer|min:1|max:12',
+      'name' => 'required|string|max:255',
+      'number' => 'required|string|max:255',
       'province_id' => 'required|exists:m_provinces,id',
       'regency_id' => 'required|exists:m_regencies,id',
       'district_id' => 'required|exists:m_districts,id',
-      'phhk_pbhh' => 'required|string',
-      'phhbk_pbphh' => 'required|string',
+      'investment_value' => 'required|integer|min:0',
+      'number_of_workers' => 'required|integer|min:0',
+      'present_condition' => 'required|boolean',
       'id_jenis_produksi' => 'required|exists:m_jenis_produksi,id',
     ]);
 
-    $industriBerizin->update($validated);
+    $pbphh->update($validated);
 
-    return redirect()->route('industri-berizin.index')
+    return redirect()->route('pbphh.index')
       ->with('success', 'Data berhasil diperbarui');
   }
 
-  public function destroy(IndustriBerizin $industriBerizin)
+  public function destroy(Pbphh $pbphh)
   {
-    $industriBerizin->delete();
+    $pbphh->delete();
 
-    return redirect()->route('industri-berizin.index')
+    return redirect()->route('pbphh.index')
       ->with('success', 'Data berhasil dihapus');
   }
 
-  public function submit(IndustriBerizin $industriBerizin)
+  public function submit(Pbphh $pbphh)
   {
-    $industriBerizin->update(['status' => 'waiting_kasi']);
+    $pbphh->update(['status' => 'waiting_kasi']);
     return redirect()->back()->with('success', 'Laporan berhasil diajukan untuk verifikasi Kasi.');
   }
 
-  public function approve(IndustriBerizin $industriBerizin)
+  public function approve(Pbphh $pbphh)
   {
     $user = auth()->user();
 
-    if (($user->hasRole('kasi') || $user->hasRole('admin')) && $industriBerizin->status === 'waiting_kasi') {
-      $industriBerizin->update([
+    if (($user->hasRole('kasi') || $user->hasRole('admin')) && $pbphh->status === 'waiting_kasi') {
+      $pbphh->update([
         'status' => 'waiting_cdk',
         'approved_by_kasi_at' => now(),
       ]);
       return redirect()->back()->with('success', 'Laporan disetujui dan diteruskan ke KaCDK.');
     }
 
-    if (($user->hasRole('kacdk') || $user->hasRole('admin')) && $industriBerizin->status === 'waiting_cdk') {
-      $industriBerizin->update([
+    if (($user->hasRole('kacdk') || $user->hasRole('admin')) && $pbphh->status === 'waiting_cdk') {
+      $pbphh->update([
         'status' => 'final',
         'approved_by_cdk_at' => now(),
       ]);
@@ -172,13 +154,13 @@ class IndustriBerizinController extends Controller
     return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
   }
 
-  public function reject(Request $request, IndustriBerizin $industriBerizin)
+  public function reject(Request $request, Pbphh $pbphh)
   {
     $request->validate([
       'rejection_note' => 'required|string|max:255',
     ]);
 
-    $industriBerizin->update([
+    $pbphh->update([
       'status' => 'rejected',
       'rejection_note' => $request->rejection_note,
     ]);
@@ -188,20 +170,19 @@ class IndustriBerizinController extends Controller
 
   public function export(Request $request)
   {
-    $year = $request->query('year');
-    return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\IndustriBerizinExport($year), 'industri-berizin-' . date('Y-m-d') . '.xlsx');
+    return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PbphhExport(), 'pbphh-' . date('Y-m-d') . '.xlsx');
   }
 
   public function template()
   {
-    return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\IndustriBerizinTemplateExport, 'template_import_industri_berizin.xlsx');
+    return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PbphhTemplateExport, 'template_import_pbphh.xlsx');
   }
 
   public function import(Request $request)
   {
     $request->validate(['file' => 'required|mimes:xlsx,csv,xls']);
 
-    $import = new \App\Imports\IndustriBerizinImport();
+    $import = new \App\Imports\PbphhImport();
 
     try {
       \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('file'));

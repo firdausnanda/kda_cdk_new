@@ -161,9 +161,9 @@ export default function Edit({ auth, data: item, kayu_list }) {
   return (
     <AuthenticatedLayout
       user={auth.user}
-      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Edit Data Laporan</h2>}
+      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Edit Data Produksi dari {data.forest_type}</h2>}
     >
-      <Head title={`Edit Hasil Hutan Bukan Kayu - ${data.forest_type}`} />
+      <Head title={`Edit Produksi dari ${data.forest_type} - Hasil Hutan Bukan Kayu`} />
 
       <div className="max-w-4xl mx-auto">
         <Link

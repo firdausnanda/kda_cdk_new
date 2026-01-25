@@ -312,7 +312,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->pluck('total', 'commodity');
 
-        $industriCount = \App\Models\IndustriBerizin::count();
+        $industriCount = \App\Models\Pbphh::count();
 
         $pnbpTotal = RealisasiPnbp::where('year', $currentYear)
             ->where('status', 'final')

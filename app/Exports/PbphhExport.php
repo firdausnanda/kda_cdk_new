@@ -2,42 +2,34 @@
 
 namespace App\Exports;
 
-use App\Models\IndustriBerizin;
+use App\Models\Pbphh;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithTitle;
 
-class IndustriBerizinExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize, WithTitle
+class PbphhExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize, WithTitle
 {
-  protected $year;
-
-  public function __construct($year = null)
-  {
-    $this->year = $year;
-  }
-
   public function query()
   {
-    return IndustriBerizin::query()
+    return Pbphh::query()
       ->with(['creator', 'regency', 'district', 'jenis_produksi'])
       ->where('status', 'final')
-      ->when($this->year, fn($q) => $q->where('year', $this->year))
-      ->orderBy('year', 'desc')
-      ->orderBy('month', 'asc');
+      ->orderBy('name', 'asc');
   }
 
   public function headings(): array
   {
     return [
       'No',
-      'Tahun',
-      'Bulan',
+      'Nama Industri',
+      'Nomor Izin',
       'Kabupaten/Kota',
       'Kecamatan',
-      'PHHK/PBHH',
-      'PHHBK/PBPHH',
+      'Nilai Investasi',
+      'Jumlah Tenaga Kerja',
+      'Kondisi Saat Ini',
       'Jenis Produksi',
       'Status',
       'Diinput Oleh',
@@ -49,29 +41,16 @@ class IndustriBerizinExport implements FromQuery, WithHeadings, WithMapping, Sho
   {
     static $no = 0;
     $no++;
-    $monthNames = [
-      1 => 'Januari',
-      2 => 'Februari',
-      3 => 'Maret',
-      4 => 'April',
-      5 => 'Mei',
-      6 => 'Juni',
-      7 => 'Juli',
-      8 => 'Agustus',
-      9 => 'September',
-      10 => 'Oktober',
-      11 => 'November',
-      12 => 'Desember'
-    ];
 
     return [
       $no,
-      $row->year,
-      $monthNames[$row->month] ?? $row->month,
+      $row->name,
+      $row->number,
       $row->regency->name ?? '-',
       $row->district->name ?? '-',
-      $row->phhk_pbhh,
-      $row->phhbk_pbphh,
+      number_format($row->investment_value, 0, ',', '.'),
+      $row->number_of_workers,
+      $row->present_condition ? 'Aktif' : 'Tidak Aktif',
       $row->jenis_produksi->name ?? '-',
       ucfirst($row->status),
       $row->creator->name ?? 'Unknown',
@@ -81,6 +60,6 @@ class IndustriBerizinExport implements FromQuery, WithHeadings, WithMapping, Sho
 
   public function title(): string
   {
-    return 'Industri Berizin ' . ($this->year ?? 'Semua Tahun');
+    return 'Data PBPHH';
   }
 }

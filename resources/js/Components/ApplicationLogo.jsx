@@ -11,7 +11,7 @@ export default function ApplicationLogo({ className = '', collapsed = false, ...
                         <span>Prov. Jatim</span>
                     </div>
                     <span className="text-[10px] font-bold text-primary-300 uppercase tracking-widest leading-none mt-1 truncate">
-                        CDK Trenggalek
+                        CDK Wilayah Trenggalek
                     </span>
                 </div>
             )}

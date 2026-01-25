@@ -31,11 +31,10 @@ class RealisasiPnbpFactory extends Factory
       'month' => fake()->month(),
       'province_id' => 35,
       'regency_id' => $regency->id,
-      'district_id' => $district->id,
       'types_of_forest_products' => fake()->randomElement(['Kayu Jati', 'Getah Pinus', 'Rotan']),
+      'id_pengelola_wisata' => fake()->randomElement(['Perhutani', 'Masyarakat', 'Lainnya']), // Assuming string input for now based on migration
       'pnbp_target' => fake()->numberBetween(1000000, 100000000),
-      'number_of_psdh' => fake()->numberBetween(100000, 10000000),
-      'number_of_dbhdr' => fake()->numberBetween(100000, 10000000),
+      'pnbp_realization' => fake()->numberBetween(100000, 10000000),
       'status' => 'final',
       'approved_by_kasi_at' => now(),
       'approved_by_cdk_at' => now(),

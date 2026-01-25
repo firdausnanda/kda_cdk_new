@@ -38,7 +38,7 @@ class DatabaseSeeder extends Seeder
             KupsSeeder::class,
             HasilHutanKayuSeeder::class,
             HasilHutanBukanKayuSeeder::class,
-            IndustriBerizinSeeder::class,
+            PbphhSeeder::class,
             RealisasiPnbpSeeder::class,
             PerhutananSosialKayuSeeder::class,
             PerhutananSosialBukanKayuSeeder::class,

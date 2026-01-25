@@ -159,9 +159,9 @@ export default function Create({ auth, kayu_list, forest_type }) {
   return (
     <AuthenticatedLayout
       user={auth.user}
-      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Input Data Baru</h2>}
+      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Input Data Produksi dari {forest_type}</h2>}
     >
-      <Head title={`Input Hasil Hutan Kayu - ${forest_type}`} />
+      <Head title={`Input Produksi dari ${forest_type} - Hasil Hutan Kayu`} />
 
       <div className="max-w-4xl mx-auto">
         <Link

@@ -8,17 +8,16 @@ import { useState, useEffect } from 'react';
 import Select from 'react-select';
 import axios from 'axios';
 
-export default function Edit({ auth, data: item, provinces }) {
+export default function Edit({ auth, data: item, provinces, pengelola_wisata }) {
   const { data, setData, patch, processing, errors } = useForm({
     year: item.year || new Date().getFullYear(),
     month: item.month || new Date().getMonth() + 1,
     province_id: item.province_id || 35,
     regency_id: item.regency_id || '',
-    district_id: item.district_id || '',
+    id_pengelola_wisata: item.id_pengelola_wisata || '',
     types_of_forest_products: item.types_of_forest_products || '',
     pnbp_target: item.pnbp_target || '',
-    number_of_psdh: item.number_of_psdh || '',
-    number_of_dbhdr: item.number_of_dbhdr || '',
+    pnbp_realization: item.pnbp_realization || '',
   });
 
   const [regencies, setRegencies] = useState([]);
@@ -173,9 +172,9 @@ export default function Edit({ auth, data: item, provinces }) {
   return (
     <AuthenticatedLayout
       user={auth.user}
-      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Edit Data Realisasi PNBP</h2>}
+      header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Edit Data PNBP</h2>}
     >
-      <Head title="Edit Realisasi PNBP" />
+      <Head title="Edit PNBP" />
 
       <div className="max-w-4xl mx-auto">
         <Link
@@ -192,7 +191,7 @@ export default function Edit({ auth, data: item, provinces }) {
           <div className="p-8 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-xl font-bold text-gray-900">Formulir Edit Data</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Perbarui informasi realisasi PNBP di bawah ini.
+              Perbarui informasi PNBP di bawah ini.
             </p>
           </div>
 
@@ -262,27 +261,24 @@ export default function Edit({ auth, data: item, provinces }) {
                 </div>
 
                 <div>
-                  <InputLabel value="Kecamatan" className="text-gray-700 font-bold mb-2" />
-                  <Select
-                    options={districts}
-                    isLoading={loadingDistricts}
-                    isDisabled={!data.regency_id}
-                    value={districts.find(d => d.value == data.district_id) || (item.district ? { value: item.district_id, label: formatLabel(item.district.name) } : null)}
-                    onChange={(opt) => {
-                      setData((prev) => ({
-                        ...prev,
-                        district_id: opt?.value || '',
-                      }));
-                    }}
-                    placeholder="Pilih Kecamatan..."
-                    styles={selectStyles}
-                    isClearable
-                  />
-                  <InputError message={errors.district_id} className="mt-2" />
+                  <InputLabel value="Kecamatan" className="text-gray-700 font-bold mb-2 hidden" />
                 </div>
 
                 <div className="md:col-span-2 mt-4">
-                  <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 border-b border-emerald-100 pb-2">Detail Realisasi PNBP</h4>
+                  <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 border-b border-emerald-100 pb-2">Detail PNBP</h4>
+                </div>
+
+                <div className="md:col-span-2">
+                  <InputLabel htmlFor="id_pengelola_wisata" value="Pengelola" className="text-gray-700 font-bold mb-2" />
+                  <Select
+                    options={pengelola_wisata.map(p => ({ value: p.id, label: p.name }))}
+                    value={pengelola_wisata.map(p => ({ value: p.id, label: p.name })).find(opt => opt.value == data.id_pengelola_wisata) || null}
+                    onChange={(opt) => setData('id_pengelola_wisata', opt?.value || '')}
+                    placeholder="Pilih Pengelola..."
+                    styles={selectStyles}
+                    isClearable
+                  />
+                  <InputError message={errors.id_pengelola_wisata} className="mt-2" />
                 </div>
 
                 <div className="md:col-span-2">
@@ -290,12 +286,14 @@ export default function Edit({ auth, data: item, provinces }) {
                   <Select
                     options={[
                       { value: 'Kayu', label: 'Kayu' },
-                      { value: 'Non Kayu', label: 'Non Kayu' }
+                      { value: 'Non Kayu', label: 'Non Kayu' },
+                      { value: 'Jasa Lingkungan', label: 'Jasa Lingkungan' }
                     ]}
                     onChange={(opt) => setData('types_of_forest_products', opt?.value || '')}
                     value={[
                       { value: 'Kayu', label: 'Kayu' },
-                      { value: 'Non Kayu', label: 'Non Kayu' }
+                      { value: 'Non Kayu', label: 'Non Kayu' },
+                      { value: 'Jasa Lingkungan', label: 'Jasa Lingkungan' }
                     ].find(opt => opt.value === data.types_of_forest_products) || null}
                     placeholder="Pilih Jenis Hasil Hutan..."
                     styles={selectStyles}
@@ -324,39 +322,21 @@ export default function Edit({ auth, data: item, provinces }) {
                 </div>
 
                 <div>
-                  <InputLabel htmlFor="number_of_psdh" value="Jumlah PSDH" className="text-gray-700 font-bold mb-2" />
+                  <InputLabel htmlFor="pnbp_realization" value="Realisasi PNBP" className="text-gray-700 font-bold mb-2" />
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <span className="text-gray-500 font-bold sm:text-sm">Rp</span>
                     </div>
                     <TextInput
-                      id="number_of_psdh"
+                      id="pnbp_realization"
                       type="text"
                       className="w-full pl-10"
-                      value={formatCurrency(data.number_of_psdh)}
-                      onChange={(e) => setData('number_of_psdh', parseCurrency(e.target.value))}
+                      value={formatCurrency(data.pnbp_realization)}
+                      onChange={(e) => setData('pnbp_realization', parseCurrency(e.target.value))}
                       required
                     />
                   </div>
-                  <InputError message={errors.number_of_psdh} className="mt-2" />
-                </div>
-
-                <div>
-                  <InputLabel htmlFor="number_of_dbhdr" value="Jumlah DBHDR" className="text-gray-700 font-bold mb-2" />
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 font-bold sm:text-sm">Rp</span>
-                    </div>
-                    <TextInput
-                      id="number_of_dbhdr"
-                      type="text"
-                      className="w-full pl-10"
-                      value={formatCurrency(data.number_of_dbhdr)}
-                      onChange={(e) => setData('number_of_dbhdr', parseCurrency(e.target.value))}
-                      required
-                    />
-                  </div>
-                  <InputError message={errors.number_of_dbhdr} className="mt-2" />
+                  <InputError message={errors.pnbp_realization} className="mt-2" />
                 </div>
 
               </div>

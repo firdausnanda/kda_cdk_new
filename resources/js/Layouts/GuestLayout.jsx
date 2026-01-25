@@ -38,7 +38,7 @@ export default function Guest({ children }) {
                             <span className="text-yellow-400 drop-shadow-lg">HUT</span>
                         </h1>
                         <p className="font-sans text-xl text-primary-100 font-medium tracking-wide max-w-lg mx-auto leading-relaxed">
-                            System for Monitoring Analysis Real Time – Kehutanan
+                            Sistem Monitoring Analisis Real Time Data Kehutanan
                         </p>
                     </div>
 
