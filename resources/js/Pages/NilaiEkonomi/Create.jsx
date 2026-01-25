@@ -192,6 +192,8 @@ export default function Create({ auth, commodities }) {
                     defaultValue={monthOptions.find(opt => opt.value === data.month)}
                     onChange={(opt) => setData('month', opt?.value)}
                     styles={selectStyles}
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
                   />
                   <InputError message={errors.month} className="mt-2" />
                 </div>
@@ -202,6 +204,8 @@ export default function Create({ auth, commodities }) {
                     defaultValue={yearOptions.find(opt => opt.value === data.year)}
                     onChange={(opt) => setData('year', opt?.value)}
                     styles={selectStyles}
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
                   />
                   <InputError message={errors.year} className="mt-2" />
                 </div>
@@ -302,6 +306,9 @@ export default function Create({ auth, commodities }) {
                         onChange={(opt) => updateDetail(index, 'commodity_id', opt?.value)}
                         styles={selectStyles}
                         placeholder="Pilih Komoditas..."
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        menuPlacement="top"
                       />
                       <InputError message={errors[`details.${index}.commodity_id`]} className="mt-1" />
                     </div>

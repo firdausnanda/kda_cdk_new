@@ -181,6 +181,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/perkembangan-kth/{perkembangan_kth}/approve', [\App\Http\Controllers\PerkembanganKthController::class, 'approve'])->name('perkembangan-kth.approve');
     Route::post('/perkembangan-kth/{perkembangan_kth}/reject', [\App\Http\Controllers\PerkembanganKthController::class, 'reject'])->name('perkembangan-kth.reject');
 
+    // Nilai Transaksi Ekonomi
+    Route::get('nilai-transaksi-ekonomi/export', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'export'])->name('nilai-transaksi-ekonomi.export');
+    Route::get('nilai-transaksi-ekonomi/template', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'template'])->name('nilai-transaksi-ekonomi.template');
+    Route::post('nilai-transaksi-ekonomi/import', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'import'])->name('nilai-transaksi-ekonomi.import');
+    Route::resource('nilai-transaksi-ekonomi', \App\Http\Controllers\NilaiTransaksiEkonomiController::class)->parameters(['nilai-transaksi-ekonomi' => 'nilai_transaksi_ekonomi']);
+    Route::post('/nilai-transaksi-ekonomi/{nilai_transaksi_ekonomi}/submit', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'submit'])->name('nilai-transaksi-ekonomi.submit');
+    Route::post('/nilai-transaksi-ekonomi/{nilai_transaksi_ekonomi}/approve', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'approve'])->name('nilai-transaksi-ekonomi.approve');
+    Route::post('/nilai-transaksi-ekonomi/{nilai_transaksi_ekonomi}/reject', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'reject'])->name('nilai-transaksi-ekonomi.reject');
+
     // User Management
     // User Management
     Route::resource('users', \App\Http\Controllers\UserController::class);

@@ -23,10 +23,10 @@ export default function Authenticated({ user, header, children }) {
         hutan_rakyat_mobile: route().current('hasil-hutan-kayu.*', { forest_type: 'Hutan Rakyat' }) || route().current('hasil-hutan-bukan-kayu.*', { forest_type: 'Hutan Rakyat' }) || window.location.search.includes('Hutan%20Rakyat') || window.location.search.includes('Hutan+Rakyat'),
         perhutanan_sosial: route().current('hasil-hutan-kayu.*', { forest_type: 'Perhutanan Sosial' }) || route().current('hasil-hutan-bukan-kayu.*', { forest_type: 'Perhutanan Sosial' }) || window.location.search.includes('Perhutanan%20Sosial') || window.location.search.includes('Perhutanan+Sosial'),
         perhutanan_sosial_mobile: route().current('hasil-hutan-kayu.*', { forest_type: 'Perhutanan Sosial' }) || route().current('hasil-hutan-bukan-kayu.*', { forest_type: 'Perhutanan Sosial' }) || window.location.search.includes('Perhutanan%20Sosial') || window.location.search.includes('Perhutanan+Sosial'),
-        pemberdayaan: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*') || route().current('perkembangan-kth.*'),
-        pemberdayaan_mobile: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*') || route().current('perkembangan-kth.*'),
+        pemberdayaan: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*') || route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*'),
+        pemberdayaan_mobile: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*') || route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*'),
         kelembagaan_perhutanan_sosial: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*'),
-        kelembagaan_hutan_rakyat: route().current('perkembangan-kth.*')
+        kelembagaan_hutan_rakyat: route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*')
     });
 
     const { flash, auth } = usePage().props;
@@ -355,7 +355,8 @@ export default function Authenticated({ user, header, children }) {
                                                 name: 'Kelembagaan Hutan Rakyat',
                                                 key: 'kelembagaan_hutan_rakyat',
                                                 children: [
-                                                    { name: 'Perkembangan KTH', route: route('perkembangan-kth.index'), pattern: 'perkembangan-kth.*' }
+                                                    { name: 'Perkembangan KTH', route: route('perkembangan-kth.index'), pattern: 'perkembangan-kth.*' },
+                                                    { name: 'Nilai Transaksi Ekonomi', route: route('nilai-transaksi-ekonomi.index'), pattern: 'nilai-transaksi-ekonomi.*' }
                                                 ]
                                             }
                                         ].map((item) => (

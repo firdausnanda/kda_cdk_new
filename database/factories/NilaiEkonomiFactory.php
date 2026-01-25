@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Districts;
+use App\Models\Provinces;
+use App\Models\Regencies;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -16,9 +19,9 @@ class NilaiEkonomiFactory extends Factory
      */
     public function definition(): array
     {
-        $province = \App\Models\Provinces::inRandomOrder()->first() ?? \App\Models\Provinces::factory()->create();
-        $regency = \App\Models\Regencies::where('province_id', $province->id)->inRandomOrder()->first() ?? \App\Models\Regencies::factory()->create(['province_id' => $province->id]);
-        $district = \App\Models\Districts::where('regency_id', $regency->id)->inRandomOrder()->first() ?? \App\Models\Districts::factory()->create(['regency_id' => $regency->id]);
+        $province = Provinces::where('id', 35)->first();
+        $regency = Regencies::where('province_id', $province->id)->inRandomOrder()->first();
+        $district = Districts::where('regency_id', $regency->id)->inRandomOrder()->first();
 
         return [
             'nama_kelompok' => $this->faker->company . ' Cluster',
