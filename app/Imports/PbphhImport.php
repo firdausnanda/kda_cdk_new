@@ -25,7 +25,7 @@ class PbphhImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
       'nilai_investasi' => 'required|numeric|min:0',
       'jumlah_tenaga_kerja' => 'required|numeric|min:0',
       'kondisi_saat_ini' => 'required|in:Aktif,aktif,Tidak Aktif,tidak aktif,1,0,true,false',
-      'nama_jenis_produksi' => 'required|string',
+      'jenis_produksi_kapasitas' => 'required|string',
     ];
   }
 
@@ -39,7 +39,7 @@ class PbphhImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
       'nilai_investasi.required' => 'Nilai Investasi harus diisi.',
       'jumlah_tenaga_kerja.required' => 'Jumlah Tenaga Kerja harus diisi.',
       'kondisi_saat_ini.required' => 'Kondisi Saat Ini harus diisi.',
-      'nama_jenis_produksi.required' => 'Nama Jenis Produksi harus diisi.',
+      'jenis_produksi_kapasitas.required' => 'Jenis Produksi harus diisi.',
     ];
   }
 
@@ -77,25 +77,47 @@ class PbphhImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
       return null;
     }
 
-    // Look up jenis produksi by name
-    $jenisProduksi = DB::table('m_jenis_produksi')
-      ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower(trim($row['nama_jenis_produksi'])) . '%'])
-      ->first();
+    // Parse Jenis Produksi & Kapasitas
+    $rawJenis = $row['jenis_produksi_kapasitas'];
+    $items = array_map('trim', explode(',', $rawJenis));
+    $pivotData = [];
 
-    if (!$jenisProduksi) {
-      $this->onFailure(new \Maatwebsite\Excel\Validators\Failure(
-        $this->getRowNumber(),
-        'nama_jenis_produksi',
-        ["Jenis Produksi '{$row['nama_jenis_produksi']}' tidak ditemukan."]
-      ));
-      return null;
+    foreach ($items as $item) {
+      // Expected format: Name (Capacity)
+      if (preg_match('/^(.+?)\s*\((.+?)\)$/', $item, $matches)) {
+        $name = trim($matches[1]);
+        $capacity = trim($matches[2]);
+      } else {
+        // Fallback: Use entire string as name, empty capacity
+        $name = $item;
+        $capacity = '-';
+      }
+
+      $jenisProduksi = DB::table('m_jenis_produksi')
+        ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($name) . '%'])
+        ->first();
+
+      if ($jenisProduksi) {
+        $pivotData[$jenisProduksi->id] = ['kapasitas_ijin' => $capacity];
+      } else {
+        $this->onFailure(new \Maatwebsite\Excel\Validators\Failure(
+          $this->getRowNumber(),
+          'jenis_produksi_kapasitas',
+          ["Jenis Produksi '{$name}' tidak ditemukan."]
+        ));
+        // Continue processing other items, but note this row might be incomplete
+      }
+    }
+
+    if (empty($pivotData)) {
+      return null; // Skip if no valid production types found
     }
 
     // Parse present_condition
     $condition = strtolower(trim($row['kondisi_saat_ini']));
     $presentCondition = in_array($condition, ['aktif', '1', 'true']) ? true : false;
 
-    return new Pbphh([
+    $pbphh = Pbphh::create([
       'name' => $row['nama_industri'],
       'number' => $row['nomor_izin'],
       'province_id' => $regency->province_id,
@@ -104,10 +126,13 @@ class PbphhImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
       'investment_value' => (int) $row['nilai_investasi'],
       'number_of_workers' => (int) $row['jumlah_tenaga_kerja'],
       'present_condition' => $presentCondition,
-      'id_jenis_produksi' => $jenisProduksi->id,
       'status' => 'draft',
       'created_by' => Auth::id(),
     ]);
+
+    $pbphh->jenis_produksi()->sync($pivotData);
+
+    return $pbphh;
   }
 
   private $rowNumber = 1;

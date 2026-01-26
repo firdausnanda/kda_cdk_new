@@ -30,7 +30,7 @@ class PbphhExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSiz
       'Nilai Investasi',
       'Jumlah Tenaga Kerja',
       'Kondisi Saat Ini',
-      'Jenis Produksi',
+      'Jenis Produksi (Kapasitas)',
       'Status',
       'Diinput Oleh',
       'Tanggal Input'
@@ -51,7 +51,9 @@ class PbphhExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSiz
       number_format($row->investment_value, 0, ',', '.'),
       $row->number_of_workers,
       $row->present_condition ? 'Aktif' : 'Tidak Aktif',
-      $row->jenis_produksi->name ?? '-',
+      $row->jenis_produksi->map(function ($jp) {
+        return $jp->name . ' (' . ($jp->pivot->kapasitas_ijin ?? '-') . ')';
+      })->implode(', '),
       ucfirst($row->status),
       $row->creator->name ?? 'Unknown',
       $row->created_at->format('d-m-Y H:i'),

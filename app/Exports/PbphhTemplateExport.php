@@ -23,7 +23,7 @@ class PbphhTemplateExport implements WithHeadings, ShouldAutoSize, WithTitle, Wi
       'Nilai Investasi',
       'Jumlah Tenaga Kerja',
       'Kondisi Saat Ini',
-      'Nama Jenis Produksi'
+      'Jenis Produksi (Kapasitas)'
     ];
   }
 
@@ -96,7 +96,7 @@ class PbphhTemplateExport implements WithHeadings, ShouldAutoSize, WithTitle, Wi
         $sheet->getComment('E1')->getText()->createTextRun('Nilai investasi dalam Rupiah (angka saja)');
         $sheet->getComment('F1')->getText()->createTextRun('Jumlah tenaga kerja (angka)');
         $sheet->getComment('G1')->getText()->createTextRun('Pilih: Aktif atau Tidak Aktif');
-        $sheet->getComment('H1')->getText()->createTextRun('Contoh nama jenis produksi dari master data');
+        $sheet->getComment('H1')->getText()->createTextRun("Format: Nama Jenis (Kapasitas)\nPisahkan dengan koma (,) untuk lebih dari satu.\nContoh: Plywood (1000 m3), Blockboard (500 m3)");
       },
     ];
   }
