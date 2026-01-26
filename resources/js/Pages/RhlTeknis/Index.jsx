@@ -346,17 +346,29 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="space-y-1">
+                          <div className="flex flex-col gap-1.5 min-w-[200px]">
                             {item.details.map((detail, idx) => (
-                              <div key={idx} className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                <span className="text-xs font-semibold text-gray-700">{detail.bangunan_kta?.name || '-'}</span>
-                                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-bold">
-                                  {detail.unit_amount} Unit
-                                </span>
+                              <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100/50 hover:bg-white hover:border-emerald-200 hover:shadow-sm transition-all group">
+                                <div className="flex items-center gap-2.5 overflow-hidden">
+                                  <div className="shrink-0 p-1.5 bg-emerald-100 text-emerald-600 rounded-md group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                                    </svg>
+                                  </div>
+                                  <span className="text-xs font-bold text-gray-700 group-hover:text-gray-900 truncate" title={detail.bangunan_kta?.name}>{detail.bangunan_kta?.name || '-'}</span>
+                                </div>
+                                <div className="shrink-0 ml-2">
+                                  <span className="text-[10px] font-mono font-bold text-gray-600 bg-white border border-gray-200 px-2 py-0.5 rounded-md shadow-sm group-hover:border-emerald-200 group-hover:text-emerald-700 transition-colors">
+                                    {detail.unit_amount}
+                                  </span>
+                                </div>
                               </div>
                             ))}
-                            {item.details.length === 0 && <span className="text-gray-400 italic text-xs">Tidak ada detail</span>}
+                            {item.details.length === 0 && (
+                              <div className="flex items-center justify-center p-3 rounded-lg border border-dashed border-gray-200 bg-gray-50/50">
+                                <span className="text-gray-400 italic text-xs">Tidak ada detail</span>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
