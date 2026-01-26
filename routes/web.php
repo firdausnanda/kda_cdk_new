@@ -170,7 +170,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/nilai-ekonomi/{nilai_ekonomi}/submit', [\App\Http\Controllers\NilaiEkonomiController::class, 'submit'])->name('nilai-ekonomi.submit');
     Route::post('/nilai-ekonomi/{nilai_ekonomi}/approve', [\App\Http\Controllers\NilaiEkonomiController::class, 'approve'])->name('nilai-ekonomi.approve');
     Route::post('/nilai-ekonomi/{nilai_ekonomi}/reject', [\App\Http\Controllers\NilaiEkonomiController::class, 'reject'])->name('nilai-ekonomi.reject');
-    Route::post('/commodities', [\App\Http\Controllers\CommodityController::class, 'store'])->name('commodities.store');
+
 
     // Perkembangan KTH
     Route::get('perkembangan-kth/export', [\App\Http\Controllers\PerkembanganKthController::class, 'export'])->name('perkembangan-kth.export');
@@ -206,6 +206,14 @@ Route::middleware('auth')->group(function () {
     Route::resource('regencies', \App\Http\Controllers\RegencyController::class);
     Route::resource('districts', \App\Http\Controllers\DistrictController::class);
     Route::resource('villages', \App\Http\Controllers\VillageController::class);
+    Route::resource('bangunan-kta', \App\Http\Controllers\BangunanKtaController::class);
+    Route::resource('sumber-dana', \App\Http\Controllers\SumberDanaController::class);
+    Route::resource('commodities', \App\Http\Controllers\CommodityController::class);
+    Route::resource('bukan-kayu', \App\Http\Controllers\BukanKayuController::class);
+    Route::resource('kayu', \App\Http\Controllers\KayuController::class);
+    Route::resource('jenis-produksi', \App\Http\Controllers\JenisProduksiController::class);
+    Route::resource('pengelola-wisata', \App\Http\Controllers\PengelolaWisataController::class);
+    Route::resource('skema-perhutanan-sosial', \App\Http\Controllers\SkemaPerhutananSosialController::class);
 });
 
 require __DIR__ . '/auth.php';
