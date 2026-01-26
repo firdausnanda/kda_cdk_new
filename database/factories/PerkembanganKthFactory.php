@@ -14,7 +14,12 @@ class PerkembanganKthFactory extends Factory
 
   public function definition(): array
   {
-    $regency = Regencies::where('province_id', 35)->inRandomOrder()->first();
+    $regency = Regencies::where('province_id', 35)->whereIn('name', [
+      'KABUPATEN TRENGGALEK',
+      'KABUPATEN TULUNGAGUNG',
+      'KABUPATEN KEDIRI',
+      'KOTA KEDIRI'
+    ])->inRandomOrder()->first();
     $district = $regency ? Districts::where('regency_id', $regency->id)->inRandomOrder()->first() : null;
     $village = $district ? Villages::where('district_id', $district->id)->inRandomOrder()->first() : null;
 

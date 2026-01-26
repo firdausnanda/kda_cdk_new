@@ -20,7 +20,12 @@ class HasilHutanBukanKayuFactory extends Factory
   public function definition(): array
   {
     $village = Villages::whereHas('district.regency', function ($q) {
-      $q->where('province_id', 35);
+      $q->where('province_id', 35)->whereIn('name', [
+        'KABUPATEN TRENGGALEK',
+        'KABUPATEN TULUNGAGUNG',
+        'KABUPATEN KEDIRI',
+        'KOTA KEDIRI'
+      ]);
     })->inRandomOrder()->first();
 
     $district = $village->district;

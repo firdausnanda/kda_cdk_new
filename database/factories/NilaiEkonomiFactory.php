@@ -20,7 +20,14 @@ class NilaiEkonomiFactory extends Factory
     public function definition(): array
     {
         $province = Provinces::where('id', 35)->first();
-        $regency = Regencies::where('province_id', $province->id)->inRandomOrder()->first();
+        $regency = Regencies::where('province_id', $province->id)
+            ->whereIn('name', [
+                'KABUPATEN TRENGGALEK',
+                'KABUPATEN TULUNGAGUNG',
+                'KABUPATEN KEDIRI',
+                'KOTA KEDIRI'
+            ])
+            ->inRandomOrder()->first();
         $district = Districts::where('regency_id', $regency->id)->inRandomOrder()->first();
 
         return [
