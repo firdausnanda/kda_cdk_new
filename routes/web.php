@@ -197,8 +197,15 @@ Route::middleware('auth')->group(function () {
     // Impersonation Routes
     Route::impersonate();
 
+
     // Activity Log
     Route::resource('activity-log', \App\Http\Controllers\ActivityLogController::class)->only(['index']);
+
+    // Master Data
+    Route::resource('provinces', \App\Http\Controllers\ProvinceController::class);
+    Route::resource('regencies', \App\Http\Controllers\RegencyController::class);
+    Route::resource('districts', \App\Http\Controllers\DistrictController::class);
+    Route::resource('villages', \App\Http\Controllers\VillageController::class);
 });
 
 require __DIR__ . '/auth.php';

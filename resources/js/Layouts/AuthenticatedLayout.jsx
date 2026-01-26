@@ -26,7 +26,10 @@ export default function Authenticated({ user, header, children }) {
         pemberdayaan: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*') || route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*'),
         pemberdayaan_mobile: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*') || route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*'),
         kelembagaan_perhutanan_sosial: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*'),
-        kelembagaan_hutan_rakyat: route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*')
+        kelembagaan_perhutanan_sosial: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*'),
+        kelembagaan_hutan_rakyat: route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*'),
+        data_master: route().current('provinces.*') || route().current('regencies.*') || route().current('districts.*') || route().current('villages.*'),
+        data_master_mobile: route().current('provinces.*') || route().current('regencies.*') || route().current('districts.*') || route().current('villages.*')
     });
 
     const { flash, auth } = usePage().props;
@@ -410,6 +413,54 @@ export default function Authenticated({ user, header, children }) {
                             </div>
                         )}
 
+                        {/* Data Master */}
+                        {user.roles.includes('admin') && (
+                            <div className="space-y-1">
+                                <button
+                                    onClick={() => toggleMenu('data_master')}
+                                    className={`w-full group relative flex items-center py-3 rounded-xl transition-all duration-200 border ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'
+                                        } ${openMenus['data_master']
+                                            ? 'bg-white/10 border-white/20 text-white shadow-sm'
+                                            : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10 hover:text-white'
+                                        }`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 h-5 w-5 transition-colors ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} ${openMenus['data_master'] ? 'text-white' : 'text-primary-300 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    {!isSidebarCollapsed && (
+                                        <>
+                                            <span className="text-sm font-semibold flex-1 text-left">Data Master</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-200 ${openMenus['data_master'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </>
+                                    )}
+                                </button>
+
+                                {!isSidebarCollapsed && openMenus['data_master'] && (
+                                    <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
+                                        {[
+                                            { name: 'Data Provinsi', route: route('provinces.index'), pattern: 'provinces.*' },
+                                            { name: 'Data Kabupaten/Kota', route: route('regencies.index'), pattern: 'regencies.*' },
+                                            { name: 'Data Kecamatan', route: route('districts.index'), pattern: 'districts.*' },
+                                            { name: 'Data Desa/Kelurahan', route: route('villages.index'), pattern: 'villages.*' }
+                                        ].map((item) => (
+                                            <Link
+                                                key={item.name}
+                                                href={item.route}
+                                                className={`block py-2 text-xs font-medium transition-colors ${route().current(item.pattern)
+                                                    ? 'text-white font-bold'
+                                                    : 'text-primary-200 hover:text-white'
+                                                    }`}
+                                            >
+                                                {item.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {hasPermission('users.view') && (
                             <>
                                 <div className="pt-4 pb-2 px-4 uppercase text-[10px] font-bold text-primary-400 tracking-widest">
@@ -735,6 +786,49 @@ export default function Authenticated({ user, header, children }) {
                                             { name: 'Perkembangan SK PS', route: route('skps.index'), pattern: 'skps.*' },
                                             { name: 'Perkembangan KUPS', route: route('kups.index'), pattern: 'kups.*' },
                                             { name: 'Nilai Ekonomi (NEKON)', route: route('nilai-ekonomi.index'), pattern: 'nilai-ekonomi.*' }
+                                        ].map((item) => (
+                                            <Link
+                                                key={item.name}
+                                                href={item.route}
+                                                onClick={() => setShowingNavigationDropdown(false)}
+                                                className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
+                                                    ? 'text-white font-bold'
+                                                    : 'text-primary-300 hover:text-white'
+                                                    }`}
+                                            >
+                                                {item.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Data Master Mobile */}
+                        {user.roles.includes('admin') && (
+                            <div className="space-y-1">
+                                <button
+                                    onClick={() => toggleMenu('data_master_mobile')}
+                                    className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${openMenus['data_master_mobile']
+                                        ? 'bg-white/10 border-white/20 text-white'
+                                        : 'border-transparent text-primary-100 hover:bg-white/5 hover:border-white/10'
+                                        }`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    <span className="flex-1 text-left">Data Master</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${openMenus['data_master_mobile'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                {openMenus['data_master_mobile'] && (
+                                    <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
+                                        {[
+                                            { name: 'Data Provinsi', route: route('provinces.index'), pattern: 'provinces.*' },
+                                            { name: 'Data Kabupaten/Kota', route: route('regencies.index'), pattern: 'regencies.*' },
+                                            { name: 'Data Kecamatan', route: route('districts.index'), pattern: 'districts.*' },
+                                            { name: 'Data Desa/Kelurahan', route: route('villages.index'), pattern: 'villages.*' }
                                         ].map((item) => (
                                             <Link
                                                 key={item.name}
