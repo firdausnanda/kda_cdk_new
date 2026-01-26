@@ -152,9 +152,9 @@ Route::middleware('auth')->group(function () {
     Route::get('skps/template', [\App\Http\Controllers\SkpsController::class, 'template'])->name('skps.template');
     Route::post('skps/import', [\App\Http\Controllers\SkpsController::class, 'import'])->name('skps.import');
     Route::resource('skps', \App\Http\Controllers\SkpsController::class);
-    Route::post('/skps/{skps}/submit', [\App\Http\Controllers\SkpsController::class, 'submit'])->name('skps.submit');
-    Route::post('/skps/{skps}/approve', [\App\Http\Controllers\SkpsController::class, 'approve'])->name('skps.approve');
-    Route::post('/skps/{skps}/reject', [\App\Http\Controllers\SkpsController::class, 'reject'])->name('skps.reject');
+    Route::post('/skps/{skp}/submit', [\App\Http\Controllers\SkpsController::class, 'submit'])->name('skps.submit');
+    Route::post('/skps/{skp}/approve', [\App\Http\Controllers\SkpsController::class, 'approve'])->name('skps.approve');
+    Route::post('/skps/{skp}/reject', [\App\Http\Controllers\SkpsController::class, 'reject'])->name('skps.reject');
 
     // Perkembangan KUPS
     Route::get('kups/export', [\App\Http\Controllers\KupsController::class, 'export'])->name('kups.export');
