@@ -21,7 +21,10 @@ class PenghijauanLingkunganController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
+    $selectedYear = $request->query('year');
+    if (!$selectedYear) {
+      $selectedYear = PenghijauanLingkungan::max('year') ?? date('Y');
+    }
 
     $datas = PenghijauanLingkungan::query()
       ->leftJoin('m_regencies', 'penghijauan_lingkungan.regency_id', '=', 'm_regencies.id')
@@ -55,10 +58,10 @@ class PenghijauanLingkunganController extends Controller
       'total_count' => PenghijauanLingkungan::where('year', $selectedYear)->where('status', 'final')->count(),
     ];
 
-    $availableYears = PenghijauanLingkungan::distinct()->orderBy('year', 'desc')->pluck('year');
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
+    $dbYears = PenghijauanLingkungan::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
+    $fixedYears = range(2025, 2021);
+    $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+    rsort($availableYears);
 
     return Inertia::render('PenghijauanLingkungan/Index', [
       'datas' => $datas,

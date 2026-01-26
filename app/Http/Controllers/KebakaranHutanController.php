@@ -22,7 +22,10 @@ class KebakaranHutanController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
+    $selectedYear = $request->query('year');
+    if (!$selectedYear) {
+      $selectedYear = KebakaranHutan::max('year') ?? date('Y');
+    }
 
     $datas = KebakaranHutan::query()
       ->leftJoin('m_regencies', 'kebakaran_hutan.regency_id', '=', 'm_regencies.id')
@@ -63,10 +66,10 @@ class KebakaranHutanController extends Controller
     // If it's alphanumeric (e.g. "10 Ha"), sum() might fail or return 0. 
     // For now adhering to numeric assumption or basic sum.
 
-    $availableYears = KebakaranHutan::distinct()->orderBy('year', 'desc')->pluck('year');
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
+    $dbYears = KebakaranHutan::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
+    $fixedYears = range(2025, 2021);
+    $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+    rsort($availableYears);
 
     return Inertia::render('KebakaranHutan/Index', [
       'datas' => $datas,

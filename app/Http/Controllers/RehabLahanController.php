@@ -21,7 +21,10 @@ class RehabLahanController extends Controller
 
     public function index(Request $request)
     {
-        $selectedYear = $request->query('year', date('Y'));
+        $selectedYear = $request->query('year');
+        if (!$selectedYear) {
+            $selectedYear = RehabLahan::max('year') ?? date('Y');
+        }
 
         $datas = RehabLahan::query()
             ->leftJoin('m_regencies', 'rehab_lahan.regency_id', '=', 'm_regencies.id')
@@ -55,10 +58,10 @@ class RehabLahanController extends Controller
             'total_count' => RehabLahan::where('year', $selectedYear)->where('status', 'final')->count(),
         ];
 
-        $availableYears = RehabLahan::distinct()->orderBy('year', 'desc')->pluck('year');
-        if ($availableYears->isEmpty()) {
-            $availableYears = [date('Y')];
-        }
+        $dbYears = RehabLahan::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
+        $fixedYears = range(2025, 2021);
+        $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+        rsort($availableYears);
 
         return Inertia::render('RehabLahan/Index', [
             'datas' => $datas,

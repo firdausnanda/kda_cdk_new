@@ -21,7 +21,10 @@ class RehabManggroveController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
+    $selectedYear = $request->query('year');
+    if (!$selectedYear) {
+      $selectedYear = RehabManggrove::max('year') ?? date('Y');
+    }
 
     $datas = RehabManggrove::query()
       ->leftJoin('m_regencies', 'rehab_manggrove.regency_id', '=', 'm_regencies.id')
@@ -55,10 +58,10 @@ class RehabManggroveController extends Controller
       'total_count' => RehabManggrove::where('year', $selectedYear)->where('status', 'final')->count(),
     ];
 
-    $availableYears = RehabManggrove::distinct()->orderBy('year', 'desc')->pluck('year');
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
+    $dbYears = RehabManggrove::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
+    $fixedYears = range(2025, 2021);
+    $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+    rsort($availableYears);
 
     return Inertia::render('RehabManggrove/Index', [
       'datas' => $datas,

@@ -21,7 +21,10 @@ class RealisasiPnbpController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
+    $selectedYear = $request->query('year');
+    if (!$selectedYear) {
+      $selectedYear = RealisasiPnbp::max('year') ?? date('Y');
+    }
 
     $datas = RealisasiPnbp::query()
       ->leftJoin('m_regencies', 'realisasi_pnbp.regency_id', '=', 'm_regencies.id')
@@ -52,13 +55,13 @@ class RealisasiPnbpController extends Controller
     ];
 
     // Available Years
-    $availableYears = RealisasiPnbp::distinct()
+    $dbYears = RealisasiPnbp::distinct()
       ->orderBy('year', 'desc')
-      ->pluck('year');
-
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
+      ->pluck('year')
+      ->toArray();
+    $fixedYears = range(2025, 2021);
+    $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+    rsort($availableYears);
 
     return Inertia::render('RealisasiPnbp/Index', [
       'datas' => $datas,

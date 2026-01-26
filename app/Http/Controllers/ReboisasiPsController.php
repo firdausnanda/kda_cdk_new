@@ -21,7 +21,10 @@ class ReboisasiPsController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
+    $selectedYear = $request->query('year');
+    if (!$selectedYear) {
+      $selectedYear = ReboisasiPS::max('year') ?? date('Y');
+    }
 
     $datas = ReboisasiPS::query()
       ->leftJoin('m_regencies', 'reboisasi_ps.regency_id', '=', 'm_regencies.id')
@@ -55,10 +58,10 @@ class ReboisasiPsController extends Controller
       'total_count' => ReboisasiPS::where('year', $selectedYear)->where('status', 'final')->count(),
     ];
 
-    $availableYears = ReboisasiPS::distinct()->orderBy('year', 'desc')->pluck('year');
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
+    $dbYears = ReboisasiPS::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
+    $fixedYears = range(2025, 2021);
+    $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+    rsort($availableYears);
 
     return Inertia::render('ReboisasiPs/Index', [
       'datas' => $datas,

@@ -20,7 +20,10 @@ class PengunjungWisataController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
+    $selectedYear = $request->query('year');
+    if (!$selectedYear) {
+      $selectedYear = PengunjungWisata::max('year') ?? date('Y');
+    }
 
     $datas = PengunjungWisata::query()
       ->with(['pengelolaWisata', 'creator'])
@@ -42,10 +45,10 @@ class PengunjungWisataController extends Controller
       'total_count' => PengunjungWisata::where('year', $selectedYear)->where('status', 'final')->count(),
     ];
 
-    $availableYears = PengunjungWisata::distinct()->orderBy('year', 'desc')->pluck('year');
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
+    $dbYears = PengunjungWisata::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
+    $fixedYears = range(2025, 2021);
+    $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+    rsort($availableYears);
 
     return Inertia::render('PengunjungWisata/Index', [
       'datas' => $datas,

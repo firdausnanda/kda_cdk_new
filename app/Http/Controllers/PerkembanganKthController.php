@@ -21,7 +21,10 @@ class PerkembanganKthController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
+    $selectedYear = $request->query('year');
+    if (!$selectedYear) {
+      $selectedYear = PerkembanganKth::max('year') ?? date('Y');
+    }
 
     $datas = PerkembanganKth::query()
       ->leftJoin('m_regencies', 'perkembangan_kth.regency_id', '=', 'm_regencies.id')
@@ -61,10 +64,10 @@ class PerkembanganKthController extends Controller
       ]
     ];
 
-    $availableYears = PerkembanganKth::distinct()->orderBy('year', 'desc')->pluck('year');
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
+    $dbYears = PerkembanganKth::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
+    $fixedYears = range(2025, 2021);
+    $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+    rsort($availableYears);
 
     return Inertia::render('PerkembanganKth/Index', [
       'datas' => $datas,

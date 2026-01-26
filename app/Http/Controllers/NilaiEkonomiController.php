@@ -24,7 +24,13 @@ class NilaiEkonomiController extends Controller
 
     public function index(Request $request)
     {
-        $query = NilaiEkonomi::with(['province', 'regency', 'district', 'details.commodity', 'creator']);
+        $selectedYear = $request->query('year');
+        if (!$selectedYear) {
+            $selectedYear = NilaiEkonomi::max('year') ?? date('Y');
+        }
+
+        $query = NilaiEkonomi::with(['province', 'regency', 'district', 'details.commodity', 'creator'])
+            ->when($selectedYear, fn($q) => $q->where('year', $selectedYear));
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -44,10 +50,19 @@ class NilaiEkonomiController extends Controller
 
         $data = $query->latest()->paginate(10)->withQueryString();
 
+        $dbYears = NilaiEkonomi::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
+        $fixedYears = range(2025, 2021);
+        $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+        rsort($availableYears);
+
         return Inertia::render('NilaiEkonomi/Index', [
             'data' => $data,
-            'filters' => $request->only(['search']),
+            'filters' => [
+                'year' => $selectedYear,
+                'search' => $request->search,
+            ],
             'stats' => $stats,
+            'availableYears' => $availableYears,
         ]);
     }
 

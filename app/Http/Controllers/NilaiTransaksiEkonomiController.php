@@ -23,7 +23,10 @@ class NilaiTransaksiEkonomiController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
+    $selectedYear = $request->query('year');
+    if (!$selectedYear) {
+      $selectedYear = NilaiTransaksiEkonomi::max('year') ?? date('Y');
+    }
 
     $datas = NilaiTransaksiEkonomi::query()
       ->leftJoin('m_regencies', 'nilai_transaksi_ekonomi.regency_id', '=', 'm_regencies.id')
@@ -57,10 +60,10 @@ class NilaiTransaksiEkonomiController extends Controller
       'total_kth' => NilaiTransaksiEkonomi::where('year', $selectedYear)->where('status', 'final')->distinct('nama_kth')->count('nama_kth'),
     ];
 
-    $availableYears = NilaiTransaksiEkonomi::distinct()->orderBy('year', 'desc')->pluck('year');
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
+    $dbYears = NilaiTransaksiEkonomi::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
+    $fixedYears = range(2025, 2021);
+    $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+    rsort($availableYears);
 
     return Inertia::render('NilaiTransaksiEkonomi/Index', [
       'datas' => $datas,

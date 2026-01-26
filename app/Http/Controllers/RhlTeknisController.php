@@ -24,7 +24,10 @@ class RhlTeknisController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
+    $selectedYear = $request->query('year');
+    if (!$selectedYear) {
+      $selectedYear = RhlTeknis::max('year') ?? date('Y');
+    }
 
     $datas = RhlTeknis::query()
       ->when($selectedYear, function ($query, $year) {
@@ -54,10 +57,10 @@ class RhlTeknisController extends Controller
       'total_count' => RhlTeknis::where('year', $selectedYear)->where('status', 'final')->count(),
     ];
 
-    $availableYears = RhlTeknis::distinct()->orderBy('year', 'desc')->pluck('year');
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
+    $dbYears = RhlTeknis::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
+    $fixedYears = range(2025, 2021);
+    $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+    rsort($availableYears);
 
     return Inertia::render('RhlTeknis/Index', [
       'datas' => $datas,

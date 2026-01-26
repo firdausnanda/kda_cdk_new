@@ -22,8 +22,11 @@ class HasilHutanKayuController extends Controller
 
   public function index(Request $request)
   {
-    $selectedYear = $request->query('year', date('Y'));
-    $forestType = $request->query('forest_type', 'Hutan Negara'); // Default logic if needed, but usually passed
+    $forestType = $request->query('forest_type', 'Hutan Negara');
+    $selectedYear = $request->query('year');
+    if (!$selectedYear) {
+      $selectedYear = HasilHutanKayu::where('forest_type', $forestType)->max('year') ?? date('Y');
+    }
 
     $datas = HasilHutanKayu::query()
       ->leftJoin('m_regencies', 'hasil_hutan_kayu.regency_id', '=', 'm_regencies.id')
@@ -72,15 +75,14 @@ class HasilHutanKayuController extends Controller
     ];
 
     // Get available years for filter
-    $availableYears = HasilHutanKayu::where('forest_type', $forestType)
+    $dbYears = HasilHutanKayu::where('forest_type', $forestType)
       ->distinct()
       ->orderBy('year', 'desc')
-      ->pluck('year');
-
-    // Ensure current year is always available if list is empty
-    if ($availableYears->isEmpty()) {
-      $availableYears = [date('Y')];
-    }
+      ->pluck('year')
+      ->toArray();
+    $fixedYears = range(2025, 2021);
+    $availableYears = array_values(array_unique(array_merge($dbYears, $fixedYears)));
+    rsort($availableYears);
 
     return Inertia::render('HasilHutanKayu/Index', [
       'datas' => $datas,
