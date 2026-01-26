@@ -76,6 +76,7 @@ export default function Create({ auth, commodities }) {
     { value: 'Batang', label: 'Batang' },
     { value: 'Pengunjung', label: 'Pengunjung' },
     { value: 'Kendaraan', label: 'Kendaraan' },
+    { value: 'Butir', label: 'Butir' },
   ];
 
   const submit = (e) => {

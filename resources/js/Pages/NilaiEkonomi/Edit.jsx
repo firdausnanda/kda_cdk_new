@@ -76,6 +76,9 @@ export default function Edit({ auth, nilaiEkonomi, commodities }) {
     { value: 'M3', label: 'Meter Kubik (M³)' },
     { value: 'Liter', label: 'Liter' },
     { value: 'Batang', label: 'Batang' },
+    { value: 'Pengunjung', label: 'Pengunjung' },
+    { value: 'Kendaraan', label: 'Kendaraan' },
+    { value: 'Butir', label: 'Butir' },
   ];
 
   const submit = (e) => {
