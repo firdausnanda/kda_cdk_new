@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\HasilHutanKayu;
 use App\Models\Kayu;
+use App\Models\JenisProduksi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +51,7 @@ class HasilHutanKayuController extends Controller
         });
       })
 
-      ->with(['creator', 'regency', 'district', 'kayu'])
+      ->with(['creator', 'regency', 'district', 'kayu', 'jenis_produksi'])
       ->latest('hasil_hutan_kayu.created_at')
       ->paginate(10)
 
@@ -102,6 +103,7 @@ class HasilHutanKayuController extends Controller
     return Inertia::render('HasilHutanKayu/Create', [
       'forest_type' => $forestType,
       'kayu_list' => Kayu::all(),
+      'jenis_produksi_list' => JenisProduksi::all(),
       'provinces' => DB::table('m_provinces')->where('id', '35')->get(), // Default Jawa Timur
       'regencies' => DB::table('m_regencies')->where('province_id', '35')->get()
     ]);
@@ -116,11 +118,35 @@ class HasilHutanKayuController extends Controller
       'regency_id' => 'required|exists:m_regencies,id',
       'district_id' => 'required|exists:m_districts,id',
       'forest_type' => 'required|in:Hutan Negara,Hutan Rakyat,Perhutanan Sosial',
-      'annual_volume_target' => 'required|string', // Using string as per migration/model
+      'annual_volume_target' => 'required|string',
+      'annual_volume_realization' => 'nullable|string',
       'id_kayu' => 'required|exists:m_kayu,id',
+      'jenis_produksi' => 'required|array|min:1',
+      'jenis_produksi.*.id' => 'required|exists:m_jenis_produksi,id',
+      'jenis_produksi.*.kapasitas_ijin' => 'nullable|string',
     ]);
 
-    HasilHutanKayu::create($validated);
+    DB::transaction(function () use ($validated) {
+      $hasilHutanKayu = HasilHutanKayu::create([
+        'year' => $validated['year'],
+        'month' => $validated['month'],
+        'province_id' => $validated['province_id'],
+        'regency_id' => $validated['regency_id'],
+        'district_id' => $validated['district_id'],
+        'forest_type' => $validated['forest_type'],
+        'annual_volume_target' => $validated['annual_volume_target'],
+        'annual_volume_realization' => $validated['annual_volume_realization'] ?? null,
+        'id_kayu' => $validated['id_kayu'],
+        'status' => 'draft',
+        'created_by' => auth()->id(),
+      ]);
+
+      $syncData = [];
+      foreach ($validated['jenis_produksi'] as $item) {
+        $syncData[$item['id']] = ['kapasitas_ijin' => $item['kapasitas_ijin']];
+      }
+      $hasilHutanKayu->jenis_produksi()->sync($syncData);
+    });
 
     return redirect()->route('hasil-hutan-kayu.index', ['forest_type' => $validated['forest_type']])
       ->with('success', 'Data berhasil ditambahkan');
@@ -129,8 +155,9 @@ class HasilHutanKayuController extends Controller
   public function edit(HasilHutanKayu $hasilHutanKayu)
   {
     return Inertia::render('HasilHutanKayu/Edit', [
-      'data' => $hasilHutanKayu->load(['kayu', 'regency', 'district']),
+      'data' => $hasilHutanKayu->load(['kayu', 'regency', 'district', 'jenis_produksi']),
       'kayu_list' => Kayu::all(),
+      'jenis_produksi_list' => JenisProduksi::all(),
       'provinces' => DB::table('m_provinces')->where('id', '35')->get(),
       'regencies' => DB::table('m_regencies')->where('province_id', '35')->get(),
       'districts' => DB::table('m_districts')->where('regency_id', $hasilHutanKayu->regency_id)->get(),
@@ -147,10 +174,33 @@ class HasilHutanKayuController extends Controller
       'district_id' => 'required|exists:m_districts,id',
       'forest_type' => 'required|in:Hutan Negara,Hutan Rakyat,Perhutanan Sosial',
       'annual_volume_target' => 'required|string',
+      'annual_volume_realization' => 'nullable|string',
       'id_kayu' => 'required|exists:m_kayu,id',
+      'jenis_produksi' => 'required|array|min:1',
+      'jenis_produksi.*.id' => 'required|exists:m_jenis_produksi,id',
+      'jenis_produksi.*.kapasitas_ijin' => 'nullable|string',
     ]);
 
-    $hasilHutanKayu->update($validated);
+    DB::transaction(function () use ($hasilHutanKayu, $validated) {
+      $hasilHutanKayu->update([
+        'year' => $validated['year'],
+        'month' => $validated['month'],
+        'province_id' => $validated['province_id'],
+        'regency_id' => $validated['regency_id'],
+        'district_id' => $validated['district_id'],
+        'forest_type' => $validated['forest_type'],
+        'annual_volume_target' => $validated['annual_volume_target'],
+        'annual_volume_realization' => $validated['annual_volume_realization'] ?? null,
+        'id_kayu' => $validated['id_kayu'],
+        'updated_by' => auth()->id(),
+      ]);
+
+      $syncData = [];
+      foreach ($validated['jenis_produksi'] as $item) {
+        $syncData[$item['id']] = ['kapasitas_ijin' => $item['kapasitas_ijin']];
+      }
+      $hasilHutanKayu->jenis_produksi()->sync($syncData);
+    });
 
     return redirect()->route('hasil-hutan-kayu.index', ['forest_type' => $hasilHutanKayu->forest_type])
       ->with('success', 'Data berhasil diperbarui');

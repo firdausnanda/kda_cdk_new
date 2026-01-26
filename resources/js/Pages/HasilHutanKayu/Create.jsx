@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import Select from 'react-select';
 import axios from 'axios';
 
-export default function Create({ auth, kayu_list, forest_type }) {
+export default function Create({ auth, kayu_list, jenis_produksi_list, forest_type }) {
   const { data, setData, post, processing, errors } = useForm({
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
@@ -19,6 +19,7 @@ export default function Create({ auth, kayu_list, forest_type }) {
     annual_volume_target: '',
     annual_volume_realization: '',
     id_kayu: '',
+    jenis_produksi: [],
   });
 
   const [regencies, setRegencies] = useState([]);
@@ -273,7 +274,7 @@ export default function Create({ auth, kayu_list, forest_type }) {
                 {/* Forest Type Hidden Input */}
                 <input type="hidden" value={data.forest_type} />
 
-                <div>
+                <div className="md:col-span-2">
                   <InputLabel htmlFor="id_kayu" value="Jenis Kayu" className="text-gray-700 font-bold mb-2" />
                   <Select
                     options={kayu_list.map(k => ({ value: k.id, label: k.name }))}
@@ -285,6 +286,61 @@ export default function Create({ auth, kayu_list, forest_type }) {
                     value={kayu_list.find(k => k.id === data.id_kayu) ? { value: data.id_kayu, label: kayu_list.find(k => k.id === data.id_kayu).name } : null}
                   />
                   <InputError message={errors.id_kayu} className="mt-2" />
+                </div>
+
+                <div className="md:col-span-2 space-y-4">
+                  <div>
+                    <InputLabel value="Jenis Produksi & Kapasitas Ijin" className="text-gray-700 font-bold mb-2" />
+                    <Select
+                      isMulti
+                      options={jenis_produksi_list?.map(j => ({ value: j.id, label: j.name }))}
+                      onChange={(opts) => {
+                        const selectedIds = opts.map(o => o.value);
+                        const newJenisProduksi = selectedIds.map(id => {
+                          const existing = data.jenis_produksi.find(item => item.id === id);
+                          return existing ? existing : { id: id, kapasitas_ijin: '' };
+                        });
+                        setData('jenis_produksi', newJenisProduksi);
+                      }}
+                      placeholder="Pilih Jenis Produksi (Bisa lebih dari satu)..."
+                      styles={selectStyles}
+                      value={data.jenis_produksi.map(item => {
+                        const jp = jenis_produksi_list?.find(j => j.id === item.id);
+                        return jp ? { value: jp.id, label: jp.name } : null;
+                      }).filter(Boolean)}
+                    />
+                    <InputError message={errors.jenis_produksi} className="mt-2" />
+                  </div>
+
+                  {data.jenis_produksi.length > 0 && (
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {data.jenis_produksi.map((item, index) => {
+                        const jpName = jenis_produksi_list?.find(j => j.id === item.id)?.name;
+                        return (
+                          <div key={item.id}>
+                            <InputLabel value={`Kapasitas Ijin - ${jpName}`} className="text-xs text-gray-500 mb-1" />
+                            <div className="relative">
+                              <TextInput
+                                type="text"
+                                className="w-full text-sm"
+                                value={item.kapasitas_ijin}
+                                onChange={(e) => {
+                                  const newArr = [...data.jenis_produksi];
+                                  newArr[index].kapasitas_ijin = e.target.value;
+                                  setData('jenis_produksi', newArr);
+                                }}
+                                placeholder="0"
+                              />
+                              {/* Extract unit from name if possible, e.g. (m3) */}
+                              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 text-xs">
+                                {jpName?.match(/\((.*?)\)/)?.[1] || ''}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div>

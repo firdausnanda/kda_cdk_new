@@ -23,6 +23,12 @@ class JenisProduksiSeeder extends Seeder
             [
                 'name' => 'Plywood (m3)',
             ],
+            [
+                'name' => 'Blockboard (m3)',
+            ],
+            [
+                'name' => 'Barecore (m3)',
+            ],
         ];
 
         foreach ($data as $item) {

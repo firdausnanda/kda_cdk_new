@@ -433,6 +433,7 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
                   <th className="px-6 py-4">Input Oleh</th>
                   <th className="px-6 py-4">Lokasi (Kec/Desa)</th>
                   <th className="px-6 py-4">Jenis Kayu</th>
+                  <th className="px-6 py-4">Jenis Produksi</th>
                   <th className="px-6 py-4">Target Volume</th>
                   <th className="px-6 py-4">Realisasi Volume</th>
                   <th className="px-6 py-4 text-center">Status</th>
@@ -460,6 +461,22 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-800">{item.kayu_name || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {item.jenis_produksi && item.jenis_produksi.length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                          {item.jenis_produksi.map((jp, idx) => (
+                            <div key={idx} className="text-xs">
+                              <span className="font-semibold text-gray-700">{jp.name}</span>
+                              {jp.pivot?.kapasitas_ijin && (
+                                <span className="text-gray-500 ml-1">({jp.pivot.kapasitas_ijin})</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className="font-bold text-gray-900">{item.annual_volume_target}</span>

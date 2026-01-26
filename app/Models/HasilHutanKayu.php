@@ -54,6 +54,13 @@ class HasilHutanKayu extends Model
         return $this->belongsTo(Kayu::class, 'id_kayu');
     }
 
+    public function jenis_produksi()
+    {
+        return $this->belongsToMany(JenisProduksi::class, 'hasil_hutan_kayu_jenis_produksi', 'hasil_hutan_kayu_id', 'jenis_produksi_id')
+            ->withPivot('kapasitas_ijin')
+            ->withTimestamps();
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

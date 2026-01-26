@@ -74,6 +74,8 @@ export default function Create({ auth, commodities }) {
     { value: 'M3', label: 'Meter Kubik (M³)' },
     { value: 'Liter', label: 'Liter' },
     { value: 'Batang', label: 'Batang' },
+    { value: 'Pengunjung', label: 'Pengunjung' },
+    { value: 'Kendaraan', label: 'Kendaraan' },
   ];
 
   const submit = (e) => {
