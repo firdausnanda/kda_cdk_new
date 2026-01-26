@@ -171,10 +171,10 @@ class DashboardController extends Controller
 
     public function publicDashboard(Request $request)
     {
-        $currentYear = $request->input('year', date('Y'));
+        $currentYear = $request->input('year', 2025);
 
-        // Generate last 5 years
-        $thisYear = date('Y');
+        // Generate last 5 years starting from 2025
+        $thisYear = 2025;
         $availableYears = range($thisYear, $thisYear - 4);
 
         // --- 1. Pembinaan Hutan (Rehab Lahan) ---
