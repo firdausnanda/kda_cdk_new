@@ -246,7 +246,7 @@ export default function PublicDashboard({ currentYear, availableYears, stats }) 
                 { label: 'Rehabilitasi Lahan', total: stats?.pembinaan?.rehab_total, targetTotal: stats?.pembinaan?.rehab_target_total, chart: stats?.pembinaan?.rehab_chart, targetChart: stats?.pembinaan?.rehab_target_chart, fund: stats?.pembinaan?.rehab_fund, regency: stats?.pembinaan?.rehab_regency, color: '#10b981', unit: 'Ha' },
                 { label: 'Penghijauan Lingkungan', total: stats?.pembinaan?.penghijauan_total, targetTotal: stats?.pembinaan?.penghijauan_target_total, chart: stats?.pembinaan?.penghijauan_chart, targetChart: stats?.pembinaan?.penghijauan_target_chart, fund: stats?.pembinaan?.penghijauan_fund, regency: stats?.pembinaan?.penghijauan_regency, color: '#14b8a6', unit: 'Ha' },
                 { label: 'Rehabilitasi Manggrove', total: stats?.pembinaan?.manggrove_total, targetTotal: stats?.pembinaan?.manggrove_target_total, chart: stats?.pembinaan?.manggrove_chart, targetChart: stats?.pembinaan?.manggrove_target_chart, fund: stats?.pembinaan?.manggrove_fund, regency: stats?.pembinaan?.manggrove_regency, color: '#06b6d4', unit: 'Ha' },
-                { label: 'Bangunan Konservasi Tanah dan Air', total: stats?.pembinaan?.rhl_teknis_total, targetTotal: stats?.pembinaan?.rhl_teknis_target_total, chart: stats?.pembinaan?.rhl_teknis_chart, targetChart: stats?.pembinaan?.rhl_teknis_target_chart, fund: stats?.pembinaan?.rhl_teknis_fund, regency: null, color: '#f97316', unit: 'Unit' },
+                { label: 'Bangunan Konservasi Tanah dan Air', total: stats?.pembinaan?.rhl_teknis_total, targetTotal: stats?.pembinaan?.rhl_teknis_target_total, chart: stats?.pembinaan?.rhl_teknis_chart, targetChart: stats?.pembinaan?.rhl_teknis_target_chart, fund: stats?.pembinaan?.rhl_teknis_fund, regency: null, types: stats?.pembinaan?.rhl_teknis_type, color: '#f97316', unit: 'Unit' },
                 { label: 'Reboisasi Area PS', total: stats?.pembinaan?.reboisasi_total, targetTotal: stats?.pembinaan?.reboisasi_target_total, chart: stats?.pembinaan?.reboisasi_chart, targetChart: stats?.pembinaan?.reboisasi_target_chart, fund: stats?.pembinaan?.reboisasi_fund, regency: stats?.pembinaan?.reboisasi_regency, color: '#ec4899', unit: 'Ha' },
               ].map((section, idx) => {
                 const percentage = section.targetTotal > 0 ? (section.total / section.targetTotal) * 100 : 0;
@@ -383,7 +383,9 @@ export default function PublicDashboard({ currentYear, availableYears, stats }) 
                             <div className={`bg-white rounded-3xl p-6 shadow-sm border flex flex-col h-full`} style={{ borderColor: section.color + '30' }}>
                               <div className="flex items-center gap-4 mb-6">
                                 <div className={`p-3 rounded-2xl`} style={{ backgroundColor: section.color + '15', color: section.color }}>
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m.5-1c.5 0 .996-.067 1.474-.194M12 15.5c-.478 0-.974-.067-1.474-.194" /></svg>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                                  </svg>
                                 </div>
                                 <div>
                                   <h3 className="text-lg font-bold text-gray-900">Sumber Dana</h3>
@@ -436,31 +438,30 @@ export default function PublicDashboard({ currentYear, availableYears, stats }) 
                               <div className="flex items-center gap-4 mb-6">
                                 <div className={`p-3 rounded-2xl`} style={{ backgroundColor: section.color + '15', color: section.color }}>
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                   </svg>
                                 </div>
                                 <div>
-                                  <h3 className="text-lg font-bold text-gray-900">Wilayah</h3>
-                                  <p className="text-xs text-gray-500">Distribusi Kabupaten/Kota</p>
+                                  <h3 className="text-lg font-bold text-gray-900">{section.regency ? 'Wilayah' : 'Jenis Bangunan'}</h3>
+                                  <p className="text-xs text-gray-500">{section.regency ? 'Distribusi Kabupaten/Kota' : 'Jenis Bangunan KTA'}</p>
                                 </div>
                               </div>
                               <div className="flex flex-col gap-6 flex-1">
-                                {section.regency ? (
+                                {section.regency || section.types ? (
                                   <>
                                     <div className={`flex flex-col items-center justify-center p-4 rounded-2xl border`} style={{ backgroundColor: section.color + '05', borderColor: section.color + '20' }}>
-                                      <span className={`text-[10px] font-bold uppercase tracking-widest mb-1`} style={{ color: section.color }}>Total Wilayah</span>
+                                      <span className={`text-[10px] font-bold uppercase tracking-widest mb-1`} style={{ color: section.color }}>{section.regency ? 'Total Wilayah' : 'Total Jenis'}</span>
                                       <span className="text-4xl font-black text-gray-900">
-                                        {formatNumber(Object.keys(section.regency || {}).length)}
+                                        {formatNumber(Object.keys(section.regency || section.types || {}).length)}
                                       </span>
-                                      <span className="text-xs font-medium text-gray-400 mt-1">Kabupaten/Kota Terjangkau</span>
+                                      <span className="text-xs font-medium text-gray-400 mt-1">{section.regency ? 'Kabupaten/Kota Terjangkau' : 'Bangunan Terdaftar'}</span>
                                     </div>
                                     <div className="w-full h-[180px]">
                                       <Bar
                                         data={{
-                                          labels: Object.keys(section.regency),
+                                          labels: Object.keys(section.regency || section.types || {}),
                                           datasets: [{
-                                            data: Object.values(section.regency),
+                                            data: Object.values(section.regency || section.types || {}),
                                             backgroundColor: section.color + 'AA',
                                             borderRadius: 6
                                           }]
@@ -474,7 +475,7 @@ export default function PublicDashboard({ currentYear, availableYears, stats }) 
                                             legend: { display: false },
                                             tooltip: {
                                               callbacks: {
-                                                label: (context) => ` Jumlah: ${context.raw} Laporan`
+                                                label: (context) => ` Jumlah: ${context.raw} ${section.regency ? 'Laporan' : 'Unit'}`
                                               }
                                             }
                                           },

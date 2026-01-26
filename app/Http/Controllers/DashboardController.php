@@ -57,10 +57,7 @@ class DashboardController extends Controller
             ->where('status', 'final')
             ->get()
             ->sum(function ($row) {
-                return (float) str_replace(['Rp', '.', ' '], '', $row->number_of_psdh) +
-                    (float) str_replace(['Rp', '.', ' '], '', $row->number_of_dbhdr);
-                // Note: Assuming the data might have formatting characters based on 'string' type in validation. 
-                // If it's pure number string, these replaces are harmless.
+                return (float) str_replace(['Rp', '.', ' '], '', $row->pnbp_realization);
             });
 
         // --- KUPS Stats (New) ---
@@ -372,6 +369,17 @@ class DashboardController extends Controller
             ->groupBy('m_sumber_dana.name')
             ->pluck('total', 'fund');
 
+        $rhlTeknisType = \App\Models\RhlTeknisDetail::join('rhl_teknis', 'rhl_teknis_details.rhl_teknis_id', '=', 'rhl_teknis.id')
+            ->join('m_bangunan_kta', 'rhl_teknis_details.bangunan_kta_id', '=', 'm_bangunan_kta.id')
+            ->where('rhl_teknis.year', $currentYear)
+            ->where('rhl_teknis.status', 'final')
+            ->whereNull('rhl_teknis.deleted_at')
+            ->selectRaw('m_bangunan_kta.name as type, sum(rhl_teknis_details.unit_amount) as total')
+            ->groupBy('m_bangunan_kta.name')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->pluck('total', 'type');
+
         // --- 2. Perlindungan Hutan ---
         // Kebakaran
         $kebakaranStats = \App\Models\KebakaranHutan::where('year', $currentYear)
@@ -595,6 +603,7 @@ class DashboardController extends Controller
                     'rhl_teknis_chart' => $rhlTeknisChart,
                     'rhl_teknis_target_chart' => $rhlTeknisTargetChart,
                     'rhl_teknis_fund' => $rhlTeknisFund,
+                    'rhl_teknis_type' => $rhlTeknisType,
                 ],
                 'perlindungan' => [
                     'kebakaran_kejadian' => (int) ($kebakaranStats->total_kejadian ?? 0),
