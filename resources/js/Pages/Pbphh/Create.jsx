@@ -222,7 +222,7 @@ export default function Create({ auth, jenis_produksi_list, provinces, regencies
                   <InputError message={errors.name} className="mt-2" />
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <InputLabel htmlFor="number" value="Nomor Izin" className="text-gray-700 font-bold mb-2" />
                   <TextInput
                     id="number"
