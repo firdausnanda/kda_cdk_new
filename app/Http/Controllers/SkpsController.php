@@ -46,7 +46,10 @@ class SkpsController extends Controller
       ->paginate(10)
       ->withQueryString();
 
-    $stats = SkemaPerhutananSosial::leftJoin('skps', 'm_skema_perhutanan_sosial.id', '=', 'skps.id_skema_perhutanan_sosial')
+    $stats = SkemaPerhutananSosial::leftJoin('skps', function ($join) {
+      $join->on('m_skema_perhutanan_sosial.id', '=', 'skps.id_skema_perhutanan_sosial')
+        ->where('skps.status', 'final');
+    })
       ->selectRaw('m_skema_perhutanan_sosial.name, count(skps.id) as total')
       ->groupBy('m_skema_perhutanan_sosial.id', 'm_skema_perhutanan_sosial.name')
       ->get();

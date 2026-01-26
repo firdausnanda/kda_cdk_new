@@ -526,11 +526,14 @@ class DashboardController extends Controller
 
         // --- 4. Kelembagaan Perhutanan Sosial ---
         $kelembagaanPsStats = [
-            'kelompok_count' => Skps::count(),
-            'area_total' => (float) Skps::sum('ps_area'),
-            'kk_total' => (int) Skps::sum('number_of_kk'),
+            'kelompok_count' => Skps::where('status', 'final')->count(),
+            'area_total' => (float) Skps::where('status', 'final')->sum('ps_area'),
+            'kk_total' => (int) Skps::where('status', 'final')->sum('number_of_kk'),
             'nekon_total' => (float) NilaiEkonomi::where('year', $currentYear)->where('status', 'final')->sum('total_transaction_value'),
-            'scheme_distribution' => SkemaPerhutananSosial::leftJoin('skps', 'm_skema_perhutanan_sosial.id', '=', 'skps.id_skema_perhutanan_sosial')
+            'scheme_distribution' => SkemaPerhutananSosial::leftJoin('skps', function ($join) {
+                $join->on('m_skema_perhutanan_sosial.id', '=', 'skps.id_skema_perhutanan_sosial')
+                    ->where('skps.status', 'final');
+            })
                 ->selectRaw('m_skema_perhutanan_sosial.name as scheme, count(skps.id) as count')
                 ->groupBy('m_skema_perhutanan_sosial.id', 'm_skema_perhutanan_sosial.name')
                 ->get(),
