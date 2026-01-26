@@ -17,9 +17,9 @@ class NilaiEkonomiController extends Controller
     {
         $this->middleware('permission:pemberdayaan.view')->only(['index']);
         $this->middleware('permission:pemberdayaan.create')->only(['create', 'store']);
-        $this->middleware('permission:pemberdayaan.edit')->only(['edit', 'update']);
+        $this->middleware('permission:pemberdayaan.create|pemberdayaan.edit')->only(['edit', 'update']);
         $this->middleware('permission:pemberdayaan.delete')->only(['destroy']);
-        $this->middleware('permission:pemberdayaan.approve')->only(['submit', 'approve', 'reject']);
+        $this->middleware('permission:pemberdayaan.approve')->only(['approve', 'reject']);
     }
 
     public function index(Request $request)
@@ -126,6 +126,10 @@ class NilaiEkonomiController extends Controller
 
     public function update(Request $request, NilaiEkonomi $nilaiEkonomi)
     {
+        if (!in_array($nilaiEkonomi->status, ['draft', 'rejected'])) {
+            return redirect()->back()->with('error', 'Data tidak dapat diedit karena sedang dalam proses verifikasi atau sudah final.');
+        }
+
         $validated = $request->validate([
             'nama_kelompok' => 'required|string',
             'year' => 'required|integer',
@@ -174,6 +178,11 @@ class NilaiEkonomiController extends Controller
 
     public function submit(NilaiEkonomi $nilaiEkonomi)
     {
+        // Custom authorization: Allow if user is creator OR has specific permissions
+        if (auth()->id() !== $nilaiEkonomi->created_by && !auth()->user()->can('pemberdayaan.edit') && !auth()->user()->can('pemberdayaan.create')) {
+            return redirect()->back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk melakukan aksi ini.');
+        }
+
         $nilaiEkonomi->update(['status' => 'waiting_kasi']);
         return redirect()->back()->with('success', 'Laporan berhasil diajukan untuk verifikasi Kasi.');
     }

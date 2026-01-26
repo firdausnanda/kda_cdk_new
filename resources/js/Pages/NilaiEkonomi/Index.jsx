@@ -171,7 +171,7 @@ export default function Index({ auth, data, filters, stats }) {
   const isKasi = user.roles.includes('kasi') || (Array.isArray(user.roles) && user.roles.some(r => r.name === 'kasi'));
   const isKaCdk = user.roles.includes('kacdk') || (Array.isArray(user.roles) && user.roles.some(r => r.name === 'kacdk'));
   const canCreate = user.permissions?.includes('pemberdayaan.create') || isAdmin;
-  const canEdit = user.permissions?.includes('pemberdayaan.edit') || isAdmin;
+  const canEdit = user.permissions?.includes('pemberdayaan.edit') || canCreate || isAdmin;
   const canDelete = user.permissions?.includes('pemberdayaan.delete') || isAdmin;
   const canApprove = user.permissions?.includes('pemberdayaan.approve') || isAdmin;
 
