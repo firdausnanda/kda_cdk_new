@@ -18,7 +18,7 @@ class JenisProduksiSeeder extends Seeder
                 'name' => 'Kayu Gergajian (m3)',
             ],
             [
-                'name' => 'Vineer (m3)',
+                'name' => 'Veneer (m3)',
             ],
             [
                 'name' => 'Plywood (m3)',
