@@ -27,6 +27,9 @@ class KebakaranHutanController extends Controller
       $selectedYear = KebakaranHutan::max('year') ?? date('Y');
     }
 
+    $sortField = $request->query('sort', 'created_at');
+    $sortDirection = $request->query('direction', 'desc');
+
     $datas = KebakaranHutan::query()
       ->leftJoin('m_regencies', 'kebakaran_hutan.regency_id', '=', 'm_regencies.id')
       ->leftJoin('m_districts', 'kebakaran_hutan.district_id', '=', 'm_districts.id')
@@ -52,7 +55,21 @@ class KebakaranHutanController extends Controller
         });
       })
       ->with(['creator', 'regency', 'district', 'village', 'pengelolaWisata'])
-      ->latest('kebakaran_hutan.created_at')
+      ->when($sortField, function ($query) use ($sortField, $sortDirection) {
+        $sortMap = [
+          'month' => 'kebakaran_hutan.month',
+          'location' => 'm_villages.name', // Approximate, allows sorting by village name
+          'pengelola' => 'm_pengelola_wisata.name',
+          'area_function' => 'kebakaran_hutan.area_function',
+          'number_of_fires' => 'kebakaran_hutan.number_of_fires',
+          'fire_area' => 'kebakaran_hutan.fire_area',
+          'status' => 'kebakaran_hutan.status',
+          'created_at' => 'kebakaran_hutan.created_at',
+        ];
+
+        $dbColumn = $sortMap[$sortField] ?? 'kebakaran_hutan.created_at';
+        return $query->orderBy($dbColumn, $sortDirection);
+      })
       ->paginate(10)
       ->withQueryString();
 
@@ -75,7 +92,10 @@ class KebakaranHutanController extends Controller
       'datas' => $datas,
       'stats' => $stats,
       'filters' => [
-        'year' => (int) $selectedYear
+        'year' => (int) $selectedYear,
+        'search' => $request->search,
+        'sort' => $sortField,
+        'direction' => $sortDirection
       ],
       'availableYears' => $availableYears,
     ]);
@@ -233,5 +253,69 @@ class KebakaranHutanController extends Controller
     }
 
     return redirect()->back()->with('success', 'Data berhasil diimport.');
+  }
+
+  /**
+   * Bulk delete records.
+   */
+  public function bulkDestroy(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:kebakaran_hutan,id',
+    ]);
+
+    KebakaranHutan::whereIn('id', $request->ids)->delete();
+
+    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
+  }
+
+  /**
+   * Bulk submit records.
+   */
+  public function bulkSubmit(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:kebakaran_hutan,id',
+    ]);
+
+    $count = KebakaranHutan::whereIn('id', $request->ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil diajukan.');
+  }
+
+  /**
+   * Bulk approve records.
+   */
+  public function bulkApprove(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:kebakaran_hutan,id',
+    ]);
+
+    $user = auth()->user();
+    $count = 0;
+
+    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
+      $count = KebakaranHutan::whereIn('id', $request->ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      $count = KebakaranHutan::whereIn('id', $request->ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil disetujui.');
   }
 }

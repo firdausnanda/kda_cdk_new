@@ -26,6 +26,9 @@ class RehabLahanController extends Controller
             $selectedYear = RehabLahan::max('year') ?? date('Y');
         }
 
+        $sortField = $request->query('sort', 'created_at');
+        $sortDirection = $request->query('direction', 'desc');
+
         $datas = RehabLahan::query()
             ->leftJoin('m_regencies', 'rehab_lahan.regency_id', '=', 'm_regencies.id')
             ->leftJoin('m_districts', 'rehab_lahan.district_id', '=', 'm_districts.id')
@@ -48,7 +51,21 @@ class RehabLahanController extends Controller
                 });
             })
             ->with(['creator', 'regency_rel', 'district_rel', 'village_rel'])
-            ->latest('rehab_lahan.created_at')
+            ->when($sortField, function ($query) use ($sortField, $sortDirection) {
+                // Map frontend sort keys to database columns
+                $sortMap = [
+                    'year' => 'rehab_lahan.year',
+                    'month' => 'rehab_lahan.month', // Sort by month for "Bulan / Tahun"
+                    'location' => 'm_villages.name', // Sort by village name for location
+                    'realization' => 'rehab_lahan.realization',
+                    'fund_source' => 'rehab_lahan.fund_source',
+                    'status' => 'rehab_lahan.status',
+                    'created_at' => 'rehab_lahan.created_at',
+                ];
+
+                $column = $sortMap[$sortField] ?? 'rehab_lahan.created_at';
+                return $query->orderBy($column, $sortDirection);
+            })
             ->paginate(10)
             ->withQueryString();
 
@@ -67,7 +84,10 @@ class RehabLahanController extends Controller
             'datas' => $datas,
             'stats' => $stats,
             'filters' => [
-                'year' => (int) $selectedYear
+                'year' => (int) $selectedYear,
+                'search' => $request->search,
+                'sort' => $sortField,
+                'direction' => $sortDirection,
             ],
             'availableYears' => $availableYears,
             'sumberDana' => SumberDana::all()
@@ -257,5 +277,69 @@ class RehabLahanController extends Controller
         }
 
         return redirect()->back()->with('success', 'Data berhasil diimport.');
+    }
+
+    /**
+     * Bulk delete records.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:rehab_lahan,id',
+        ]);
+
+        RehabLahan::whereIn('id', $request->ids)->delete();
+
+        return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
+    }
+
+    /**
+     * Bulk submit records.
+     */
+    public function bulkSubmit(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:rehab_lahan,id',
+        ]);
+
+        $count = RehabLahan::whereIn('id', $request->ids)
+            ->whereIn('status', ['draft', 'rejected'])
+            ->update(['status' => 'waiting_kasi']);
+
+        return redirect()->back()->with('success', $count . ' laporan berhasil diajukan.');
+    }
+
+    /**
+     * Bulk approve records.
+     */
+    public function bulkApprove(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:rehab_lahan,id',
+        ]);
+
+        $user = auth()->user();
+        $count = 0;
+
+        if ($user->hasRole('kasi') || $user->hasRole('admin')) {
+            $count = RehabLahan::whereIn('id', $request->ids)
+                ->where('status', 'waiting_kasi')
+                ->update([
+                    'status' => 'waiting_cdk',
+                    'approved_by_kasi_at' => now(),
+                ]);
+        } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+            $count = RehabLahan::whereIn('id', $request->ids)
+                ->where('status', 'waiting_cdk')
+                ->update([
+                    'status' => 'final',
+                    'approved_by_cdk_at' => now(),
+                ]);
+        }
+
+        return redirect()->back()->with('success', $count . ' laporan berhasil disetujui.');
     }
 }

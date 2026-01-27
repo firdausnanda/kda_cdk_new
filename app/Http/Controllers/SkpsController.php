@@ -41,8 +41,32 @@ class SkpsController extends Controller
             ->orWhere('m_skema_perhutanan_sosial.name', 'like', "%{$search}%");
         });
       })
+      ->when($request->has('sort') && $request->has('direction'), function ($query) use ($request) {
+        $direction = $request->direction === 'desc' ? 'desc' : 'asc';
+        $sort = $request->sort;
+
+        switch ($sort) {
+          case 'location':
+            return $query->orderBy('m_districts.name', $direction);
+          case 'group_name':
+            return $query->orderBy('skps.nama_kelompok', $direction);
+          case 'skema':
+            return $query->orderBy('m_skema_perhutanan_sosial.name', $direction);
+          case 'area':
+            return $query->orderBy('skps.ps_area', $direction);
+          case 'potential':
+            return $query->orderBy('skps.potential', $direction);
+          case 'kk_count':
+            return $query->orderBy('skps.number_of_kk', $direction);
+          case 'status':
+            return $query->orderBy('skps.status', $direction);
+          default:
+            return $query->orderBy('skps.created_at', 'desc');
+        }
+      }, function ($query) {
+        return $query->latest('skps.created_at');
+      })
       ->with(['creator', 'regency', 'district', 'skema'])
-      ->latest('skps.created_at')
       ->paginate(10)
       ->withQueryString();
 
@@ -57,6 +81,11 @@ class SkpsController extends Controller
     return Inertia::render('Skps/Index', [
       'datas' => $datas,
       'stats' => $stats,
+      'filters' => [
+        'search' => $request->search,
+        'sort' => $request->sort,
+        'direction' => $request->direction,
+      ],
     ]);
   }
 
@@ -203,5 +232,63 @@ class SkpsController extends Controller
     }
 
     return redirect()->back()->with('success', 'Data berhasil diimport.');
+  }
+
+  public function bulkDestroy(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:skps,id',
+    ]);
+
+    Skps::whereIn('id', $request->ids)->delete();
+
+    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
+  }
+
+  public function bulkSubmit(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:skps,id',
+    ]);
+
+    // Only submit drafts or rejected items
+    Skps::whereIn('id', $request->ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return redirect()->back()->with('success', count($request->ids) . ' laporan berhasil diajukan.');
+  }
+
+  public function bulkApprove(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:skps,id',
+    ]);
+
+    $user = auth()->user();
+    $ids = $request->ids;
+
+    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
+      Skps::whereIn('id', $ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    }
+
+    if ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      Skps::whereIn('id', $ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    return redirect()->back()->with('success', count($ids) . ' laporan berhasil disetujui.');
   }
 }

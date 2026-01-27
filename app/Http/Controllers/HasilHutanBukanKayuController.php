@@ -28,6 +28,9 @@ class HasilHutanBukanKayuController extends Controller
       $selectedYear = HasilHutanBukanKayu::where('forest_type', $forestType)->max('year') ?? date('Y');
     }
 
+    $sortField = $request->query('sort', 'created_at');
+    $sortDirection = $request->query('direction', 'desc');
+
     $datas = HasilHutanBukanKayu::query()
       ->leftJoin('m_regencies', 'hasil_hutan_bukan_kayu.regency_id', '=', 'm_regencies.id')
       ->leftJoin('m_districts', 'hasil_hutan_bukan_kayu.district_id', '=', 'm_districts.id')
@@ -36,7 +39,7 @@ class HasilHutanBukanKayuController extends Controller
         'hasil_hutan_bukan_kayu.*',
         'm_regencies.name as regency_name',
         'm_districts.name as district_name',
-        'm_bukan_kayu.name as kayu_name' // Using alias 'kayu_name' to reuse frontend logic possibly, or better 'bukan_kayu_name'
+        'm_bukan_kayu.name as kayu_name'
       )
       ->where('forest_type', $forestType)
       ->when($selectedYear, function ($query, $year) {
@@ -49,8 +52,20 @@ class HasilHutanBukanKayuController extends Controller
             ->orWhere('m_districts.name', 'like', "%{$search}%");
         });
       })
-      ->with(['creator', 'regency', 'district', 'kayu']) // Model relation is 'kayu' (belongsTo BukanKayu)
-      ->latest('hasil_hutan_bukan_kayu.created_at')
+      ->with(['creator', 'regency', 'district', 'kayu'])
+      ->when($sortField, function ($query) use ($sortField, $sortDirection) {
+        $sortMap = [
+          'month' => 'hasil_hutan_bukan_kayu.month',
+          'location' => 'm_districts.name',
+          'commodity' => 'm_bukan_kayu.name',
+          'volume' => 'hasil_hutan_bukan_kayu.annual_volume_target',
+          'status' => 'hasil_hutan_bukan_kayu.status',
+          'created_at' => 'hasil_hutan_bukan_kayu.created_at',
+        ];
+
+        $dbColumn = $sortMap[$sortField] ?? 'hasil_hutan_bukan_kayu.created_at';
+        return $query->orderBy($dbColumn, $sortDirection);
+      })
       ->paginate(10)
       ->withQueryString();
 
@@ -89,6 +104,9 @@ class HasilHutanBukanKayuController extends Controller
       'available_years' => $availableYears,
       'filters' => [
         'year' => $selectedYear,
+        'search' => $request->search,
+        'sort' => $sortField,
+        'direction' => $sortDirection
       ],
     ]);
   }
@@ -238,5 +256,69 @@ class HasilHutanBukanKayuController extends Controller
     }
 
     return redirect()->back()->with('success', 'Data berhasil diimport.');
+  }
+
+  /**
+   * Bulk delete records.
+   */
+  public function bulkDestroy(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:hasil_hutan_bukan_kayu,id',
+    ]);
+
+    HasilHutanBukanKayu::whereIn('id', $request->ids)->delete();
+
+    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
+  }
+
+  /**
+   * Bulk submit records.
+   */
+  public function bulkSubmit(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:hasil_hutan_bukan_kayu,id',
+    ]);
+
+    $count = HasilHutanBukanKayu::whereIn('id', $request->ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil diajukan.');
+  }
+
+  /**
+   * Bulk approve records.
+   */
+  public function bulkApprove(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:hasil_hutan_bukan_kayu,id',
+    ]);
+
+    $user = auth()->user();
+    $count = 0;
+
+    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
+      $count = HasilHutanBukanKayu::whereIn('id', $request->ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      $count = HasilHutanBukanKayu::whereIn('id', $request->ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil disetujui.');
   }
 }

@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Select from 'react-select';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { debounce } from 'lodash';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -15,8 +16,13 @@ const MySwal = withReactContent(Swal);
 
 export default function Index({ auth, datas, stats, filters, availableYears }) {
   const { flash } = usePage().props;
-  const [searchTerm, setSearchTerm] = useState(filters.search || '');
-  const [selectedYear, setSelectedYear] = useState(filters.year || new Date().getFullYear());
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [params, setParams] = useState({
+    year: filters.year || new Date().getFullYear(),
+    search: filters.search || '',
+    sort: filters.sort || '',
+    direction: filters.direction || 'asc'
+  });
   const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Memproses...');
@@ -30,6 +36,14 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
     if (flash?.error) {
       MySwal.fire({ title: 'Gagal', text: flash.error, icon: 'error' });
     }
+    if (flash?.import_errors) {
+      let errorHtml = '<div class="text-left max-h-60 overflow-y-auto text-sm space-y-2">';
+      flash.import_errors.forEach(fail => {
+        errorHtml += `<div class="p-2 bg-red-50 rounded border border-red-100"><span class="font-bold text-red-700">Baris ${fail.row}:</span> <span class="text-gray-600">${fail.errors.join(', ')}</span></div>`;
+      });
+      errorHtml += '</div>';
+      MySwal.fire({ title: 'Import Gagal Sebagian', html: errorHtml, icon: 'error', confirmButtonText: 'Tutup', confirmButtonColor: '#d33', width: '600px' });
+    }
   }, [flash]);
 
   const formatRupiah = (number) => {
@@ -38,29 +52,129 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
 
   const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
 
-  const debouncedSearch = useCallback(
-    debounce((query, year) => {
+  const handleSearch = useCallback(
+    debounce((value) => {
+      const newParams = { ...params, search: value };
+      setParams(newParams);
       setIsSearching(true);
-      router.get(route('nilai-transaksi-ekonomi.index'), { search: query, year: year }, { preserveState: true, preserveScroll: true, onFinish: () => setIsSearching(false) });
+      router.get(route('nilai-transaksi-ekonomi.index'), newParams, {
+        preserveState: true,
+        preserveScroll: true,
+        onFinish: () => setIsSearching(false)
+      });
     }, 500),
-    []
+    [params]
   );
 
-  const handleSearch = (e) => {
-    const query = e.target.value;
-    setSearchTerm(query);
-    debouncedSearch(query, selectedYear);
+  const onSearchChange = (e) => {
+    const value = e.target.value;
+    handleSearch(value);
   };
 
   const handleYearChange = (option) => {
     const year = option.value;
-    setSelectedYear(year);
-    router.get(route('nilai-transaksi-ekonomi.index'), { search: searchTerm, year: year }, { preserveState: true, preserveScroll: true });
+    const newParams = { ...params, year };
+    setParams(newParams);
+    router.get(route('nilai-transaksi-ekonomi.index'), newParams, { preserveState: true, preserveScroll: true });
   };
 
   const yearOptions = availableYears.map(year => ({ value: year, label: `Tahun ${year}` }));
 
+  const handleSort = (field) => {
+    let direction = 'asc';
+    if (params.sort === field && params.direction === 'asc') {
+      direction = 'desc';
+    }
+    const newParams = { ...params, sort: field, direction };
+    setParams(newParams);
+
+    router.get(route('nilai-transaksi-ekonomi.index'), newParams, {
+      preserveState: true,
+      preserveScroll: true
+    });
+  };
+
+  const SortIcon = ({ field }) => {
+    return (
+      <div className="w-4 h-4 ml-1 text-gray-500">
+        {params.sort === field ? (
+          params.direction === 'asc' ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          )
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
+        )}
+      </div>
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(datas.data.map((item) => item.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelect = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter((itemId) => itemId !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleBulkAction = (action) => {
+    if (selectedIds.length === 0) return;
+
+    let title, text, routeName;
+
+    if (action === 'delete') {
+      title = 'Hapus data terpilih?';
+      text = 'Data yang dihapus tidak dapat dikembalikan!';
+      routeName = 'nilai-transaksi-ekonomi.bulk-delete';
+    } else if (action === 'submit') {
+      title = 'Submit data terpilih?';
+      text = 'Data akan dikirim ke Kasi.';
+      routeName = 'nilai-transaksi-ekonomi.bulk-submit';
+    } else if (action === 'approve') {
+      title = 'Setujui data terpilih?';
+      text = 'Data akan disetujui.';
+      routeName = 'nilai-transaksi-ekonomi.bulk-approve';
+    }
+
+    MySwal.fire({
+      title: title,
+      text: text,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: action === 'delete' ? '#d33' : '#15803d',
+      confirmButtonText: 'Ya, Lanjutkan!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setLoadingText('Memproses Bulk Action...');
+        setIsLoading(true);
+        router.post(route(routeName), { ids: selectedIds }, {
+          onFinish: () => {
+            setIsLoading(false);
+            setSelectedIds([]);
+          }
+        });
+      }
+    });
+  };
+
   const handleImportSubmit = (e) => {
+    // ... import logic unchanged ...
     e.preventDefault();
     if (!importFile) return;
 
@@ -99,8 +213,6 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
       }
     });
   };
-
-  // handleYearChange replaced above
 
   const handleDelete = (id) => {
     MySwal.fire({
@@ -226,7 +338,7 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
                 <div className="w-40">
                   <Select
                     options={yearOptions}
-                    value={yearOptions.find(opt => opt.value == selectedYear)}
+                    value={yearOptions.find(opt => opt.value == params.year)}
                     onChange={handleYearChange}
                     className="text-sm font-bold"
                     placeholder="Pilih Tahun"
@@ -256,7 +368,7 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
                   />
                 </div>
                 <div className="w-full md:w-64 relative">
-                  <TextInput className="w-full text-sm pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors rounded-xl" placeholder="Cari KTH, Komoditas..." value={searchTerm} onChange={handleSearch} />
+                  <TextInput className="w-full text-sm pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors rounded-xl" placeholder="Cari KTH, Komoditas..." value={params.search} onChange={onSearchChange} />
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                     <svg className="w-4 h-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
                       <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
@@ -272,22 +384,112 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-500">
+            {
+              selectedIds.length > 0 && createPortal(
+                <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-50 animate-in slide-in-from-bottom-5 duration-300 flex items-center gap-4 min-w-[300px]">
+                  <div className="flex items-center gap-3 pr-4 border-r border-gray-100">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 font-bold text-sm">
+                      {selectedIds.length}
+                    </span>
+                    <span className="text-sm font-medium text-gray-600">Terpilih</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {(canEdit || isAdmin) && (
+                      <button
+                        onClick={() => handleBulkAction('submit')}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex flex-col items-center gap-1 group min-w-[60px]"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 9l3 3m0 0l-3 3m3-3H9" />
+                        </svg>
+                        <span className="text-[10px] font-bold">Ajukan</span>
+                      </button>
+                    )}
+                    {(canApprove || isAdmin) && (
+                      <button
+                        onClick={() => handleBulkAction('approve')}
+                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors flex flex-col items-center gap-1 group min-w-[60px]"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-[10px] font-bold">Setujui</span>
+                      </button>
+                    )}
+                    {(canDelete || isAdmin) && (
+                      <button
+                        onClick={() => handleBulkAction('delete')}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex flex-col items-center gap-1 group min-w-[60px]"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span className="text-[10px] font-bold">Hapus</span>
+                      </button>
+                    )}
+                  </div>
+                </div>,
+                document.body
+              )
+            }
+            <div className="overflow-x-auto min-h-[400px]">
+              <table className="w-full text-left text-sm text-gray-500 min-w-[1000px]">
                 <thead className="bg-gray-50/50 text-gray-700 uppercase tracking-wider text-[11px] font-bold">
                   <tr>
+                    <th scope="col" className="px-6 py-4 w-12 text-center">
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 transition duration-150 ease-in-out cursor-pointer"
+                          checked={selectedIds.length === datas.data.length && datas.data.length > 0}
+                          onChange={handleSelectAll}
+                        />
+                      </div>
+                    </th>
                     <th className="px-6 py-4">Bulan / Tahun</th>
-                    <th className="px-6 py-4">KTH / Lokasi</th>
+                    <th className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('location')}>
+                      <div className="flex items-center gap-1">
+                        KTH / Lokasi
+                        <SortIcon field="location" />
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('nama_kth')}>
+                      <div className="flex items-center gap-1">
+                        Nama KTH
+                        <SortIcon field="nama_kth" />
+                      </div>
+                    </th>
                     <th className="px-6 py-4">Komoditas & Volume</th>
-                    <th className="px-6 py-4 text-right">Nilai Transaksi</th>
+                    <th className="px-6 py-4 text-right cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('nilai')}>
+                      <div className="flex items-center justify-end gap-1">
+                        Nilai Transaksi
+                        <SortIcon field="nilai" />
+                      </div>
+                    </th>
                     <th className="px-6 py-4">Input Oleh</th>
-                    <th className="px-6 py-4 text-center">Status</th>
+                    <th className="px-6 py-4 text-center cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('status')}>
+                      <div className="flex items-center justify-center gap-1">
+                        Status
+                        <SortIcon field="status" />
+                      </div>
+                    </th>
                     <th className="px-6 py-4 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {datas.data.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
+                    <tr key={item.id} className={`hover:bg-primary-50/30 transition-colors group ${selectedIds.includes(item.id) ? 'bg-blue-50/50' : ''}`}>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 transition duration-150 ease-in-out cursor-pointer"
+                            checked={selectedIds.includes(item.id)}
+                            onChange={() => handleSelect(item.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="font-bold text-gray-900">{new Date(0, item.month - 1).toLocaleString('id-ID', { month: 'long' })}</div>
                         <div className="text-xs text-gray-400 font-semibold">{item.year}</div>

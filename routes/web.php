@@ -7,6 +7,7 @@ use App\Http\Controllers\PenghijauanLingkunganController;
 use App\Http\Controllers\RehabManggroveController;
 use App\Http\Controllers\RhlTeknisController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\ReboisasiPsController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -55,6 +56,9 @@ Route::middleware('auth')->group(function () {
     Route::get('rehab-lahan/export', [RehabLahanController::class, 'export'])->name('rehab-lahan.export');
     Route::get('rehab-lahan/template', [RehabLahanController::class, 'template'])->name('rehab-lahan.template');
     Route::post('rehab-lahan/import', [RehabLahanController::class, 'import'])->name('rehab-lahan.import');
+    Route::post('rehab-lahan/bulk-delete', [RehabLahanController::class, 'bulkDestroy'])->name('rehab-lahan.bulk-delete');
+    Route::post('rehab-lahan/bulk-submit', [RehabLahanController::class, 'bulkSubmit'])->name('rehab-lahan.bulk-submit');
+    Route::post('rehab-lahan/bulk-approve', [RehabLahanController::class, 'bulkApprove'])->name('rehab-lahan.bulk-approve');
     Route::resource('rehab-lahan', RehabLahanController::class);
 
     Route::post('/penghijauan-lingkungan/{penghijauan_lingkungan}/submit', [PenghijauanLingkunganController::class, 'submit'])->name('penghijauan-lingkungan.submit');
@@ -63,6 +67,9 @@ Route::middleware('auth')->group(function () {
     Route::get('penghijauan-lingkungan/export', [PenghijauanLingkunganController::class, 'export'])->name('penghijauan-lingkungan.export');
     Route::get('penghijauan-lingkungan/template', [PenghijauanLingkunganController::class, 'template'])->name('penghijauan-lingkungan.template');
     Route::post('penghijauan-lingkungan/import', [PenghijauanLingkunganController::class, 'import'])->name('penghijauan-lingkungan.import');
+    Route::post('penghijauan-lingkungan/bulk-delete', [PenghijauanLingkunganController::class, 'bulkDestroy'])->name('penghijauan-lingkungan.bulk-delete');
+    Route::post('penghijauan-lingkungan/bulk-submit', [PenghijauanLingkunganController::class, 'bulkSubmit'])->name('penghijauan-lingkungan.bulk-submit');
+    Route::post('penghijauan-lingkungan/bulk-approve', [PenghijauanLingkunganController::class, 'bulkApprove'])->name('penghijauan-lingkungan.bulk-approve');
     Route::resource('penghijauan-lingkungan', PenghijauanLingkunganController::class);
 
     Route::post('/rehab-manggrove/{rehab_manggrove}/submit', [RehabManggroveController::class, 'submit'])->name('rehab-manggrove.submit');
@@ -71,30 +78,42 @@ Route::middleware('auth')->group(function () {
     Route::get('rehab-manggrove/export', [RehabManggroveController::class, 'export'])->name('rehab-manggrove.export');
     Route::get('rehab-manggrove/template', [RehabManggroveController::class, 'template'])->name('rehab-manggrove.template');
     Route::post('rehab-manggrove/import', [RehabManggroveController::class, 'import'])->name('rehab-manggrove.import');
+    Route::post('rehab-manggrove/bulk-delete', [RehabManggroveController::class, 'bulkDestroy'])->name('rehab-manggrove.bulk-delete');
+    Route::post('rehab-manggrove/bulk-submit', [RehabManggroveController::class, 'bulkSubmit'])->name('rehab-manggrove.bulk-submit');
+    Route::post('rehab-manggrove/bulk-approve', [RehabManggroveController::class, 'bulkApprove'])->name('rehab-manggrove.bulk-approve');
 
     // RHL Teknis
     Route::get('rhl-teknis/export', [RhlTeknisController::class, 'export'])->name('rhl-teknis.export');
     Route::get('rhl-teknis/template', [RhlTeknisController::class, 'template'])->name('rhl-teknis.template');
     Route::post('rhl-teknis/import', [RhlTeknisController::class, 'import'])->name('rhl-teknis.import');
+    Route::post('rhl-teknis/bulk-delete', [RhlTeknisController::class, 'bulkDestroy'])->name('rhl-teknis.bulk-delete');
+    Route::post('rhl-teknis/bulk-submit', [RhlTeknisController::class, 'bulkSubmit'])->name('rhl-teknis.bulk-submit');
+    Route::post('rhl-teknis/bulk-approve', [RhlTeknisController::class, 'bulkApprove'])->name('rhl-teknis.bulk-approve');
     Route::resource('rhl-teknis', RhlTeknisController::class)->parameters(['rhl-teknis' => 'rhl_teknis']);
     Route::post('/rhl-teknis/{rhl_teknis}/submit', [RhlTeknisController::class, 'submit'])->name('rhl-teknis.submit');
     Route::post('/rhl-teknis/{rhl_teknis}/approve', [RhlTeknisController::class, 'approve'])->name('rhl-teknis.approve');
     Route::post('/rhl-teknis/{rhl_teknis}/reject', [RhlTeknisController::class, 'reject'])->name('rhl-teknis.reject');
 
     // Reboisasi Area PS
-    Route::get('reboisasi-ps/export', [\App\Http\Controllers\ReboisasiPsController::class, 'export'])->name('reboisasi-ps.export');
-    Route::get('reboisasi-ps/template', [\App\Http\Controllers\ReboisasiPsController::class, 'template'])->name('reboisasi-ps.template');
-    Route::post('reboisasi-ps/import', [\App\Http\Controllers\ReboisasiPsController::class, 'import'])->name('reboisasi-ps.import');
-    Route::resource('reboisasi-ps', \App\Http\Controllers\ReboisasiPsController::class)->parameters(['reboisasi-ps' => 'reboisasi_ps']);
-    Route::post('/reboisasi-ps/{reboisasi_ps}/submit', [\App\Http\Controllers\ReboisasiPsController::class, 'submit'])->name('reboisasi-ps.submit');
-    Route::post('/reboisasi-ps/{reboisasi_ps}/approve', [\App\Http\Controllers\ReboisasiPsController::class, 'approve'])->name('reboisasi-ps.approve');
-    Route::post('/reboisasi-ps/{reboisasi_ps}/reject', [\App\Http\Controllers\ReboisasiPsController::class, 'reject'])->name('reboisasi-ps.reject');
+    Route::get('reboisasi-ps/export', [ReboisasiPsController::class, 'export'])->name('reboisasi-ps.export');
+    Route::get('reboisasi-ps/template', [ReboisasiPsController::class, 'template'])->name('reboisasi-ps.template');
+    Route::post('reboisasi-ps/import', [ReboisasiPsController::class, 'import'])->name('reboisasi-ps.import');
+    Route::post('reboisasi-ps/bulk-delete', [ReboisasiPsController::class, 'bulkDestroy'])->name('reboisasi-ps.bulk-delete');
+    Route::post('reboisasi-ps/bulk-submit', [ReboisasiPsController::class, 'bulkSubmit'])->name('reboisasi-ps.bulk-submit');
+    Route::post('reboisasi-ps/bulk-approve', [ReboisasiPsController::class, 'bulkApprove'])->name('reboisasi-ps.bulk-approve');
+    Route::resource('reboisasi-ps', ReboisasiPsController::class)->parameters(['reboisasi-ps' => 'reboisasi_ps']);
+    Route::post('/reboisasi-ps/{reboisasi_ps}/submit', [ReboisasiPsController::class, 'submit'])->name('reboisasi-ps.submit');
+    Route::post('/reboisasi-ps/{reboisasi_ps}/approve', [ReboisasiPsController::class, 'approve'])->name('reboisasi-ps.approve');
+    Route::post('/reboisasi-ps/{reboisasi_ps}/reject', [ReboisasiPsController::class, 'reject'])->name('reboisasi-ps.reject');
 
 
     // Pengunjung Objek Wisata
     Route::get('pengunjung-wisata/export', [\App\Http\Controllers\PengunjungWisataController::class, 'export'])->name('pengunjung-wisata.export');
     Route::get('pengunjung-wisata/template', [\App\Http\Controllers\PengunjungWisataController::class, 'template'])->name('pengunjung-wisata.template');
     Route::post('pengunjung-wisata/import', [\App\Http\Controllers\PengunjungWisataController::class, 'import'])->name('pengunjung-wisata.import');
+    Route::post('pengunjung-wisata/bulk-delete', [\App\Http\Controllers\PengunjungWisataController::class, 'bulkDestroy'])->name('pengunjung-wisata.bulk-delete');
+    Route::post('pengunjung-wisata/bulk-submit', [\App\Http\Controllers\PengunjungWisataController::class, 'bulkSubmit'])->name('pengunjung-wisata.bulk-submit');
+    Route::post('pengunjung-wisata/bulk-approve', [\App\Http\Controllers\PengunjungWisataController::class, 'bulkApprove'])->name('pengunjung-wisata.bulk-approve');
     Route::resource('pengunjung-wisata', \App\Http\Controllers\PengunjungWisataController::class)->parameters(['pengunjung-wisata' => 'pengunjung_wisata']);
     Route::post('/pengunjung-wisata/{pengunjung_wisata}/submit', [\App\Http\Controllers\PengunjungWisataController::class, 'submit'])->name('pengunjung-wisata.submit');
     Route::post('/pengunjung-wisata/{pengunjung_wisata}/approve', [\App\Http\Controllers\PengunjungWisataController::class, 'approve'])->name('pengunjung-wisata.approve');
@@ -104,6 +123,9 @@ Route::middleware('auth')->group(function () {
     Route::get('kebakaran-hutan/export', [\App\Http\Controllers\KebakaranHutanController::class, 'export'])->name('kebakaran-hutan.export');
     Route::get('kebakaran-hutan/template', [\App\Http\Controllers\KebakaranHutanController::class, 'template'])->name('kebakaran-hutan.template');
     Route::post('kebakaran-hutan/import', [\App\Http\Controllers\KebakaranHutanController::class, 'import'])->name('kebakaran-hutan.import');
+    Route::post('kebakaran-hutan/bulk-delete', [\App\Http\Controllers\KebakaranHutanController::class, 'bulkDestroy'])->name('kebakaran-hutan.bulk-delete');
+    Route::post('kebakaran-hutan/bulk-submit', [\App\Http\Controllers\KebakaranHutanController::class, 'bulkSubmit'])->name('kebakaran-hutan.bulk-submit');
+    Route::post('kebakaran-hutan/bulk-approve', [\App\Http\Controllers\KebakaranHutanController::class, 'bulkApprove'])->name('kebakaran-hutan.bulk-approve');
     Route::resource('kebakaran-hutan', \App\Http\Controllers\KebakaranHutanController::class)->parameters(['kebakaran-hutan' => 'kebakaran_hutan']);
     Route::post('/kebakaran-hutan/{kebakaran_hutan}/submit', [\App\Http\Controllers\KebakaranHutanController::class, 'submit'])->name('kebakaran-hutan.submit');
     Route::post('/kebakaran-hutan/{kebakaran_hutan}/approve', [\App\Http\Controllers\KebakaranHutanController::class, 'approve'])->name('kebakaran-hutan.approve');
@@ -115,6 +137,9 @@ Route::middleware('auth')->group(function () {
     Route::get('hasil-hutan-kayu/export', [\App\Http\Controllers\HasilHutanKayuController::class, 'export'])->name('hasil-hutan-kayu.export');
     Route::get('hasil-hutan-kayu/template', [\App\Http\Controllers\HasilHutanKayuController::class, 'template'])->name('hasil-hutan-kayu.template');
     Route::post('hasil-hutan-kayu/import', [\App\Http\Controllers\HasilHutanKayuController::class, 'import'])->name('hasil-hutan-kayu.import');
+    Route::post('hasil-hutan-kayu/bulk-delete', [\App\Http\Controllers\HasilHutanKayuController::class, 'bulkDestroy'])->name('hasil-hutan-kayu.bulk-delete');
+    Route::post('hasil-hutan-kayu/bulk-submit', [\App\Http\Controllers\HasilHutanKayuController::class, 'bulkSubmit'])->name('hasil-hutan-kayu.bulk-submit');
+    Route::post('hasil-hutan-kayu/bulk-approve', [\App\Http\Controllers\HasilHutanKayuController::class, 'bulkApprove'])->name('hasil-hutan-kayu.bulk-approve');
     Route::resource('hasil-hutan-kayu', \App\Http\Controllers\HasilHutanKayuController::class)->parameters(['hasil-hutan-kayu' => 'hasil_hutan_kayu']);
     Route::post('/hasil-hutan-kayu/{hasil_hutan_kayu}/submit', [\App\Http\Controllers\HasilHutanKayuController::class, 'submit'])->name('hasil-hutan-kayu.submit');
     Route::post('/hasil-hutan-kayu/{hasil_hutan_kayu}/approve', [\App\Http\Controllers\HasilHutanKayuController::class, 'approve'])->name('hasil-hutan-kayu.approve');
@@ -124,6 +149,9 @@ Route::middleware('auth')->group(function () {
     Route::get('hasil-hutan-bukan-kayu/export', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'export'])->name('hasil-hutan-bukan-kayu.export');
     Route::get('hasil-hutan-bukan-kayu/template', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'template'])->name('hasil-hutan-bukan-kayu.template');
     Route::post('hasil-hutan-bukan-kayu/import', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'import'])->name('hasil-hutan-bukan-kayu.import');
+    Route::post('hasil-hutan-bukan-kayu/bulk-delete', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'bulkDestroy'])->name('hasil-hutan-bukan-kayu.bulk-delete');
+    Route::post('hasil-hutan-bukan-kayu/bulk-submit', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'bulkSubmit'])->name('hasil-hutan-bukan-kayu.bulk-submit');
+    Route::post('hasil-hutan-bukan-kayu/bulk-approve', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'bulkApprove'])->name('hasil-hutan-bukan-kayu.bulk-approve');
     Route::resource('hasil-hutan-bukan-kayu', \App\Http\Controllers\HasilHutanBukanKayuController::class)->parameters(['hasil-hutan-bukan-kayu' => 'hasil_hutan_bukan_kayu']);
     Route::post('/hasil-hutan-bukan-kayu/{hasil_hutan_bukan_kayu}/submit', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'submit'])->name('hasil-hutan-bukan-kayu.submit');
     Route::post('/hasil-hutan-bukan-kayu/{hasil_hutan_bukan_kayu}/approve', [\App\Http\Controllers\HasilHutanBukanKayuController::class, 'approve'])->name('hasil-hutan-bukan-kayu.approve');
@@ -133,6 +161,9 @@ Route::middleware('auth')->group(function () {
     Route::get('pbphh/export', [\App\Http\Controllers\PbphhController::class, 'export'])->name('pbphh.export');
     Route::get('pbphh/template', [\App\Http\Controllers\PbphhController::class, 'template'])->name('pbphh.template');
     Route::post('pbphh/import', [\App\Http\Controllers\PbphhController::class, 'import'])->name('pbphh.import');
+    Route::post('pbphh/bulk-delete', [\App\Http\Controllers\PbphhController::class, 'bulkDestroy'])->name('pbphh.bulk-delete');
+    Route::post('pbphh/bulk-submit', [\App\Http\Controllers\PbphhController::class, 'bulkSubmit'])->name('pbphh.bulk-submit');
+    Route::post('pbphh/bulk-approve', [\App\Http\Controllers\PbphhController::class, 'bulkApprove'])->name('pbphh.bulk-approve');
     Route::resource('pbphh', \App\Http\Controllers\PbphhController::class);
     Route::post('/pbphh/{pbphh}/submit', [\App\Http\Controllers\PbphhController::class, 'submit'])->name('pbphh.submit');
     Route::post('/pbphh/{pbphh}/approve', [\App\Http\Controllers\PbphhController::class, 'approve'])->name('pbphh.approve');
@@ -142,6 +173,15 @@ Route::middleware('auth')->group(function () {
     Route::get('realisasi-pnbp/export', [\App\Http\Controllers\RealisasiPnbpController::class, 'export'])->name('realisasi-pnbp.export');
     Route::get('realisasi-pnbp/template', [\App\Http\Controllers\RealisasiPnbpController::class, 'template'])->name('realisasi-pnbp.template');
     Route::post('realisasi-pnbp/import', [\App\Http\Controllers\RealisasiPnbpController::class, 'import'])->name('realisasi-pnbp.import');
+    Route::post('realisasi-pnbp/bulk-delete', [\App\Http\Controllers\RealisasiPnbpController::class, 'bulkDestroy'])
+        ->name('realisasi-pnbp.bulk-delete')
+        ->middleware('permission:bina-usaha.delete');
+    Route::post('realisasi-pnbp/bulk-submit', [\App\Http\Controllers\RealisasiPnbpController::class, 'bulkSubmit'])
+        ->name('realisasi-pnbp.bulk-submit')
+        ->middleware('permission:bina-usaha.edit');
+    Route::post('realisasi-pnbp/bulk-approve', [\App\Http\Controllers\RealisasiPnbpController::class, 'bulkApprove'])
+        ->name('realisasi-pnbp.bulk-approve')
+        ->middleware('permission:bina-usaha.approve');
     Route::resource('realisasi-pnbp', \App\Http\Controllers\RealisasiPnbpController::class)->parameters(['realisasi-pnbp' => 'realisasi_pnbp']);
     Route::post('/realisasi-pnbp/{realisasi_pnbp}/submit', [\App\Http\Controllers\RealisasiPnbpController::class, 'submit'])->name('realisasi-pnbp.submit');
     Route::post('/realisasi-pnbp/{realisasi_pnbp}/approve', [\App\Http\Controllers\RealisasiPnbpController::class, 'approve'])->name('realisasi-pnbp.approve');
@@ -151,6 +191,15 @@ Route::middleware('auth')->group(function () {
     Route::get('skps/export', [\App\Http\Controllers\SkpsController::class, 'export'])->name('skps.export');
     Route::get('skps/template', [\App\Http\Controllers\SkpsController::class, 'template'])->name('skps.template');
     Route::post('skps/import', [\App\Http\Controllers\SkpsController::class, 'import'])->name('skps.import');
+    Route::post('skps/bulk-delete', [\App\Http\Controllers\SkpsController::class, 'bulkDestroy'])
+        ->name('skps.bulk-delete')
+        ->middleware('permission:pemberdayaan.delete');
+    Route::post('skps/bulk-submit', [\App\Http\Controllers\SkpsController::class, 'bulkSubmit'])
+        ->name('skps.bulk-submit')
+        ->middleware('permission:pemberdayaan.edit');
+    Route::post('skps/bulk-approve', [\App\Http\Controllers\SkpsController::class, 'bulkApprove'])
+        ->name('skps.bulk-approve')
+        ->middleware('permission:pemberdayaan.approve');
     Route::resource('skps', \App\Http\Controllers\SkpsController::class);
     Route::post('/skps/{skp}/submit', [\App\Http\Controllers\SkpsController::class, 'submit'])->name('skps.submit');
     Route::post('/skps/{skp}/approve', [\App\Http\Controllers\SkpsController::class, 'approve'])->name('skps.approve');
@@ -160,12 +209,30 @@ Route::middleware('auth')->group(function () {
     Route::get('kups/export', [\App\Http\Controllers\KupsController::class, 'export'])->name('kups.export');
     Route::get('kups/template', [\App\Http\Controllers\KupsController::class, 'template'])->name('kups.template');
     Route::post('kups/import', [\App\Http\Controllers\KupsController::class, 'import'])->name('kups.import');
+    Route::post('kups/bulk-delete', [\App\Http\Controllers\KupsController::class, 'bulkDestroy'])
+        ->name('kups.bulk-delete')
+        ->middleware('permission:pemberdayaan.delete');
+    Route::post('kups/bulk-submit', [\App\Http\Controllers\KupsController::class, 'bulkSubmit'])
+        ->name('kups.bulk-submit')
+        ->middleware('permission:pemberdayaan.edit');
+    Route::post('kups/bulk-approve', [\App\Http\Controllers\KupsController::class, 'bulkApprove'])
+        ->name('kups.bulk-approve')
+        ->middleware('permission:pemberdayaan.approve');
     Route::resource('kups', \App\Http\Controllers\KupsController::class);
     Route::post('/kups/{kups}/submit', [\App\Http\Controllers\KupsController::class, 'submit'])->name('kups.submit');
     Route::post('/kups/{kups}/approve', [\App\Http\Controllers\KupsController::class, 'approve'])->name('kups.approve');
     Route::post('/kups/{kups}/reject', [\App\Http\Controllers\KupsController::class, 'reject'])->name('kups.reject');
 
     // Nilai Ekonomi (NEKON)
+    Route::post('nilai-ekonomi/bulk-delete', [\App\Http\Controllers\NilaiEkonomiController::class, 'bulkDestroy'])
+        ->name('nilai-ekonomi.bulk-delete')
+        ->middleware('permission:pemberdayaan.delete');
+    Route::post('nilai-ekonomi/bulk-submit', [\App\Http\Controllers\NilaiEkonomiController::class, 'bulkSubmit'])
+        ->name('nilai-ekonomi.bulk-submit')
+        ->middleware('permission:pemberdayaan.edit');
+    Route::post('nilai-ekonomi/bulk-approve', [\App\Http\Controllers\NilaiEkonomiController::class, 'bulkApprove'])
+        ->name('nilai-ekonomi.bulk-approve')
+        ->middleware('permission:pemberdayaan.approve');
     Route::resource('nilai-ekonomi', \App\Http\Controllers\NilaiEkonomiController::class);
     Route::post('/nilai-ekonomi/{nilai_ekonomi}/submit', [\App\Http\Controllers\NilaiEkonomiController::class, 'submit'])->name('nilai-ekonomi.submit');
     Route::post('/nilai-ekonomi/{nilai_ekonomi}/approve', [\App\Http\Controllers\NilaiEkonomiController::class, 'approve'])->name('nilai-ekonomi.approve');
@@ -173,6 +240,15 @@ Route::middleware('auth')->group(function () {
 
 
     // Perkembangan KTH
+    Route::post('perkembangan-kth/bulk-delete', [\App\Http\Controllers\PerkembanganKthController::class, 'bulkDestroy'])
+        ->name('perkembangan-kth.bulk-delete')
+        ->middleware('permission:pemberdayaan.delete');
+    Route::post('perkembangan-kth/bulk-submit', [\App\Http\Controllers\PerkembanganKthController::class, 'bulkSubmit'])
+        ->name('perkembangan-kth.bulk-submit')
+        ->middleware('permission:pemberdayaan.edit');
+    Route::post('perkembangan-kth/bulk-approve', [\App\Http\Controllers\PerkembanganKthController::class, 'bulkApprove'])
+        ->name('perkembangan-kth.bulk-approve')
+        ->middleware('permission:pemberdayaan.approve');
     Route::get('perkembangan-kth/export', [\App\Http\Controllers\PerkembanganKthController::class, 'export'])->name('perkembangan-kth.export');
     Route::get('perkembangan-kth/template', [\App\Http\Controllers\PerkembanganKthController::class, 'template'])->name('perkembangan-kth.template');
     Route::post('perkembangan-kth/import', [\App\Http\Controllers\PerkembanganKthController::class, 'import'])->name('perkembangan-kth.import');
@@ -182,6 +258,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/perkembangan-kth/{perkembangan_kth}/reject', [\App\Http\Controllers\PerkembanganKthController::class, 'reject'])->name('perkembangan-kth.reject');
 
     // Nilai Transaksi Ekonomi
+    Route::post('nilai-transaksi-ekonomi/bulk-delete', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'bulkDestroy'])
+        ->name('nilai-transaksi-ekonomi.bulk-delete')
+        ->middleware('permission:pemberdayaan.delete');
+    Route::post('nilai-transaksi-ekonomi/bulk-submit', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'bulkSubmit'])
+        ->name('nilai-transaksi-ekonomi.bulk-submit')
+        ->middleware('permission:pemberdayaan.edit');
+    Route::post('nilai-transaksi-ekonomi/bulk-approve', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'bulkApprove'])
+        ->name('nilai-transaksi-ekonomi.bulk-approve')
+        ->middleware('permission:pemberdayaan.approve');
     Route::get('nilai-transaksi-ekonomi/export', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'export'])->name('nilai-transaksi-ekonomi.export');
     Route::get('nilai-transaksi-ekonomi/template', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'template'])->name('nilai-transaksi-ekonomi.template');
     Route::post('nilai-transaksi-ekonomi/import', [\App\Http\Controllers\NilaiTransaksiEkonomiController::class, 'import'])->name('nilai-transaksi-ekonomi.import');

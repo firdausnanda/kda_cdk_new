@@ -28,9 +28,11 @@ class RealisasiPnbpController extends Controller
 
     $datas = RealisasiPnbp::query()
       ->leftJoin('m_regencies', 'realisasi_pnbp.regency_id', '=', 'm_regencies.id')
+      ->leftJoin('m_pengelola_wisata', 'realisasi_pnbp.id_pengelola_wisata', '=', 'm_pengelola_wisata.id')
       ->select(
         'realisasi_pnbp.*',
-        'm_regencies.name as regency_name'
+        'm_regencies.name as regency_name',
+        'm_pengelola_wisata.name as pengelola_name'
       )
       ->when($selectedYear, function ($query, $year) {
         return $query->where('realisasi_pnbp.year', $year);
@@ -38,11 +40,34 @@ class RealisasiPnbpController extends Controller
       ->when($request->search, function ($query, $search) {
         $query->where(function ($q) use ($search) {
           $q->where('types_of_forest_products', 'like', "%{$search}%")
-            ->orWhere('m_regencies.name', 'like', "%{$search}%");
+            ->orWhere('m_regencies.name', 'like', "%{$search}%")
+            ->orWhere('m_pengelola_wisata.name', 'like', "%{$search}%");
         });
       })
+      ->when($request->has('sort') && $request->has('direction'), function ($query) use ($request) {
+        $direction = $request->direction === 'desc' ? 'desc' : 'asc';
+        $sort = $request->sort;
+
+        switch ($sort) {
+          case 'month':
+            return $query->orderBy('realisasi_pnbp.month', $direction);
+          case 'pengelola':
+            return $query->orderBy('m_pengelola_wisata.name', $direction);
+          case 'forest_product':
+            return $query->orderBy('realisasi_pnbp.types_of_forest_products', $direction);
+          case 'target':
+            return $query->orderBy('realisasi_pnbp.pnbp_target', $direction);
+          case 'realization':
+            return $query->orderBy('realisasi_pnbp.pnbp_realization', $direction);
+          case 'status':
+            return $query->orderBy('realisasi_pnbp.status', $direction);
+          default:
+            return $query->orderBy('realisasi_pnbp.created_at', 'desc');
+        }
+      }, function ($query) {
+        return $query->latest('realisasi_pnbp.created_at');
+      })
       ->with(['creator', 'regency', 'pengelola_wisata'])
-      ->latest('realisasi_pnbp.created_at')
       ->paginate(10)
       ->withQueryString();
 
@@ -69,6 +94,8 @@ class RealisasiPnbpController extends Controller
       'available_years' => $availableYears,
       'filters' => [
         'year' => $selectedYear,
+        'sort' => $request->sort,
+        'direction' => $request->direction,
       ],
     ]);
   }
@@ -209,5 +236,63 @@ class RealisasiPnbpController extends Controller
     }
 
     return redirect()->back()->with('success', 'Data berhasil diimport.');
+  }
+
+  public function bulkDestroy(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:realisasi_pnbp,id',
+    ]);
+
+    RealisasiPnbp::whereIn('id', $request->ids)->delete();
+
+    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
+  }
+
+  public function bulkSubmit(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:realisasi_pnbp,id',
+    ]);
+
+    // Only submit drafts or rejected items
+    RealisasiPnbp::whereIn('id', $request->ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return redirect()->back()->with('success', count($request->ids) . ' laporan berhasil diajukan.');
+  }
+
+  public function bulkApprove(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:realisasi_pnbp,id',
+    ]);
+
+    $user = auth()->user();
+    $ids = $request->ids;
+
+    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
+      RealisasiPnbp::whereIn('id', $ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    }
+
+    if ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      RealisasiPnbp::whereIn('id', $ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    return redirect()->back()->with('success', count($ids) . ' laporan berhasil disetujui.');
   }
 }

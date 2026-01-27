@@ -19,12 +19,14 @@ export default function Pagination({ links }) {
             key={key}
             href={link.url}
             className={`mb-1 mr-1 px-3 py-2 text-xs font-bold border rounded-lg transition-colors focus:shadow-outline ${link.active
-                ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-800'
+              ? 'bg-emerald-600 text-white border-emerald-600'
+              : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-800'
               }`}
-            dangerouslySetInnerHTML={{ __html: link.label }}
             preserveScroll
-          />
+            preserveState
+          >
+            <span dangerouslySetInnerHTML={{ __html: link.label }} />
+          </Link>
         )
       ))}
     </div>

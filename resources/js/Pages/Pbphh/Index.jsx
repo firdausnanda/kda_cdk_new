@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { debounce } from 'lodash';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -10,7 +11,9 @@ import SecondaryButton from '@/Components/SecondaryButton';
 const MySwal = withReactContent(Swal);
 import Pagination from '@/Components/Pagination';
 
-export default function Index({ auth, datas, stats }) {
+export default function Index({ auth, datas, stats, filters = {} }) {
+  // Use filters prop safely with default empty object
+  const currentFilters = filters || {};
   const { flash } = usePage().props;
 
   const isAdmin = auth.user.roles.includes('admin');
@@ -62,6 +65,127 @@ export default function Index({ auth, datas, stats }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Memproses...');
 
+  /* Selection State */
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  /* Handlers */
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allIds = datas.data.map(item => item.id);
+      setSelectedIds(allIds);
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelect = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(itemId => itemId !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleSort = (field) => {
+    const currentSort = currentFilters.sort;
+    const currentDirection = currentFilters.direction;
+
+    let newDirection = 'asc';
+    if (currentSort === field && currentDirection === 'asc') {
+      newDirection = 'desc';
+    }
+
+    router.get(
+      route('pbphh.index'),
+      {
+        search: searchTerm,
+        sort: field,
+        direction: newDirection
+      },
+      {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true
+      }
+    );
+  };
+
+  const handleBulkAction = (action) => {
+    if (selectedIds.length === 0) return;
+
+    let title = '';
+    let routeName = '';
+    let confirmText = '';
+    let color = '#3085d6';
+
+    switch (action) {
+      case 'delete':
+        title = 'Hapus Data Terpilih?';
+        confirmText = 'Ya, Hapus!';
+        routeName = 'pbphh.bulk-delete';
+        color = '#d33';
+        break;
+      case 'submit':
+        title = 'Ajukan Data Terpilih?';
+        confirmText = 'Ya, Ajukan!';
+        routeName = 'pbphh.bulk-submit';
+        color = '#15803d';
+        break;
+      case 'approve':
+        title = 'Setujui Data Terpilih?';
+        confirmText = 'Ya, Setujui!';
+        routeName = 'pbphh.bulk-approve';
+        color = '#15803d';
+        break;
+      default:
+        return;
+    }
+
+    MySwal.fire({
+      title: title,
+      text: `${selectedIds.length} data terpilih akan diproses.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: color,
+      confirmButtonText: confirmText,
+      cancelButtonText: 'Batal',
+      borderRadius: '1.25rem',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setLoadingText('Memproses Aksi Massal...');
+        setIsLoading(true);
+        router.post(route(routeName), { ids: selectedIds }, {
+          preserveScroll: true,
+          onSuccess: () => {
+            setSelectedIds([]);
+            MySwal.fire({
+              title: 'Berhasil!',
+              text: 'Aksi massal berhasil dilakukan.',
+              icon: 'success',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          },
+          onFinish: () => setIsLoading(false)
+        });
+      }
+    });
+  };
+
+  const SortIcon = ({ field }) => {
+    if (currentFilters.sort !== field) return <div className="w-4 h-4 ml-1 opacity-20"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" /></svg></div>;
+
+    return (
+      <div className="w-4 h-4 ml-1 text-primary-600">
+        {currentFilters.direction === 'asc' ? (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" /></svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+        )}
+      </div>
+    );
+  };
+
   const handleImportSubmit = (e) => {
     e.preventDefault();
     if (!importFile) return;
@@ -81,7 +205,11 @@ export default function Index({ auth, datas, stats }) {
     debounce((value) => {
       router.get(
         route('pbphh.index'),
-        { search: value },
+        {
+          search: value,
+          sort: currentFilters.sort,
+          direction: currentFilters.direction
+        },
         {
           preserveState: true,
           replace: true,
@@ -380,21 +508,93 @@ export default function Index({ auth, datas, stats }) {
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
                   <tr>
-                    <th className="px-6 py-4 font-bold tracking-wider">Nama Industri</th>
-                    <th className="px-6 py-4 font-bold tracking-wider">Nomor Izin</th>
-                    <th className="px-6 py-4 font-bold tracking-wider">Lokasi</th>
-                    <th className="px-6 py-4 font-bold tracking-wider">Nilai Investasi</th>
-                    <th className="px-6 py-4 font-bold tracking-wider">Tenaga Kerja</th>
-                    <th className="px-6 py-4 font-bold tracking-wider">Kondisi</th>
+                    <th className="px-6 py-4 w-4">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-emerald-600 shadow-sm focus:ring-emerald-500"
+                        onChange={handleSelectAll}
+                        checked={datas.data.length > 0 && selectedIds.length === datas.data.length}
+                      />
+                    </th>
+                    <th
+                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                      onClick={() => handleSort('name')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Nama Industri
+                        <SortIcon field="name" />
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                      onClick={() => handleSort('number')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Nomor Izin
+                        <SortIcon field="number" />
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                      onClick={() => handleSort('location')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Lokasi
+                        <SortIcon field="location" />
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                      onClick={() => handleSort('investment')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Nilai Investasi
+                        <SortIcon field="investment" />
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                      onClick={() => handleSort('workers')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Tenaga Kerja
+                        <SortIcon field="workers" />
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                      onClick={() => handleSort('condition')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Kondisi
+                        <SortIcon field="condition" />
+                      </div>
+                    </th>
                     <th className="px-6 py-4 font-bold tracking-wider">Jenis Produksi</th>
-                    <th className="px-6 py-4 font-bold tracking-wider">Status</th>
+                    <th
+                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                      onClick={() => handleSort('status')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Status
+                        <SortIcon field="status" />
+                      </div>
+                    </th>
                     <th className="px-6 py-4 font-bold tracking-wider text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
                   {datas.data.length > 0 ? (
                     datas.data.map((item, index) => (
-                      <tr key={index} className="hover:bg-gray-50/50 transition-colors group">
+                      <tr key={index} className={`hover:bg-gray-50/50 transition-colors group ${selectedIds.includes(item.id) ? 'bg-emerald-50/50' : ''}`}>
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300 text-emerald-600 shadow-sm focus:ring-emerald-500"
+                            onChange={() => handleSelect(item.id)}
+                            checked={selectedIds.includes(item.id)}
+                          />
+                        </td>
                         <td className="px-6 py-4">
                           <div className="font-bold text-gray-900">{item.name}</div>
                           <div className="text-xs text-gray-400 mt-0.5">
@@ -521,6 +721,61 @@ export default function Index({ auth, datas, stats }) {
             </div>
             <Pagination links={datas.links} />
           </div>
+
+          {selectedIds.length > 0 && createPortal(
+            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999] flex items-center gap-4 animate-in slide-in-from-bottom-5 duration-300">
+              <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-lg">
+                <span className="font-bold text-gray-700">{selectedIds.length}</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase">Dipilih</span>
+              </div>
+              <div className="h-8 w-px bg-gray-200"></div>
+              <div className="flex items-center gap-2">
+                {(canEdit || isAdmin) && (
+                  <button
+                    onClick={() => handleBulkAction('submit')}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm shadow-blue-200"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Ajukan
+                  </button>
+                )}
+                {(canApprove || isAdmin) && (
+                  <button
+                    onClick={() => handleBulkAction('approve')}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm shadow-emerald-200"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Setujui
+                  </button>
+                )}
+                {(canDelete || isAdmin) && (
+                  <button
+                    onClick={() => handleBulkAction('delete')}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm shadow-red-200"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Hapus
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedIds([])}
+                className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                title="Batalkan Pilihan"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>,
+            document.body
+          )}
         </div>
       </AuthenticatedLayout>
 

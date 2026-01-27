@@ -26,6 +26,9 @@ class PenghijauanLingkunganController extends Controller
       $selectedYear = PenghijauanLingkungan::max('year') ?? date('Y');
     }
 
+    $sortField = $request->query('sort', 'created_at');
+    $sortDirection = $request->query('direction', 'desc');
+
     $datas = PenghijauanLingkungan::query()
       ->leftJoin('m_regencies', 'penghijauan_lingkungan.regency_id', '=', 'm_regencies.id')
       ->leftJoin('m_districts', 'penghijauan_lingkungan.district_id', '=', 'm_districts.id')
@@ -48,7 +51,20 @@ class PenghijauanLingkunganController extends Controller
         });
       })
       ->with(['creator', 'regency_rel', 'district_rel', 'village_rel'])
-      ->latest('penghijauan_lingkungan.created_at')
+      ->when($sortField, function ($query) use ($sortField, $sortDirection) {
+        $sortMap = [
+          'year' => 'penghijauan_lingkungan.year',
+          'month' => 'penghijauan_lingkungan.month',
+          'location' => 'm_villages.name',
+          'realization' => 'penghijauan_lingkungan.realization',
+          'fund_source' => 'penghijauan_lingkungan.fund_source',
+          'status' => 'penghijauan_lingkungan.status',
+          'created_at' => 'penghijauan_lingkungan.created_at',
+        ];
+
+        $dbColumn = $sortMap[$sortField] ?? 'penghijauan_lingkungan.created_at';
+        return $query->orderBy($dbColumn, $sortDirection);
+      })
       ->paginate(10)
       ->withQueryString();
 
@@ -67,7 +83,10 @@ class PenghijauanLingkunganController extends Controller
       'datas' => $datas,
       'stats' => $stats,
       'filters' => [
-        'year' => (int) $selectedYear
+        'year' => (int) $selectedYear,
+        'search' => $request->search,
+        'sort' => $sortField,
+        'direction' => $sortDirection
       ],
       'availableYears' => $availableYears,
       'sumberDana' => SumberDana::all()
@@ -246,5 +265,69 @@ class PenghijauanLingkunganController extends Controller
     }
 
     return redirect()->back()->with('success', 'Data berhasil diimport.');
+  }
+
+  /**
+   * Bulk delete records.
+   */
+  public function bulkDestroy(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:penghijauan_lingkungan,id',
+    ]);
+
+    PenghijauanLingkungan::whereIn('id', $request->ids)->delete();
+
+    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
+  }
+
+  /**
+   * Bulk submit records.
+   */
+  public function bulkSubmit(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:penghijauan_lingkungan,id',
+    ]);
+
+    $count = PenghijauanLingkungan::whereIn('id', $request->ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil diajukan.');
+  }
+
+  /**
+   * Bulk approve records.
+   */
+  public function bulkApprove(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:penghijauan_lingkungan,id',
+    ]);
+
+    $user = auth()->user();
+    $count = 0;
+
+    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
+      $count = PenghijauanLingkungan::whereIn('id', $request->ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      $count = PenghijauanLingkungan::whereIn('id', $request->ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil disetujui.');
   }
 }

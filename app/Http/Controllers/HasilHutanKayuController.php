@@ -28,6 +28,9 @@ class HasilHutanKayuController extends Controller
       $selectedYear = HasilHutanKayu::where('forest_type', $forestType)->max('year') ?? date('Y');
     }
 
+    $sortField = $request->query('sort', 'created_at');
+    $sortDirection = $request->query('direction', 'desc');
+
     $datas = HasilHutanKayu::query()
       ->leftJoin('m_regencies', 'hasil_hutan_kayu.regency_id', '=', 'm_regencies.id')
       ->leftJoin('m_districts', 'hasil_hutan_kayu.district_id', '=', 'm_districts.id')
@@ -51,7 +54,20 @@ class HasilHutanKayuController extends Controller
       })
 
       ->with(['creator', 'regency', 'district', 'kayu'])
-      ->latest('hasil_hutan_kayu.created_at')
+      ->when($sortField, function ($query) use ($sortField, $sortDirection) {
+        $sortMap = [
+          'month' => 'hasil_hutan_kayu.month', // Or combined with year if needed
+          'location' => 'm_districts.name', // Approximate, allows sorting by district name
+          'kayu' => 'm_kayu.name',
+          'target' => 'hasil_hutan_kayu.annual_volume_target',
+          'realization' => 'hasil_hutan_kayu.annual_volume_realization',
+          'status' => 'hasil_hutan_kayu.status',
+          'created_at' => 'hasil_hutan_kayu.created_at',
+        ];
+
+        $dbColumn = $sortMap[$sortField] ?? 'hasil_hutan_kayu.created_at';
+        return $query->orderBy($dbColumn, $sortDirection);
+      })
       ->paginate(10)
 
       ->withQueryString();
@@ -91,6 +107,9 @@ class HasilHutanKayuController extends Controller
       'available_years' => $availableYears,
       'filters' => [
         'year' => $selectedYear,
+        'search' => $request->search,
+        'sort' => $sortField,
+        'direction' => $sortDirection
       ],
     ]);
   }
@@ -241,5 +260,69 @@ class HasilHutanKayuController extends Controller
     }
 
     return redirect()->back()->with('success', 'Data berhasil diimport.');
+  }
+
+  /**
+   * Bulk delete records.
+   */
+  public function bulkDestroy(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:hasil_hutan_kayu,id',
+    ]);
+
+    HasilHutanKayu::whereIn('id', $request->ids)->delete();
+
+    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
+  }
+
+  /**
+   * Bulk submit records.
+   */
+  public function bulkSubmit(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:hasil_hutan_kayu,id',
+    ]);
+
+    $count = HasilHutanKayu::whereIn('id', $request->ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil diajukan.');
+  }
+
+  /**
+   * Bulk approve records.
+   */
+  public function bulkApprove(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:hasil_hutan_kayu,id',
+    ]);
+
+    $user = auth()->user();
+    $count = 0;
+
+    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
+      $count = HasilHutanKayu::whereIn('id', $request->ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      $count = HasilHutanKayu::whereIn('id', $request->ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil disetujui.');
   }
 }

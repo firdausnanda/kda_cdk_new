@@ -26,6 +26,9 @@ class ReboisasiPsController extends Controller
       $selectedYear = ReboisasiPS::max('year') ?? date('Y');
     }
 
+    $sortField = $request->query('sort', 'created_at');
+    $sortDirection = $request->query('direction', 'desc');
+
     $datas = ReboisasiPS::query()
       ->leftJoin('m_regencies', 'reboisasi_ps.regency_id', '=', 'm_regencies.id')
       ->leftJoin('m_districts', 'reboisasi_ps.district_id', '=', 'm_districts.id')
@@ -48,7 +51,20 @@ class ReboisasiPsController extends Controller
         });
       })
       ->with(['creator', 'regency_rel', 'district_rel', 'village_rel'])
-      ->latest('reboisasi_ps.created_at')
+      ->when($sortField, function ($query) use ($sortField, $sortDirection) {
+        $sortMap = [
+          'month' => 'reboisasi_ps.month',
+          'location' => 'm_villages.name',
+          'realization' => 'reboisasi_ps.realization',
+          'target' => 'reboisasi_ps.target_annual',
+          'fund_source' => 'reboisasi_ps.fund_source',
+          'status' => 'reboisasi_ps.status',
+          'created_at' => 'reboisasi_ps.created_at',
+        ];
+
+        $dbColumn = $sortMap[$sortField] ?? 'reboisasi_ps.created_at';
+        return $query->orderBy($dbColumn, $sortDirection);
+      })
       ->paginate(10)
       ->withQueryString();
 
@@ -67,7 +83,10 @@ class ReboisasiPsController extends Controller
       'datas' => $datas,
       'stats' => $stats,
       'filters' => [
-        'year' => (int) $selectedYear
+        'year' => (int) $selectedYear,
+        'search' => $request->search,
+        'sort' => $sortField,
+        'direction' => $sortDirection
       ],
       'availableYears' => $availableYears,
       'sumberDana' => SumberDana::all()
@@ -239,5 +258,69 @@ class ReboisasiPsController extends Controller
       return redirect()->back()->with('import_errors', $this->mapImportFailures($import->failures()));
     }
     return redirect()->back()->with('success', 'Data berhasil diimport.');
+  }
+
+  /**
+   * Bulk delete records.
+   */
+  public function bulkDestroy(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:reboisasi_ps,id',
+    ]);
+
+    ReboisasiPS::whereIn('id', $request->ids)->delete();
+
+    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
+  }
+
+  /**
+   * Bulk submit records.
+   */
+  public function bulkSubmit(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:reboisasi_ps,id',
+    ]);
+
+    $count = ReboisasiPS::whereIn('id', $request->ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil diajukan.');
+  }
+
+  /**
+   * Bulk approve records.
+   */
+  public function bulkApprove(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:reboisasi_ps,id',
+    ]);
+
+    $user = auth()->user();
+    $count = 0;
+
+    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
+      $count = ReboisasiPS::whereIn('id', $request->ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      $count = ReboisasiPS::whereIn('id', $request->ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil disetujui.');
   }
 }

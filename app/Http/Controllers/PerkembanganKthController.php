@@ -26,6 +26,9 @@ class PerkembanganKthController extends Controller
       $selectedYear = PerkembanganKth::max('year') ?? date('Y');
     }
 
+    $sort = $request->query('sort');
+    $direction = $request->query('direction', 'asc');
+
     $datas = PerkembanganKth::query()
       ->leftJoin('m_regencies', 'perkembangan_kth.regency_id', '=', 'm_regencies.id')
       ->leftJoin('m_districts', 'perkembangan_kth.district_id', '=', 'm_districts.id')
@@ -48,8 +51,28 @@ class PerkembanganKthController extends Controller
             ->orWhere('m_regencies.name', 'like', "%{$search}%");
         });
       })
+      ->when($sort, function ($query, $sort) use ($direction) {
+        if ($sort === 'location') {
+          $query->orderBy('m_districts.name', $direction);
+        } elseif ($sort === 'nama_kth') {
+          $query->orderBy('perkembangan_kth.nama_kth', $direction);
+        } elseif ($sort === 'nomor_register') {
+          $query->orderBy('perkembangan_kth.nomor_register', $direction);
+        } elseif ($sort === 'kelas') {
+          $query->orderBy('perkembangan_kth.kelas_kelembagaan', $direction);
+        } elseif ($sort === 'anggota') {
+          $query->orderBy('perkembangan_kth.jumlah_anggota', $direction);
+        } elseif ($sort === 'luas') {
+          $query->orderBy('perkembangan_kth.luas_kelola', $direction);
+        } elseif ($sort === 'status') {
+          $query->orderBy('perkembangan_kth.status', $direction);
+        } else {
+          $query->orderBy('perkembangan_kth.created_at', 'desc');
+        }
+      }, function ($query) {
+        $query->orderBy('perkembangan_kth.created_at', 'desc');
+      })
       ->with(['creator', 'regency_rel', 'district_rel', 'village_rel'])
-      ->latest('perkembangan_kth.created_at')
       ->paginate(10)
       ->withQueryString();
 
@@ -75,9 +98,69 @@ class PerkembanganKthController extends Controller
       'filters' => [
         'year' => (int) $selectedYear,
         'search' => $request->search,
+        'sort' => $sort,
+        'direction' => $direction,
       ],
       'availableYears' => $availableYears,
     ]);
+  }
+
+  public function bulkDestroy(Request $request)
+  {
+    $ids = $request->ids;
+    if (empty($ids)) {
+      return back()->with('error', 'Tidak ada data yang dipilih.');
+    }
+
+    $count = PerkembanganKth::whereIn('id', $ids)->delete();
+    return back()->with('success', "$count data berhasil dihapus.");
+  }
+
+  public function bulkSubmit(Request $request)
+  {
+    $ids = $request->ids;
+    if (empty($ids)) {
+      return back()->with('error', 'Tidak ada data yang dipilih.');
+    }
+
+    $count = PerkembanganKth::whereIn('id', $ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return back()->with('success', "$count data berhasil disubmit ke Kasi.");
+  }
+
+  public function bulkApprove(Request $request)
+  {
+    $ids = $request->ids;
+    if (empty($ids)) {
+      return back()->with('error', 'Tidak ada data yang dipilih.');
+    }
+
+    $user = auth()->user();
+    $updatedCount = 0;
+
+    if ($user->hasRole('kasi')) {
+      $updatedCount = PerkembanganKth::whereIn('id', $ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      $updatedCount = PerkembanganKth::whereIn('id', $ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    if ($updatedCount > 0) {
+      return back()->with('success', "$updatedCount data berhasil disetujui.");
+    }
+
+    return back()->with('error', 'Tidak ada data yang dapat disetujui sesuai status dan hak akses.');
   }
 
   /**

@@ -23,7 +23,10 @@ class KupsController extends Controller
 
   public function index(Request $request)
   {
-    $query = Kups::with(['province', 'regency', 'district']);
+    $query = Kups::query()
+      ->select('kups.*')
+      ->with(['province', 'regency', 'district'])
+      ->leftJoin('m_districts', 'kups.district_id', '=', 'm_districts.id');
 
     // Filter by Year (if applicable, though KUPS table doesn't have year column strictly, sticking to standard filters if needed or just basic)
     // Ignoring year filter for now as schema doesn't have it, but standard filters might be requested separately.
@@ -31,8 +34,9 @@ class KupsController extends Controller
     if ($request->has('search')) {
       $search = $request->search;
       $query->where(function ($q) use ($search) {
-        $q->where('commodity', 'like', "%{$search}%")
-          ->orWhere('category', 'like', "%{$search}%")
+        $q->where('kups.commodity', 'like', "%{$search}%")
+          ->orWhere('kups.category', 'like', "%{$search}%")
+          ->orWhere('kups.nama_kups', 'like', "%{$search}%")
           ->orWhereHas('regency', function ($q2) use ($search) {
             $q2->where('name', 'like', "%{$search}%");
           })
@@ -42,7 +46,28 @@ class KupsController extends Controller
       });
     }
 
-    $kups = $query->latest()->paginate(10)->withQueryString();
+    if ($request->has('sort') && $request->has('direction')) {
+      $sort = $request->sort;
+      $direction = $request->direction;
+
+      if ($sort === 'location') {
+        $query->orderBy('m_districts.name', $direction);
+      } elseif ($sort === 'nama_kups') {
+        $query->orderBy('kups.nama_kups', $direction);
+      } elseif ($sort === 'category') {
+        $query->orderBy('kups.category', $direction);
+      } elseif ($sort === 'commodity') {
+        $query->orderBy('kups.commodity', $direction);
+      } elseif ($sort === 'status') {
+        $query->orderBy('kups.status', $direction);
+      } else {
+        $query->orderBy('kups.' . $sort, $direction);
+      }
+    } else {
+      $query->latest('kups.created_at');
+    }
+
+    $kups = $query->paginate(10)->withQueryString();
 
     // Calculate Stats
     $stats = [
@@ -54,7 +79,7 @@ class KupsController extends Controller
     return Inertia::render('Kups/Index', [
       'kups' => $kups,
       'stats' => $stats,
-      'filters' => $request->only(['search']),
+      'filters' => $request->only(['search', 'sort', 'direction']),
     ]);
   }
 
@@ -118,6 +143,17 @@ class KupsController extends Controller
     return redirect()->route('kups.index')->with('success', 'Data KUPS berhasil dihapus.');
   }
 
+  public function bulkDestroy(Request $request)
+  {
+    $ids = $request->ids;
+    if (empty($ids)) {
+      return back()->with('error', 'Tidak ada data yang dipilih.');
+    }
+
+    $count = Kups::whereIn('id', $ids)->delete();
+    return back()->with('success', "$count data berhasil dihapus.");
+  }
+
   public function submit($id)
   {
     $kup = Kups::findOrFail($id);
@@ -126,6 +162,20 @@ class KupsController extends Controller
       return back()->with('success', 'Laporan berhasil disubmit ke Kasi.');
     }
     return back()->with('error', 'Status laporan tidak valid untuk submit.');
+  }
+
+  public function bulkSubmit(Request $request)
+  {
+    $ids = $request->ids;
+    if (empty($ids)) {
+      return back()->with('error', 'Tidak ada data yang dipilih.');
+    }
+
+    $count = Kups::whereIn('id', $ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return back()->with('success', "$count data berhasil disubmit ke Kasi.");
   }
 
   public function approve($id)
@@ -150,6 +200,44 @@ class KupsController extends Controller
     }
 
     return back()->with('error', 'Anda tidak memiliki akses untuk menyetujui laporan ini.');
+  }
+
+  public function bulkApprove(Request $request)
+  {
+    $ids = $request->ids;
+    if (empty($ids)) {
+      return back()->with('error', 'Tidak ada data yang dipilih.');
+    }
+
+    $user = Auth::user();
+    $updatedCount = 0;
+
+    if ($user->hasRole('kasi')) {
+      $updatedCount = Kups::whereIn('id', $ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    } elseif ($user->hasRole('cdk') || $user->hasRole('admin')) { // Admin can finalize waiting_cdk items too? Assuming logic similar to approve
+      // Note: In approve(), admin works on waiting_cdk to final.
+      // Admin usually can approve anything or step in.
+      // Based on approve() logic:
+      // if waiting_cdk -> final (Admin/CDK)
+
+      $updatedCount = Kups::whereIn('id', $ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    if ($updatedCount > 0) {
+      return back()->with('success', "$updatedCount data berhasil disetujui.");
+    }
+
+    return back()->with('error', 'Tidak ada data yang dapat disetujui sesuai status dan hak akses.');
   }
 
   public function reject(Request $request, $id)

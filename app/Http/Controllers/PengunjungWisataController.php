@@ -25,6 +25,9 @@ class PengunjungWisataController extends Controller
       $selectedYear = PengunjungWisata::max('year') ?? date('Y');
     }
 
+    $sortField = $request->query('sort', 'created_at');
+    $sortDirection = $request->query('direction', 'desc');
+
     $datas = PengunjungWisata::query()
       ->with(['pengelolaWisata', 'creator'])
       ->when($selectedYear, function ($query, $year) {
@@ -35,7 +38,25 @@ class PengunjungWisataController extends Controller
           $q->where('name', 'like', "%{$search}%");
         });
       })
-      ->latest('created_at')
+      ->when($sortField, function ($query) use ($sortField, $sortDirection) {
+        $sortMap = [
+          'month' => 'month',
+          'pengelola' => 'pengelolaWisata.name', // Relation sorting needs careful handling or join
+          'visitors' => 'number_of_visitors',
+          'income' => 'gross_income',
+          'status' => 'status',
+          'created_at' => 'created_at',
+        ];
+
+        if ($sortField === 'pengelola') {
+          return $query->join('m_pengelola_wisata', 'pengunjung_wisata.id_pengelola_wisata', '=', 'm_pengelola_wisata.id')
+            ->orderBy('m_pengelola_wisata.name', $sortDirection)
+            ->select('pengunjung_wisata.*'); // Avoid column collision
+        }
+
+        $dbColumn = $sortMap[$sortField] ?? 'created_at';
+        return $query->orderBy($dbColumn, $sortDirection);
+      })
       ->paginate(10)
       ->withQueryString();
 
@@ -54,7 +75,10 @@ class PengunjungWisataController extends Controller
       'datas' => $datas,
       'stats' => $stats,
       'filters' => [
-        'year' => (int) $selectedYear
+        'year' => (int) $selectedYear,
+        'search' => $request->search,
+        'sort' => $sortField,
+        'direction' => $sortDirection
       ],
       'availableYears' => $availableYears,
     ]);
@@ -194,5 +218,69 @@ class PengunjungWisataController extends Controller
     }
 
     return redirect()->back()->with('success', 'Data berhasil diimport.');
+  }
+
+  /**
+   * Bulk delete records.
+   */
+  public function bulkDestroy(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:pengunjung_wisata,id', // Adjusted table name if needed, assuming standard naming
+    ]);
+
+    PengunjungWisata::whereIn('id', $request->ids)->delete();
+
+    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
+  }
+
+  /**
+   * Bulk submit records.
+   */
+  public function bulkSubmit(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:pengunjung_wisata,id',
+    ]);
+
+    $count = PengunjungWisata::whereIn('id', $request->ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil diajukan.');
+  }
+
+  /**
+   * Bulk approve records.
+   */
+  public function bulkApprove(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:pengunjung_wisata,id',
+    ]);
+
+    $user = auth()->user();
+    $count = 0;
+
+    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
+      $count = PengunjungWisata::whereIn('id', $request->ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      $count = PengunjungWisata::whereIn('id', $request->ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil disetujui.');
   }
 }

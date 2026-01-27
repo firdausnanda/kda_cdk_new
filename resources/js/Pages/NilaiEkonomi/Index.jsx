@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { debounce } from 'lodash';
@@ -10,12 +11,106 @@ import StatusBadge from '@/Components/StatusBadge';
 
 const MySwal = withReactContent(Swal);
 
-export default function Index({ auth, data, filters, stats }) {
+export default function Index({ auth, data, filters, stats, availableYears }) {
   const { flash } = usePage().props;
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Memproses...');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [params, setParams] = useState(filters || {});
+
+  const SortIcon = ({ field }) => {
+    return (
+      <div className="w-4 h-4 ml-1 text-gray-500">
+        {params.sort === field ? (
+          params.direction === 'asc' ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          )
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
+        )}
+      </div>
+    );
+  };
+
+  const handleSort = (field) => {
+    let direction = 'asc';
+    if (params.sort === field && params.direction === 'asc') {
+      direction = 'desc';
+    }
+    setParams({ ...params, sort: field, direction });
+
+    router.get(route('nilai-ekonomi.index'), { ...params, sort: field, direction }, {
+      preserveState: true,
+      preserveScroll: true
+    });
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(data.data.map((item) => item.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelect = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter((itemId) => itemId !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleBulkAction = (action) => {
+    if (selectedIds.length === 0) return;
+
+    let title, text, routeName;
+
+    if (action === 'delete') {
+      title = 'Hapus data terpilih?';
+      text = 'Data yang dihapus tidak dapat dikembalikan!';
+      routeName = 'nilai-ekonomi.bulk-delete';
+    } else if (action === 'submit') {
+      title = 'Submit data terpilih?';
+      text = 'Data akan dikirim ke Kasi.';
+      routeName = 'nilai-ekonomi.bulk-submit';
+    } else if (action === 'approve') {
+      title = 'Setujui data terpilih?';
+      text = 'Data akan disetujui.';
+      routeName = 'nilai-ekonomi.bulk-approve';
+    }
+
+    MySwal.fire({
+      title: title,
+      text: text,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: action === 'delete' ? '#d33' : '#15803d',
+      confirmButtonText: 'Ya, Lanjutkan!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setLoadingText('Memproses Bulk Action...');
+        setIsLoading(true);
+        router.post(route(routeName), { ids: selectedIds }, {
+          onFinish: () => {
+            setIsLoading(false);
+            setSelectedIds([]);
+          }
+        });
+      }
+    });
+  };
 
   useEffect(() => {
     if (flash?.success) {
@@ -37,7 +132,7 @@ export default function Index({ auth, data, filters, stats }) {
       setIsSearching(true);
       router.get(
         route('nilai-ekonomi.index'),
-        { search: query },
+        { ...params, search: query },
         {
           preserveState: true,
           preserveScroll: true,
@@ -45,12 +140,13 @@ export default function Index({ auth, data, filters, stats }) {
         }
       );
     }, 500),
-    []
+    [params]
   );
 
   const handleSearch = (e) => {
     const query = e.target.value;
     setSearchTerm(query);
+    setParams({ ...params, search: query });
     debouncedSearch(query);
   };
 
@@ -307,20 +403,61 @@ export default function Index({ auth, data, filters, stats }) {
             <table className="w-full text-left text-sm text-gray-500">
               <thead className="bg-gray-50/50 text-gray-700 uppercase tracking-wider text-[11px] font-bold">
                 <tr>
-                  <th className="px-6 py-4">Nama Kelompok</th>
+                  <th scope="col" className="px-6 py-4 w-12 text-center">
+                    <div className="flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 transition duration-150 ease-in-out cursor-pointer"
+                        checked={selectedIds.length === data.data.length && data.data.length > 0}
+                        onChange={handleSelectAll}
+                      />
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('nama_kelompok')}>
+                    <div className="flex items-center gap-1">
+                      Nama Kelompok
+                      <SortIcon field="nama_kelompok" />
+                    </div>
+                  </th>
                   <th className="px-6 py-4">Komoditas</th>
                   <th className="px-6 py-4 text-center">Volume</th>
-                  <th className="px-6 py-4 text-right">Nilai Transaksi</th>
+                  <th className="px-6 py-4 text-right cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('total_transaction_value')}>
+                    <div className="flex items-center justify-end gap-1">
+                      Nilai Transaksi
+                      <SortIcon field="total_transaction_value" />
+                    </div>
+                  </th>
                   <th className="px-6 py-4 text-center">Periode</th>
-                  <th className="px-6 py-4">Lokasi</th>
-                  <th className="px-6 py-4 text-center">Status</th>
+                  <th className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('location')}>
+                    <div className="flex items-center gap-1">
+                      Lokasi
+                      <SortIcon field="location" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-center cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('status')}>
+                    <div className="flex items-center justify-center gap-1">
+                      Status
+                      <SortIcon field="status" />
+                    </div>
+                  </th>
                   <th className="px-6 py-4 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.data.length > 0 ? (
                   data.data.map((item) => (
-                    <tr key={item.id} className="hover:bg-primary-50/30 transition-colors group">
+                    <tr key={item.id} className={`hover:bg-primary-50/30 transition-colors group ${selectedIds.includes(item.id) ? 'bg-blue-50/50' : ''}`}>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 transition duration-150 ease-in-out cursor-pointer"
+                            checked={selectedIds.includes(item.id)}
+                            onChange={() => handleSelect(item.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </td>
                       <td className="px-6 py-4 font-bold text-gray-900">{item.nama_kelompok}</td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
@@ -464,6 +601,53 @@ export default function Index({ auth, data, filters, stats }) {
           </div>
         </div>
       </div>
+      {
+        selectedIds.length > 0 && createPortal(
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999] flex items-center gap-4 animate-in slide-in-from-bottom-5 duration-300">
+            <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-lg">
+              <span className="font-bold text-gray-700">{selectedIds.length}</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase">Dipilih</span>
+            </div>
+            <div className="h-8 w-px bg-gray-200"></div>
+            <div className="flex items-center gap-2">
+              {(canEdit || canCreate) && (
+                <button
+                  onClick={() => handleBulkAction('submit')}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm shadow-blue-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 9l3 3m0 0l-3 3m3-3H9" />
+                  </svg>
+                  Ajukan
+                </button>
+              )}
+              {(canApprove) && (
+                <button
+                  onClick={() => handleBulkAction('approve')}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm shadow-emerald-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Setujui
+                </button>
+              )}
+              {(canDelete) && (
+                <button
+                  onClick={() => handleBulkAction('delete')}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm shadow-red-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Hapus
+                </button>
+              )}
+            </div>
+          </div>,
+          document.body
+        )
+      }
     </AuthenticatedLayout>
   );
 }

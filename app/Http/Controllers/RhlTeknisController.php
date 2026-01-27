@@ -29,6 +29,9 @@ class RhlTeknisController extends Controller
       $selectedYear = RhlTeknis::max('year') ?? date('Y');
     }
 
+    $sortField = $request->query('sort', 'created_at');
+    $sortDirection = $request->query('direction', 'desc');
+
     $datas = RhlTeknis::query()
       ->leftJoin('m_regencies', 'rhl_teknis.regency_id', '=', 'm_regencies.id')
       ->leftJoin('m_districts', 'rhl_teknis.district_id', '=', 'm_districts.id')
@@ -54,7 +57,19 @@ class RhlTeknisController extends Controller
         });
       })
       ->with(['creator', 'details.bangunan_kta'])
-      ->latest()
+      ->when($sortField, function ($query) use ($sortField, $sortDirection) {
+        $sortMap = [
+          'period' => 'rhl_teknis.month',
+          'location' => 'm_villages.name',
+          'target' => 'rhl_teknis.target_annual',
+          'fund_source' => 'rhl_teknis.fund_source',
+          'status' => 'rhl_teknis.status',
+          'created_at' => 'rhl_teknis.created_at',
+        ];
+
+        $dbColumn = $sortMap[$sortField] ?? 'rhl_teknis.created_at';
+        return $query->orderBy($dbColumn, $sortDirection);
+      })
       ->paginate(10)
       ->withQueryString();
 
@@ -78,7 +93,10 @@ class RhlTeknisController extends Controller
       'datas' => $datas,
       'stats' => $stats,
       'filters' => [
-        'year' => (int) $selectedYear
+        'year' => (int) $selectedYear,
+        'search' => $request->search,
+        'sort' => $sortField,
+        'direction' => $sortDirection
       ],
       'availableYears' => $availableYears,
       'sumberDana' => SumberDana::all()
@@ -253,5 +271,69 @@ class RhlTeknisController extends Controller
       return redirect()->back()->with('import_errors', $this->mapImportFailures($import->failures()));
     }
     return redirect()->back()->with('success', 'Data berhasil diimport.');
+  }
+
+  /**
+   * Bulk delete records.
+   */
+  public function bulkDestroy(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:rhl_teknis,id',
+    ]);
+
+    RhlTeknis::whereIn('id', $request->ids)->delete();
+
+    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
+  }
+
+  /**
+   * Bulk submit records.
+   */
+  public function bulkSubmit(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:rhl_teknis,id',
+    ]);
+
+    $count = RhlTeknis::whereIn('id', $request->ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil diajukan.');
+  }
+
+  /**
+   * Bulk approve records.
+   */
+  public function bulkApprove(Request $request)
+  {
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:rhl_teknis,id',
+    ]);
+
+    $user = auth()->user();
+    $count = 0;
+
+    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
+      $count = RhlTeknis::whereIn('id', $request->ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      $count = RhlTeknis::whereIn('id', $request->ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
+
+    return redirect()->back()->with('success', $count . ' laporan berhasil disetujui.');
   }
 }

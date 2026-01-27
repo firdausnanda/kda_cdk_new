@@ -28,6 +28,9 @@ class NilaiTransaksiEkonomiController extends Controller
       $selectedYear = NilaiTransaksiEkonomi::max('year') ?? date('Y');
     }
 
+    $sort = $request->query('sort');
+    $direction = $request->query('direction', 'asc');
+
     $datas = NilaiTransaksiEkonomi::query()
       ->leftJoin('m_regencies', 'nilai_transaksi_ekonomi.regency_id', '=', 'm_regencies.id')
       ->leftJoin('m_districts', 'nilai_transaksi_ekonomi.district_id', '=', 'm_districts.id')
@@ -48,8 +51,22 @@ class NilaiTransaksiEkonomiController extends Controller
             ->orWhereHas('details.commodity', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
         });
       })
+      ->when($sort, function ($query, $sort) use ($direction) {
+        if ($sort === 'location') {
+            $query->orderBy('m_districts.name', $direction);
+        } elseif ($sort === 'nama_kth') {
+            $query->orderBy('nilai_transaksi_ekonomi.nama_kth', $direction);
+        } elseif ($sort === 'nilai') {
+            $query->orderBy('nilai_transaksi_ekonomi.total_nilai_transaksi', $direction);
+        } elseif ($sort === 'status') {
+            $query->orderBy('nilai_transaksi_ekonomi.status', $direction);
+        } else {
+            $query->orderBy('nilai_transaksi_ekonomi.created_at', 'desc');
+        }
+      }, function ($query) {
+        $query->orderBy('nilai_transaksi_ekonomi.created_at', 'desc');
+      })
       ->with(['creator', 'regency_rel', 'district_rel', 'village_rel', 'details.commodity'])
-      ->latest('nilai_transaksi_ekonomi.created_at')
       ->paginate(10)
       ->withQueryString();
 
@@ -68,9 +85,72 @@ class NilaiTransaksiEkonomiController extends Controller
     return Inertia::render('NilaiTransaksiEkonomi/Index', [
       'datas' => $datas,
       'stats' => $stats,
-      'filters' => ['year' => (int) $selectedYear, 'search' => $request->search],
+      'filters' => [
+        'year' => (int) $selectedYear,
+        'search' => $request->search,
+        'sort' => $sort,
+        'direction' => $direction,
+      ],
       'availableYears' => $availableYears,
     ]);
+  }
+
+  public function bulkDestroy(Request $request)
+  {
+      $ids = $request->ids;
+      if (empty($ids)) {
+          return back()->with('error', 'Tidak ada data yang dipilih.');
+      }
+
+      $count = NilaiTransaksiEkonomi::whereIn('id', $ids)->delete();
+      return back()->with('success', "$count data berhasil dihapus.");
+  }
+
+  public function bulkSubmit(Request $request)
+  {
+      $ids = $request->ids;
+      if (empty($ids)) {
+          return back()->with('error', 'Tidak ada data yang dipilih.');
+      }
+
+      $count = NilaiTransaksiEkonomi::whereIn('id', $ids)
+          ->whereIn('status', ['draft', 'rejected'])
+          ->update(['status' => 'waiting_kasi']);
+
+      return back()->with('success', "$count data berhasil disubmit ke Kasi.");
+  }
+
+  public function bulkApprove(Request $request)
+  {
+      $ids = $request->ids;
+      if (empty($ids)) {
+          return back()->with('error', 'Tidak ada data yang dipilih.');
+      }
+
+      $user = auth()->user();
+      $updatedCount = 0;
+
+      if ($user->hasRole('kasi')) {
+          $updatedCount = NilaiTransaksiEkonomi::whereIn('id', $ids)
+              ->where('status', 'waiting_kasi')
+              ->update([
+                  'status' => 'waiting_cdk',
+                  'approved_by_kasi_at' => now(),
+              ]);
+      } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+          $updatedCount = NilaiTransaksiEkonomi::whereIn('id', $ids)
+              ->where('status', 'waiting_cdk')
+              ->update([
+                  'status' => 'final',
+                  'approved_by_cdk_at' => now(),
+              ]);
+      }
+
+      if ($updatedCount > 0) {
+          return back()->with('success', "$updatedCount data berhasil disetujui.");
+      }
+
+      return back()->with('error', 'Tidak ada data yang dapat disetujui sesuai status dan hak akses.');
   }
 
   public function create()
