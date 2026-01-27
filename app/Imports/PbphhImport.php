@@ -130,7 +130,7 @@ class PbphhImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
       'created_by' => Auth::id(),
     ]);
 
-    $pbphh->jenis_produksi()->sync($pivotData);
+    $pbphh->jenisProduksi()->sync($pivotData);
 
     return $pbphh;
   }
