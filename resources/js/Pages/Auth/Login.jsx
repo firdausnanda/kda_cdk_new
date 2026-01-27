@@ -128,7 +128,7 @@ export default function Login({ status, canResetPassword }) {
 
                     <a
                         href={route('socialite.redirect', 'google')}
-                        className="w-full flex items-center justify-center gap-3 py-3 border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                        className="w-full flex items-center justify-center gap-3 py-3 border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:shadow-lg hover:-translate-y-1 hover:border-gray-400 active:scale-95 active:shadow-sm transition-all duration-300 ease-in-out"
                     >
                         <svg className="h-5 w-5" viewBox="0 0 24 24">
                             <path
