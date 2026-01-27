@@ -110,7 +110,30 @@ class NilaiEkonomiController extends Controller
             return back()->with('error', 'Tidak ada data yang dipilih.');
         }
 
-        $count = NilaiEkonomi::whereIn('id', $ids)->delete();
+        $user = auth()->user();
+        $count = 0;
+
+        if ($user->hasAnyRole(['kasi', 'kacdk'])) {
+            return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
+        }
+
+        if ($user->hasAnyRole(['pk', 'peh', 'pelaksana'])) {
+            $count = NilaiEkonomi::whereIn('id', $request->ids)
+                ->where('status', 'draft')
+                ->delete();
+
+            if ($count === 0) {
+                return redirect()->back()->with('error', 'Hanya data dengan status draft yang dapat dihapus.');
+            }
+
+            return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
+        }
+
+        if ($user->hasRole('admin')) {
+            $count = NilaiEkonomi::whereIn('id', $request->ids)->delete();
+
+            return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
+        }
         return back()->with('success', "$count data berhasil dihapus.");
     }
 

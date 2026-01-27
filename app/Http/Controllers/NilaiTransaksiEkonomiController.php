@@ -48,20 +48,22 @@ class NilaiTransaksiEkonomiController extends Controller
             ->orWhere('m_villages.name', 'like', "%{$search}%")
             ->orWhere('m_districts.name', 'like', "%{$search}%")
             ->orWhere('m_regencies.name', 'like', "%{$search}%")
-            ->orWhereHas('details.commodity', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
+            ->orWhereHas('details.commodity', function ($q2) use ($search) {
+              $q2->where('name', 'like', "%{$search}%");
+            });
         });
       })
       ->when($sort, function ($query, $sort) use ($direction) {
         if ($sort === 'location') {
-            $query->orderBy('m_districts.name', $direction);
+          $query->orderBy('m_districts.name', $direction);
         } elseif ($sort === 'nama_kth') {
-            $query->orderBy('nilai_transaksi_ekonomi.nama_kth', $direction);
+          $query->orderBy('nilai_transaksi_ekonomi.nama_kth', $direction);
         } elseif ($sort === 'nilai') {
-            $query->orderBy('nilai_transaksi_ekonomi.total_nilai_transaksi', $direction);
+          $query->orderBy('nilai_transaksi_ekonomi.total_nilai_transaksi', $direction);
         } elseif ($sort === 'status') {
-            $query->orderBy('nilai_transaksi_ekonomi.status', $direction);
+          $query->orderBy('nilai_transaksi_ekonomi.status', $direction);
         } else {
-            $query->orderBy('nilai_transaksi_ekonomi.created_at', 'desc');
+          $query->orderBy('nilai_transaksi_ekonomi.created_at', 'desc');
         }
       }, function ($query) {
         $query->orderBy('nilai_transaksi_ekonomi.created_at', 'desc');
@@ -97,60 +99,82 @@ class NilaiTransaksiEkonomiController extends Controller
 
   public function bulkDestroy(Request $request)
   {
-      $ids = $request->ids;
-      if (empty($ids)) {
-          return back()->with('error', 'Tidak ada data yang dipilih.');
+    $ids = $request->ids;
+    if (empty($ids)) {
+      return back()->with('error', 'Tidak ada data yang dipilih.');
+    }
+    $user = auth()->user();
+    $count = 0;
+
+    if ($user->hasAnyRole(['kasi', 'kacdk'])) {
+      return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
+    }
+
+    if ($user->hasAnyRole(['pk', 'peh', 'pelaksana'])) {
+      $count = NilaiTransaksiEkonomi::whereIn('id', $request->ids)
+        ->where('status', 'draft')
+        ->delete();
+
+      if ($count === 0) {
+        return redirect()->back()->with('error', 'Hanya data dengan status draft yang dapat dihapus.');
       }
 
-      $count = NilaiTransaksiEkonomi::whereIn('id', $ids)->delete();
-      return back()->with('success', "$count data berhasil dihapus.");
+      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
+    }
+
+    if ($user->hasRole('admin')) {
+      $count = NilaiTransaksiEkonomi::whereIn('id', $request->ids)->delete();
+
+      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
+    }
+    return back()->with('success', "$count data berhasil dihapus.");
   }
 
   public function bulkSubmit(Request $request)
   {
-      $ids = $request->ids;
-      if (empty($ids)) {
-          return back()->with('error', 'Tidak ada data yang dipilih.');
-      }
+    $ids = $request->ids;
+    if (empty($ids)) {
+      return back()->with('error', 'Tidak ada data yang dipilih.');
+    }
 
-      $count = NilaiTransaksiEkonomi::whereIn('id', $ids)
-          ->whereIn('status', ['draft', 'rejected'])
-          ->update(['status' => 'waiting_kasi']);
+    $count = NilaiTransaksiEkonomi::whereIn('id', $ids)
+      ->whereIn('status', ['draft', 'rejected'])
+      ->update(['status' => 'waiting_kasi']);
 
-      return back()->with('success', "$count data berhasil disubmit ke Kasi.");
+    return back()->with('success', "$count data berhasil disubmit ke Kasi.");
   }
 
   public function bulkApprove(Request $request)
   {
-      $ids = $request->ids;
-      if (empty($ids)) {
-          return back()->with('error', 'Tidak ada data yang dipilih.');
-      }
+    $ids = $request->ids;
+    if (empty($ids)) {
+      return back()->with('error', 'Tidak ada data yang dipilih.');
+    }
 
-      $user = auth()->user();
-      $updatedCount = 0;
+    $user = auth()->user();
+    $updatedCount = 0;
 
-      if ($user->hasRole('kasi')) {
-          $updatedCount = NilaiTransaksiEkonomi::whereIn('id', $ids)
-              ->where('status', 'waiting_kasi')
-              ->update([
-                  'status' => 'waiting_cdk',
-                  'approved_by_kasi_at' => now(),
-              ]);
-      } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-          $updatedCount = NilaiTransaksiEkonomi::whereIn('id', $ids)
-              ->where('status', 'waiting_cdk')
-              ->update([
-                  'status' => 'final',
-                  'approved_by_cdk_at' => now(),
-              ]);
-      }
+    if ($user->hasRole('kasi')) {
+      $updatedCount = NilaiTransaksiEkonomi::whereIn('id', $ids)
+        ->where('status', 'waiting_kasi')
+        ->update([
+          'status' => 'waiting_cdk',
+          'approved_by_kasi_at' => now(),
+        ]);
+    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
+      $updatedCount = NilaiTransaksiEkonomi::whereIn('id', $ids)
+        ->where('status', 'waiting_cdk')
+        ->update([
+          'status' => 'final',
+          'approved_by_cdk_at' => now(),
+        ]);
+    }
 
-      if ($updatedCount > 0) {
-          return back()->with('success', "$updatedCount data berhasil disetujui.");
-      }
+    if ($updatedCount > 0) {
+      return back()->with('success', "$updatedCount data berhasil disetujui.");
+    }
 
-      return back()->with('error', 'Tidak ada data yang dapat disetujui sesuai status dan hak akses.');
+    return back()->with('error', 'Tidak ada data yang dapat disetujui sesuai status dan hak akses.');
   }
 
   public function create()
