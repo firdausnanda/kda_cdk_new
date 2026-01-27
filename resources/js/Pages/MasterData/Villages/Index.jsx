@@ -256,8 +256,8 @@ export default function VillagesIndex({ auth, villages, districts, filters }) {
               <div className="mt-1">
                 <Select
                   id="district_id"
-                  options={districts.map(d => ({ value: d.id, label: d.name }))}
-                  value={districts.map(d => ({ value: d.id, label: d.name })).find(opt => opt.value === data.district_id) || null}
+                  options={districts.map(d => ({ value: d.id, label: `${d.regency?.name || ''} - ${d.name}` }))}
+                  value={districts.map(d => ({ value: d.id, label: `${d.regency?.name || ''} - ${d.name}` })).find(opt => opt.value === data.district_id) || null}
                   onChange={(option) => setData('district_id', option ? option.value : '')}
                   placeholder="Pilih Kecamatan"
                   classNamePrefix="react-select"
@@ -284,7 +284,7 @@ export default function VillagesIndex({ auth, villages, districts, filters }) {
                 type="text"
                 className="mt-1 block w-full"
                 value={data.name}
-                onChange={(e) => setData('name', e.target.value)}
+                onChange={(e) => setData('name', e.target.value.toUpperCase())}
                 placeholder="Contoh: WRINGIN ANOM"
               />
               <InputError message={errors.name} className="mt-2" />

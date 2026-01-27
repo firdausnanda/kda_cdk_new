@@ -19,7 +19,7 @@ class VillageController extends Controller
 
     $villages = $query->paginate(10)->withQueryString();
     // Similarly, districts list might be large.
-    $districts = Districts::all();
+    $districts = Districts::with('regency')->get();
 
     return Inertia::render('MasterData/Villages/Index', [
       'villages' => $villages,
@@ -36,7 +36,9 @@ class VillageController extends Controller
       'name' => 'required|string|max:255',
     ]);
 
-    Villages::create($request->all());
+    $data = $request->all();
+    $data['name'] = strtoupper($request->name);
+    Villages::create($data);
 
     return redirect()->route('villages.index')->with('success', 'Desa/Kelurahan berhasil ditambahkan.');
   }
@@ -48,7 +50,9 @@ class VillageController extends Controller
       'name' => 'required|string|max:255',
     ]);
 
-    $village->update($request->all());
+    $data = $request->all();
+    $data['name'] = strtoupper($request->name);
+    $village->update($data);
 
     return redirect()->route('villages.index')->with('success', 'Desa/Kelurahan berhasil diperbarui.');
   }
