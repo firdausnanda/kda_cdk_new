@@ -719,7 +719,16 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                 </tbody>
               </table>
             </div>
-            <Pagination links={datas.links} />
+            <div className="px-6 py-4 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+              {datas.total > 0 ? (
+                <div className="text-xs text-gray-500 font-medium">
+                  Menampilkan {datas.from || 0} sampai {datas.to || 0} dari {datas.total || 0} data
+                </div>
+              ) : (
+                <div></div>
+              )}
+              <Pagination links={datas.links} />
+            </div>
           </div>
 
           {selectedIds.length > 0 && createPortal(

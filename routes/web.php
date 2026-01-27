@@ -8,6 +8,7 @@ use App\Http\Controllers\RehabManggroveController;
 use App\Http\Controllers\RhlTeknisController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ReboisasiPsController;
+use App\Http\Middleware\CheckDashboardAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -33,12 +34,13 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
-
-// Public Dashboard Routes
-Route::get('/public/dashboard', [DashboardController::class, 'publicDashboard'])->name('public.dashboard');
-
 Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware(['verified', CheckDashboardAccess::class])
+        ->name('dashboard');
+
+    // Public Dashboard Routes (Accessible by all authed users)
+    Route::get('/public/dashboard', [DashboardController::class, 'publicDashboard'])->name('public.dashboard');
     // Dashboard Export
     Route::get('/dashboard/export-rehab-lahan', [DashboardController::class, 'exportRehabLahan'])->name('dashboard.export-rehab-lahan');
 

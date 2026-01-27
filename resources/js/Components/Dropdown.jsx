@@ -49,6 +49,8 @@ const Content = ({ align = 'right', width = '48', contentClasses = 'py-1 bg-whit
         widthClasses = 'w-56';
     } else if (width === '64') {
         widthClasses = 'w-64';
+    } else if (width === '80') {
+        widthClasses = 'w-80';
     }
 
     return (

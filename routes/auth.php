@@ -58,3 +58,12 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 });
+Route::middleware('guest')->group(function () {
+    Route::get('auth/{provider}', [App\Http\Controllers\Auth\SocialiteController::class, 'redirect'])
+        ->where('provider', 'google')
+        ->name('socialite.redirect');
+
+    Route::get('auth/{provider}/callback', [App\Http\Controllers\Auth\SocialiteController::class, 'callback'])
+        ->where('provider', 'google')
+        ->name('socialite.callback');
+});

@@ -26,8 +26,9 @@ export default function Authenticated({ user, header, children }) {
         pemberdayaan: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*') || route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*'),
         pemberdayaan_mobile: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*') || route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*'),
         kelembagaan_perhutanan_sosial: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*'),
-        kelembagaan_perhutanan_sosial: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*'),
+        kelembagaan_perhutanan_sosial_mobile: route().current('skps.*') || route().current('kups.*') || route().current('nilai-ekonomi.*'),
         kelembagaan_hutan_rakyat: route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*'),
+        kelembagaan_hutan_rakyat_mobile: route().current('perkembangan-kth.*') || route().current('nilai-transaksi-ekonomi.*'),
         data_master: route().current('provinces.*') || route().current('regencies.*') || route().current('districts.*') || route().current('villages.*') || route().current('bangunan-kta.*') || route().current('sumber-dana.*') || route().current('commodities.*') || route().current('bukan-kayu.*') || route().current('kayu.*') || route().current('jenis-produksi.*') || route().current('pengelola-wisata.*') || route().current('skema-perhutanan-sosial.*'),
         data_master_mobile: route().current('provinces.*') || route().current('regencies.*') || route().current('districts.*') || route().current('villages.*') || route().current('bangunan-kta.*') || route().current('sumber-dana.*') || route().current('commodities.*') || route().current('bukan-kayu.*') || route().current('kayu.*') || route().current('jenis-produksi.*') || route().current('pengelola-wisata.*') || route().current('skema-perhutanan-sosial.*')
     });
@@ -791,21 +792,70 @@ export default function Authenticated({ user, header, children }) {
                                 {openMenus['pemberdayaan_mobile'] && (
                                     <div className="ml-9 space-y-1 border-l border-white/10 pl-3 py-1">
                                         {[
-                                            { name: 'Perkembangan SK PS', route: route('skps.index'), pattern: 'skps.*' },
-                                            { name: 'Perkembangan KUPS', route: route('kups.index'), pattern: 'kups.*' },
-                                            { name: 'Nilai Ekonomi (NEKON)', route: route('nilai-ekonomi.index'), pattern: 'nilai-ekonomi.*' }
+                                            {
+                                                name: 'Kelembagaan Perhutanan Sosial',
+                                                key: 'kelembagaan_perhutanan_sosial_mobile',
+                                                children: [
+                                                    { name: 'Perkembangan SK PS', route: route('skps.index'), pattern: 'skps.*' },
+                                                    { name: 'Perkembangan KUPS', route: route('kups.index'), pattern: 'kups.*' },
+                                                    { name: 'Nilai Ekonomi (NEKON)', route: route('nilai-ekonomi.index'), pattern: 'nilai-ekonomi.*' }
+                                                ]
+                                            },
+                                            {
+                                                name: 'Kelembagaan Hutan Rakyat',
+                                                key: 'kelembagaan_hutan_rakyat_mobile',
+                                                children: [
+                                                    { name: 'Perkembangan KTH', route: route('perkembangan-kth.index'), pattern: 'perkembangan-kth.*' },
+                                                    { name: 'Nilai Transaksi Ekonomi', route: route('nilai-transaksi-ekonomi.index'), pattern: 'nilai-transaksi-ekonomi.*' }
+                                                ]
+                                            }
                                         ].map((item) => (
-                                            <Link
-                                                key={item.name}
-                                                href={item.route}
-                                                onClick={() => setShowingNavigationDropdown(false)}
-                                                className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
-                                                    ? 'text-white font-bold'
-                                                    : 'text-primary-300 hover:text-white'
-                                                    }`}
-                                            >
-                                                {item.name}
-                                            </Link>
+                                            <div key={item.name}>
+                                                {item.children ? (
+                                                    <div>
+                                                        <button
+                                                            onClick={() => toggleMenu(item.key)}
+                                                            className="flex w-full items-center py-2 text-[13px] font-medium text-primary-300 hover:text-white transition-colors"
+                                                        >
+                                                            <span className="flex-1 text-left">{item.name}</span>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 ml-2 transition-transform duration-200 ${openMenus[item.key] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </button>
+                                                        {openMenus[item.key] && (
+                                                            <div className="ml-3 space-y-1 border-l border-white/10 pl-3">
+                                                                {item.children.map((child) => {
+                                                                    const isActive = child.pattern ? route().current(child.pattern) : (child.route !== '#' && window.location.href === child.route);
+                                                                    return (
+                                                                        <Link
+                                                                            key={child.name}
+                                                                            href={child.route}
+                                                                            onClick={() => setShowingNavigationDropdown(false)}
+                                                                            className={`block py-1.5 text-xs transition-colors ${isActive
+                                                                                ? 'text-white font-bold'
+                                                                                : 'text-primary-400 hover:text-white'
+                                                                                }`}
+                                                                        >
+                                                                            {child.name}
+                                                                        </Link>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <Link
+                                                        href={item.route}
+                                                        onClick={() => setShowingNavigationDropdown(false)}
+                                                        className={`block py-2 text-[13px] font-medium transition-colors ${route().current(item.pattern)
+                                                            ? 'text-white font-bold'
+                                                            : 'text-primary-300 hover:text-white'
+                                                            }`}
+                                                    >
+                                                        {item.name}
+                                                    </Link>
+                                                )}
+                                            </div>
                                         ))}
                                     </div>
                                 )}
@@ -987,7 +1037,7 @@ export default function Authenticated({ user, header, children }) {
                                         </button>
                                     </Dropdown.Trigger>
 
-                                    <Dropdown.Content align="right" width="56" contentClasses="py-0 bg-white">
+                                    <Dropdown.Content align="right" width="64" contentClasses="py-0 bg-white">
                                         <div className="px-5 py-5 bg-gradient-to-br from-primary-50/50 to-white border-b border-gray-100">
                                             <div className="flex items-center gap-3">
                                                 <div className="h-10 w-10 shrink-0 rounded-xl bg-primary-600 flex items-center justify-center text-white font-bold text-base shadow-sm">
@@ -1001,6 +1051,21 @@ export default function Authenticated({ user, header, children }) {
                                         </div>
 
                                         <div className="p-2">
+                                            <Dropdown.Link href={route('public.dashboard')} className="rounded-xl !hover:bg-primary-50 hover:text-primary-700 transition-all duration-200 group/item py-2.5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center group-hover/item:bg-white transition-colors border border-transparent group-hover/item:border-primary-100">
+                                                        <svg className="w-5 h-5 text-gray-500 group-hover/item:text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-gray-700 group-hover/item:text-primary-700 whitespace-nowrap">Dashboard Infografis</span>
+                                                        <span className="text-[10px] text-gray-400">Halaman Depan</span>
+                                                    </div>
+                                                </div>
+                                            </Dropdown.Link>
+
+                                            <div className="my-1 border-t border-gray-50"></div>
                                             <Dropdown.Link href={route('profile.edit')} className="rounded-xl !hover:bg-primary-50 hover:text-primary-700 transition-all duration-200 group/item py-2.5">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center group-hover/item:bg-white transition-colors border border-transparent group-hover/item:border-primary-100">

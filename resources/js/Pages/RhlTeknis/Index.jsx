@@ -687,13 +687,29 @@ export default function Index({ auth, datas, stats, filters, availableYears, sum
                   })}
                   {datas.data.length === 0 && (
                     <tr>
-                      <td colSpan="7" className="text-center py-12 text-gray-400">Belum ada data tersedia</td>
+                      <td colSpan="7" className="text-center py-12">
+                        <div className="flex flex-col items-center">
+                          <div className="p-4 bg-gray-50 rounded-full mb-3 text-gray-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                          </div>
+                          <p className="text-gray-400 font-medium tracking-tight whitespace-nowrap">Belum ada data laporan tersedia</p>
+                        </div>
+                      </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100">
+            <div className="px-6 py-4 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+              {datas.total > 0 ? (
+                <div className="text-xs text-gray-500 font-medium">
+                  Menampilkan {datas.from || 0} sampai {datas.to || 0} dari {datas.total || 0} data
+                </div>
+              ) : (
+                <div></div>
+              )}
               <Pagination links={datas.links} />
             </div>
           </div>

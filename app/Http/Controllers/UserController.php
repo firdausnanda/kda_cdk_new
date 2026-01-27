@@ -23,7 +23,7 @@ class UserController extends Controller
    */
   public function index(Request $request)
   {
-    $query = User::with('roles');
+    $query = User::with('roles')->has('roles');
 
     if ($request->has('search')) {
       $search = $request->search;

@@ -447,15 +447,9 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
                       </div>
                     </th>
                     <th className="px-6 py-4">Bulan / Tahun</th>
-                    <th className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('location')}>
-                      <div className="flex items-center gap-1">
-                        KTH / Lokasi
-                        <SortIcon field="location" />
-                      </div>
-                    </th>
                     <th className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('nama_kth')}>
                       <div className="flex items-center gap-1">
-                        Nama KTH
+                        KTH / Lokasi
                         <SortIcon field="nama_kth" />
                       </div>
                     </th>
@@ -615,10 +609,31 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
                       </td>
                     </tr>
                   ))}
+                  {datas.data.length === 0 && (
+                    <tr>
+                      <td colSpan="8" className="text-center py-12">
+                        <div className="flex flex-col items-center">
+                          <div className="p-4 bg-gray-50 rounded-full mb-3 text-gray-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                          </div>
+                          <p className="text-gray-400 font-medium tracking-tight whitespace-nowrap">Belum ada data laporan tersedia</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100"><Pagination links={datas.links} /></div>
+            <div className="px-6 py-4 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+              <Pagination links={datas.links} />
+              {datas.total > 0 && (
+                <div className="text-sm text-gray-500 text-center md:text-right">
+                  Menampilkan <span className="font-bold text-gray-900">{datas.from}</span> sampai <span className="font-bold text-gray-900">{datas.to}</span> dari <span className="font-bold text-gray-900">{datas.total}</span> data
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

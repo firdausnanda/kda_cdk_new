@@ -645,8 +645,13 @@ export default function Index({ auth, kups, stats, filters }) {
             </div>
 
             {/* Pagination */}
-            <div className="px-6 py-4 border-t border-gray-100">
+            <div className="px-6 py-4 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
               <Pagination links={kups.links} />
+              {kups.total > 0 && (
+                <div className="text-sm text-gray-500 text-center md:text-right">
+                  Menampilkan <span className="font-bold text-gray-900">{kups.from}</span> sampai <span className="font-bold text-gray-900">{kups.to}</span> dari <span className="font-bold text-gray-900">{kups.total}</span> data
+                </div>
+              )}
             </div>
           </div>
         </div>
