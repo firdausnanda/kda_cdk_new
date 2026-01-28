@@ -170,12 +170,27 @@ class DashboardController extends Controller
 
     public function publicDashboard(Request $request)
     {
-        $currentYear = $request->input('year', 2025);
+        $currentYear = $request->input('year', 2026);
 
         // Generate last 5 years starting from 2025
-        $thisYear = 2025;
+        $thisYear = 2026;
         $availableYears = range($thisYear, $thisYear - 4);
 
+        return Inertia::render('Public/PublicDashboard', [
+            'currentYear' => $currentYear,
+            'availableYears' => $availableYears,
+            'stats' => [
+                'pembinaan' => $this->getPembinaanStats($currentYear),
+                'perlindungan' => $this->getPerlindunganStats($currentYear),
+                'bina_usaha' => $this->getBinaUsahaStats($currentYear),
+                'kelembagaan_ps' => $this->getKelembagaanPsStats($currentYear),
+                'kelembagaan_hr' => $this->getKelembagaanHrStats($currentYear),
+            ]
+        ]);
+    }
+
+    private function getPembinaanStats($currentYear)
+    {
         // --- 1. Pembinaan Hutan (Rehab Lahan) ---
         $rehabTotal = RehabLahan::where('year', $currentYear)
             ->where('status', 'final')
@@ -379,6 +394,42 @@ class DashboardController extends Controller
             ->limit(5)
             ->pluck('total', 'type');
 
+        return [
+            'rehab_total' => (float) $rehabTotal,
+            'rehab_target_total' => (float) $rehabTargetTotal,
+            'rehab_chart' => $rehabChart,
+            'rehab_target_chart' => $rehabTargetChart,
+            'rehab_fund' => $rehabFund,
+            'rehab_regency' => $rehabRegency,
+            'penghijauan_total' => (float) $penghijauanTotal,
+            'penghijauan_target_total' => (float) $penghijauanTargetTotal,
+            'penghijauan_chart' => $penghijauanChart,
+            'penghijauan_target_chart' => $penghijauanTargetChart,
+            'penghijauan_fund' => $penghijauanFund,
+            'penghijauan_regency' => $penghijauanRegency,
+            'manggrove_total' => (float) $manggroveTotal,
+            'manggrove_target_total' => (float) $manggroveTargetTotal,
+            'manggrove_chart' => $manggroveChart,
+            'manggrove_target_chart' => $manggroveTargetChart,
+            'manggrove_fund' => $manggroveFund,
+            'manggrove_regency' => $manggroveRegency,
+            'reboisasi_total' => (float) $reboisasiTotal,
+            'reboisasi_target_total' => (float) $reboisasiTargetTotal,
+            'reboisasi_chart' => $reboisasiChart,
+            'reboisasi_target_chart' => $reboisasiTargetChart,
+            'reboisasi_fund' => $reboisasiFund,
+            'reboisasi_regency' => $reboisasiRegency,
+            'rhl_teknis_total' => (float) $rhlTeknisTotal,
+            'rhl_teknis_target_total' => (float) $rhlTeknisTargetTotal,
+            'rhl_teknis_chart' => $rhlTeknisChart,
+            'rhl_teknis_target_chart' => $rhlTeknisTargetChart,
+            'rhl_teknis_fund' => $rhlTeknisFund,
+            'rhl_teknis_type' => $rhlTeknisType,
+        ];
+    }
+
+    private function getPerlindunganStats($currentYear)
+    {
         // --- 2. Perlindungan Hutan ---
         // Kebakaran
         $kebakaranStats = KebakaranHutan::where('year', $currentYear)
@@ -430,6 +481,21 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('pengelola');
 
+        return [
+            'kebakaran_kejadian' => (int) ($kebakaranStats->total_kejadian ?? 0),
+            'kebakaran_area' => (float) ($kebakaranStats->total_area ?? 0),
+            'kebakaranChart' => $kebakaranChart,
+            'kebakaranMonthly' => $kebakaranMonthlyData,
+            'kebakaranByPengelola' => $kebakaranByPengelola,
+            'wisata_visitors' => (int) ($wisataStats->total_visitors ?? 0),
+            'wisata_income' => (float) ($wisataStats->total_income ?? 0),
+            'wisataMonthly' => $wisataMonthlyStats,
+            'wisataByPengelola' => $wisataByPengelola,
+        ];
+    }
+
+    private function getBinaUsahaStats($currentYear)
+    {
         // --- 3. Bina Usaha (Split into 5 categories) ---
         $forestTypes = ['Hutan Negara', 'Perhutanan Sosial', 'Hutan Rakyat'];
         $binaUsahaData = [];
@@ -526,8 +592,19 @@ class DashboardController extends Controller
                 ->pluck('total', 'regency')
         ];
 
+        return [
+            'hutan_negara' => $binaUsahaData['hutan_negara'],
+            'perhutanan_sosial' => $binaUsahaData['perhutanan_sosial'],
+            'hutan_rakyat' => $binaUsahaData['hutan_rakyat'],
+            'pbphh' => $pbphhStats,
+            'pnbp' => $pnbpStats,
+        ];
+    }
+
+    private function getKelembagaanPsStats($currentYear)
+    {
         // --- 4. Kelembagaan Perhutanan Sosial ---
-        $kelembagaanPsStats = [
+        return [
             'kelompok_count' => Skps::where('status', 'final')->count(),
             'area_total' => (float) Skps::where('status', 'final')->sum('ps_area'),
             'kk_total' => (int) Skps::where('status', 'final')->sum('number_of_kk'),
@@ -546,9 +623,12 @@ class DashboardController extends Controller
                 ->groupBy('m_regencies.name')
                 ->pluck('total', 'regency')
         ];
+    }
 
+    private function getKelembagaanHrStats($currentYear)
+    {
         // --- 5. Kelembagaan Hutan Rakyat ---
-        $kelembagaanHrStats = [
+        return [
             'kelompok_count' => \App\Models\PerkembanganKth::where('year', $currentYear)->where('status', 'final')->count(),
             'area_total' => (float) \App\Models\PerkembanganKth::where('year', $currentYear)->where('status', 'final')->sum('luas_kelola'),
             'anggota_total' => (int) \App\Models\PerkembanganKth::where('year', $currentYear)->where('status', 'final')->sum('jumlah_anggota'),
@@ -574,66 +654,8 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->pluck('total', 'commodity')
         ];
-
-        return Inertia::render('Public/PublicDashboard', [
-            'currentYear' => $currentYear,
-            'availableYears' => $availableYears,
-            'stats' => [
-                'pembinaan' => [
-                    'rehab_total' => (float) $rehabTotal,
-                    'rehab_target_total' => (float) $rehabTargetTotal,
-                    'rehab_chart' => $rehabChart,
-                    'rehab_target_chart' => $rehabTargetChart,
-                    'rehab_fund' => $rehabFund,
-                    'rehab_regency' => $rehabRegency,
-                    'penghijauan_total' => (float) $penghijauanTotal,
-                    'penghijauan_target_total' => (float) $penghijauanTargetTotal,
-                    'penghijauan_chart' => $penghijauanChart,
-                    'penghijauan_target_chart' => $penghijauanTargetChart,
-                    'penghijauan_fund' => $penghijauanFund,
-                    'penghijauan_regency' => $penghijauanRegency,
-                    'manggrove_total' => (float) $manggroveTotal,
-                    'manggrove_target_total' => (float) $manggroveTargetTotal,
-                    'manggrove_chart' => $manggroveChart,
-                    'manggrove_target_chart' => $manggroveTargetChart,
-                    'manggrove_fund' => $manggroveFund,
-                    'manggrove_regency' => $manggroveRegency,
-                    'reboisasi_total' => (float) $reboisasiTotal,
-                    'reboisasi_target_total' => (float) $reboisasiTargetTotal,
-                    'reboisasi_chart' => $reboisasiChart,
-                    'reboisasi_target_chart' => $reboisasiTargetChart,
-                    'reboisasi_fund' => $reboisasiFund,
-                    'reboisasi_regency' => $reboisasiRegency,
-                    'rhl_teknis_total' => (float) $rhlTeknisTotal,
-                    'rhl_teknis_target_total' => (float) $rhlTeknisTargetTotal,
-                    'rhl_teknis_chart' => $rhlTeknisChart,
-                    'rhl_teknis_target_chart' => $rhlTeknisTargetChart,
-                    'rhl_teknis_fund' => $rhlTeknisFund,
-                    'rhl_teknis_type' => $rhlTeknisType,
-                ],
-                'perlindungan' => [
-                    'kebakaran_kejadian' => (int) ($kebakaranStats->total_kejadian ?? 0),
-                    'kebakaran_area' => (float) ($kebakaranStats->total_area ?? 0),
-                    'kebakaranChart' => $kebakaranChart,
-                    'kebakaranMonthly' => $kebakaranMonthlyData,
-                    'kebakaranByPengelola' => $kebakaranByPengelola,
-                    'wisata_visitors' => (int) ($wisataStats->total_visitors ?? 0),
-                    'wisata_income' => (float) ($wisataStats->total_income ?? 0),
-                    'wisataMonthly' => $wisataMonthlyStats,
-                    'wisataByPengelola' => $wisataByPengelola,
-                ],
-                'bina_usaha' => [
-                    'hutan_negara' => $binaUsahaData['hutan_negara'],
-                    'perhutanan_sosial' => $binaUsahaData['perhutanan_sosial'],
-                    'hutan_rakyat' => $binaUsahaData['hutan_rakyat'],
-                    'pbphh' => $pbphhStats,
-                    'pnbp' => $pnbpStats,
-                ],
-                'kelembagaan_ps' => $kelembagaanPsStats,
-                'kelembagaan_hr' => $kelembagaanHrStats,
-            ]
-        ]);
     }
+
 
     /**
      * Export Rehabilitasi Lahan data to Excel
