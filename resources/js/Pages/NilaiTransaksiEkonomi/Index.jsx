@@ -515,7 +515,9 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
                             {item.creator?.name?.substring(0, 2).toUpperCase() || '??'}
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="text-xs font-bold text-gray-900 truncate leading-none">{item.creator?.name || 'Unknown'}</span>
+                            <span className="text-xs font-bold text-gray-900 truncate leading-none" title={item.creator?.name}>
+                              {item.creator?.name ? (item.creator.name.length > 15 ? item.creator.name.substring(0, 15) + '...' : item.creator.name) : 'Unknown'}
+                            </span>
                             <span className="text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-tight">{new Date(item.created_at).toLocaleDateString('id-ID')}</span>
                           </div>
                         </div>
