@@ -170,10 +170,10 @@ class DashboardController extends Controller
 
     public function publicDashboard(Request $request)
     {
-        $currentYear = $request->input('year', 2026);
+        $currentYear = $request->input('year', 2025);
 
         // Generate last 5 years starting from 2025
-        $thisYear = 2026;
+        $thisYear = 2025;
         $availableYears = range($thisYear, $thisYear - 4);
 
         return Inertia::render('Public/PublicDashboard', [
