@@ -553,20 +553,23 @@ class DashboardController extends Controller
 
         // PBPHH
         $pbphhStats = [
-            'total_units' => \App\Models\Pbphh::count(),
-            'total_workers' => \App\Models\Pbphh::sum('number_of_workers'),
-            'total_investment' => \App\Models\Pbphh::sum('investment_value'),
+            'total_units' => \App\Models\Pbphh::where('status', 'final')->count(),
+            'total_workers' => \App\Models\Pbphh::where('status', 'final')->sum('number_of_workers'),
+            'total_investment' => \App\Models\Pbphh::where('status', 'final')->sum('investment_value'),
             'by_regency' => \App\Models\Pbphh::join('m_regencies', 'pbphh.regency_id', '=', 'm_regencies.id')
+                ->where('pbphh.status', 'final')
                 ->selectRaw('m_regencies.name as regency, count(*) as count')
                 ->groupBy('m_regencies.name')
                 ->pluck('count', 'regency'),
             'by_production_type' => \App\Models\Pbphh::join('pbphh_jenis_produksi', 'pbphh.id', '=', 'pbphh_jenis_produksi.pbphh_id')
                 ->join('m_jenis_produksi', 'pbphh_jenis_produksi.jenis_produksi_id', '=', 'm_jenis_produksi.id')
+                ->where('pbphh.status', 'final')
                 ->selectRaw('m_jenis_produksi.name as type, count(distinct pbphh.id) as count')
                 ->groupBy('m_jenis_produksi.name')
                 ->get()
                 ->toArray(),
-            'by_condition' => \App\Models\Pbphh::selectRaw('present_condition as condition_name, count(*) as count')
+            'by_condition' => \App\Models\Pbphh::where('status', 'final')
+                ->selectRaw('present_condition as condition_name, count(*) as count')
                 ->groupBy('present_condition')
                 ->get()
                 ->toArray()
