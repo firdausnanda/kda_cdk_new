@@ -32,8 +32,8 @@ class DashboardController extends Controller
         $chartYear = $request->input('year', $currentYear);
 
         // --- Rehab Lahan Stats (Existing) ---
-        $totalRehabCurrent = RehabLahan::where('year', $currentYear)->where('status', 'final')->sum('realization');
-        $totalRehabPrev = RehabLahan::where('year', $prevYear)->where('status', 'final')->sum('realization');
+        $totalRehabCurrent = RehabLahan::where('year', $chartYear)->where('status', 'final')->sum('realization');
+        $totalRehabPrev = RehabLahan::where('year', $chartYear - 1)->where('status', 'final')->sum('realization');
 
         $rehabGrowth = 0;
         if ($totalRehabPrev > 0) {
@@ -44,13 +44,13 @@ class DashboardController extends Controller
 
         // --- Produksi Kayu Stats (New) ---
         // Sum annual_volume_target for final records. The column is string, so we cast to float.
-        $kayuCurrent = HasilHutanKayu::where('year', $currentYear)
+        $kayuCurrent = HasilHutanKayu::where('year', $chartYear)
             ->where('status', 'final')
             ->sum('volume_target');
 
         // --- Transaksi Ekonomi (PNBP) Stats (New) ---
         // Sum PSDH + DBHDR
-        $pnbpCurrent = RealisasiPnbp::where('year', $currentYear)
+        $pnbpCurrent = RealisasiPnbp::where('year', $chartYear)
             ->where('status', 'final')
             ->get()
             ->sum(function ($row) {
@@ -79,16 +79,9 @@ class DashboardController extends Controller
         }
 
         // --- Available Years ---
-        $availableYears = RehabLahan::selectRaw('DISTINCT year')
-            ->orderBy('year', 'desc')
-            ->pluck('year')
-            ->toArray();
-
-        // Merge with other models' years if needed, but for now RehabLahan is the main driver for the chart.
-        if (!in_array(date('Y'), $availableYears)) {
-            $availableYears[] = (int) date('Y');
-            rsort($availableYears);
-        }
+        // Generate last 5 years including current year
+        $thisYear = (int) date('Y');
+        $availableYears = range($thisYear, $thisYear - 4);
 
         // --- Recent Activity ---
         $activities = Activity::latest()
