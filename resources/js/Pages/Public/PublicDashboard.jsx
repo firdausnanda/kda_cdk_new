@@ -361,75 +361,68 @@ export default function PublicDashboard({ currentYear, availableYears, stats }) 
 
                         {/* Right: Charts Grid */}
                         <div className="md:col-span-3 space-y-6">
-                          {/* Monthly Trend Charts Group */}
-                          <div className="grid grid-cols-1 gap-6">
-                            {/* Realization Trend Chart */}
-                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                              <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Tren Realisasi Bulanan</h4>
-                                <span className="px-2 py-1 rounded-full bg-blue-50 text-[8px] font-bold text-blue-500 uppercase">Realization</span>
+                          {/* Combined Trend Chart: Realization vs Target */}
+                          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Tren Target & Realisasi Bulanan</h4>
+                              <div className="flex gap-4">
+                                <span className="flex items-center gap-1.5 text-[8px] font-bold uppercase" style={{ color: section.color }}>
+                                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: section.color }}></span> Realisasi
+                                </span>
+                                <span className="flex items-center gap-1.5 text-[8px] font-bold text-gray-400 uppercase">
+                                  <span className="w-2 h-2 rounded-full bg-gray-400"></span> Target
+                                </span>
                               </div>
-                              <div className="h-[180px]">
-                                <Line
-                                  data={{
-                                    labels: section.chart ? Object.keys(section.chart).map(m => {
-                                      const date = new Date();
-                                      date.setMonth(m - 1);
-                                      return date.toLocaleString('id-ID', { month: 'short' });
-                                    }) : [],
-                                    datasets: [{
-                                      label: section.label,
+                            </div>
+                            <div className="h-[200px]">
+                              <Line
+                                data={{
+                                  labels: section.chart ? Object.keys(section.chart).map(m => {
+                                    const date = new Date();
+                                    date.setMonth(m - 1);
+                                    return date.toLocaleString('id-ID', { month: 'short' });
+                                  }) : [],
+                                  datasets: [
+                                    {
+                                      label: 'Realisasi ' + section.label,
                                       data: section.chart ? Object.values(section.chart) : [],
                                       borderColor: section.color,
                                       backgroundColor: section.color + '20',
                                       fill: true,
                                       tension: 0.4,
-                                      pointRadius: 2
-                                    }]
-                                  }}
-                                  options={{
-                                    ...commonOptions,
-                                    maintainAspectRatio: false,
-                                    plugins: { ...commonOptions.plugins, legend: { display: false } },
-                                    scales: { y: { ...commonOptions.scales.y, display: true }, x: { grid: { display: false } } }
-                                  }}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Target Trend Chart */}
-                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                              <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Tren Target Bulanan</h4>
-                                <span className="px-2 py-1 rounded-full bg-gray-50 text-[8px] font-bold text-gray-400 uppercase">Target</span>
-                              </div>
-                              <div className="h-[180px]">
-                                <Line
-                                  data={{
-                                    labels: section.targetChart ? Object.keys(section.targetChart).map(m => {
-                                      const date = new Date();
-                                      date.setMonth(m - 1);
-                                      return date.toLocaleString('id-ID', { month: 'short' });
-                                    }) : [],
-                                    datasets: [{
+                                      pointRadius: 3,
+                                      order: 1
+                                    },
+                                    {
                                       label: 'Target ' + section.label,
                                       data: section.targetChart ? Object.values(section.targetChart) : [],
-                                      borderColor: '#94a3b8',
-                                      backgroundColor: '#94a3b820',
+                                      borderColor: '#9ca3af', // gray-400
+                                      backgroundColor: '#9ca3af20',
                                       fill: true,
                                       tension: 0.4,
-                                      pointRadius: 2,
-                                      borderDash: [5, 5]
-                                    }]
-                                  }}
-                                  options={{
-                                    ...commonOptions,
-                                    maintainAspectRatio: false,
-                                    plugins: { ...commonOptions.plugins, legend: { display: false } },
-                                    scales: { y: { ...commonOptions.scales.y, display: true }, x: { grid: { display: false } } }
-                                  }}
-                                />
-                              </div>
+                                      pointRadius: 3,
+                                      borderDash: [5, 5],
+                                      order: 2
+                                    }
+                                  ]
+                                }}
+                                options={{
+                                  ...commonOptions,
+                                  maintainAspectRatio: false,
+                                  plugins: { ...commonOptions.plugins, legend: { display: false } },
+                                  scales: {
+                                    y: {
+                                      display: true,
+                                      beginAtZero: true,
+                                      grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                                      ticks: {
+                                        font: { size: 10, weight: 'bold' }
+                                      }
+                                    },
+                                    x: { grid: { display: false } }
+                                  }
+                                }}
+                              />
                             </div>
                           </div>
 
