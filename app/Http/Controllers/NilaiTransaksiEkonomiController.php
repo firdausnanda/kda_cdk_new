@@ -102,35 +102,49 @@ class NilaiTransaksiEkonomiController extends Controller
 
   public function bulkDestroy(Request $request)
   {
-    $ids = $request->ids;
-    if (empty($ids)) {
+    $ids = collect((array) $request->ids)
+      ->filter()
+      ->unique()
+      ->values();
+
+    if ($ids->isEmpty()) {
       return back()->with('error', 'Tidak ada data yang dipilih.');
     }
-    $user = auth()->user();
-    $count = 0;
 
+    $user = auth()->user();
+
+    /**
+     * Role yang TIDAK boleh hapus
+     */
     if ($user->hasAnyRole(['kasi', 'kacdk'])) {
-      return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
+      return back()->with('error', 'Aksi tidak diijinkan.');
     }
 
+    /**
+     * Role terbatas: hanya hapus draft
+     */
     if ($user->hasAnyRole(['pk', 'peh', 'pelaksana'])) {
-      $count = NilaiTransaksiEkonomi::whereIn('id', $request->ids)
+      $count = NilaiTransaksiEkonomi::whereIn('id', $ids)
         ->where('status', 'draft')
         ->delete();
 
       if ($count === 0) {
-        return redirect()->back()->with('error', 'Hanya data dengan status draft yang dapat dihapus.');
+        return back()->with('error', 'Hanya data dengan status draft yang dapat dihapus.');
       }
 
-      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
+      return back()->with('success', "{$count} data berhasil dihapus.");
     }
 
+    /**
+     * Admin: bebas hapus
+     */
     if ($user->hasRole('admin')) {
-      $count = NilaiTransaksiEkonomi::whereIn('id', $request->ids)->delete();
+      $count = NilaiTransaksiEkonomi::whereIn('id', $ids)->delete();
 
-      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
+      return back()->with('success', "{$count} data berhasil dihapus.");
     }
-    return back()->with('success', "$count data berhasil dihapus.");
+
+    return back()->with('error', 'Hak akses tidak dikenali.');
   }
 
   public function bulkSubmit(Request $request)
