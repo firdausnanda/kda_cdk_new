@@ -107,7 +107,7 @@ class NilaiTransaksiEkonomiImport implements ToModel, WithHeadingRow, WithValida
     $transaction = NilaiTransaksiEkonomi::firstOrCreate([
       'year' => $row['tahun'],
       'month' => $bulanInfo,
-      'nama_kth' => $row['nama_kth'],
+      'nama_kth' => strtoupper($row['nama_kth']),
       'province_id' => 35,
       'regency_id' => $regency->id,
       'district_id' => $district->id,
