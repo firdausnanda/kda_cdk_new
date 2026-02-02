@@ -55,6 +55,10 @@ class NilaiTransaksiEkonomiController extends Controller
           'nama_kth' => $q->orderBy('nama_kth', $request->direction),
           'nilai' => $q->orderBy('total_nilai_transaksi', $request->direction),
           'status' => $q->orderBy('status', $request->direction),
+          'month' => $q->orderBy('month', $request->direction),
+          'user' => $q->select('nilai_transaksi_ekonomi.*')
+            ->leftJoin('users', 'nilai_transaksi_ekonomi.created_by', '=', 'users.id')
+            ->orderBy('users.name', $request->direction),
           default => $q->latest(),
         };
       }, fn($q) => $q->latest())

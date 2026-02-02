@@ -446,7 +446,12 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
                         />
                       </div>
                     </th>
-                    <th className="px-6 py-4">Bulan / Tahun</th>
+                    <th className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('month')}>
+                      <div className="flex items-center gap-1">
+                        Bulan / Tahun
+                        <SortIcon field="month" />
+                      </div>
+                    </th>
                     <th className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('nama_kth')}>
                       <div className="flex items-center gap-1">
                         KTH / Lokasi
@@ -454,7 +459,12 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
                       </div>
                     </th>
                     <th className="px-6 py-4">Detail Transaksi</th>
-                    <th className="px-6 py-4">Input Oleh</th>
+                    <th className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('user')}>
+                      <div className="flex items-center gap-1">
+                        Input Oleh
+                        <SortIcon field="user" />
+                      </div>
+                    </th>
                     <th className="px-6 py-4 text-center cursor-pointer hover:bg-gray-100 transition-colors group" onClick={() => handleSort('status')}>
                       <div className="flex items-center justify-center gap-1">
                         Status
