@@ -17,10 +17,10 @@ class PerkembanganKthTemplateExport implements WithHeadings, ShouldAutoSize, Wit
   {
     return [
       'Tahun',
-      'Bulan (1-12)',
-      'Kabupaten/Kota',
-      'Kecamatan',
-      'Desa',
+      'Bulan (Angka)',
+      'Nama Kabupaten',
+      'Nama Kecamatan',
+      'Nama Desa',
       'Nama KTH',
       'Nomor Register',
       'Kelas Kelembagaan',
