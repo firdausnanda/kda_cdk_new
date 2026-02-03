@@ -29,7 +29,7 @@ const PbphhSlide = ({ stats, commonOptions }) => {
 
   const conditionChartData = useMemo(() => {
     return {
-      labels: stats?.bina_usaha?.pbphh?.by_condition ? stats.bina_usaha.pbphh.by_condition.map(d => String(d.condition_name) === '1' ? 'Aktif' : 'Tidak Aktif') : [],
+      labels: stats?.bina_usaha?.pbphh?.by_condition ? stats.bina_usaha.pbphh.by_condition.map(d => String(d.condition_name) === '1' ? 'Beroperasi' : 'Tidak Beroperasi') : [],
       datasets: [{
         data: stats?.bina_usaha?.pbphh?.by_condition ? stats.bina_usaha.pbphh.by_condition.map(d => d.count) : [],
         backgroundColor: stats?.bina_usaha?.pbphh?.by_condition ? stats.bina_usaha.pbphh.by_condition.map(d => String(d.condition_name) === '1' ? '#16a34a' : '#dc2626') : [],
