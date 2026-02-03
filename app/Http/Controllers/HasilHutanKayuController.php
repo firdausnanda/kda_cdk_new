@@ -96,14 +96,17 @@ class HasilHutanKayuController extends Controller
       return [
         'total_count' => HasilHutanKayu::where('forest_type', $forestType)
           ->where('year', $selectedYear)
+          ->whereNull('deleted_at')
           ->count(),
         'total_volume' => HasilHutanKayu::where('forest_type', $forestType)
           ->where('year', $selectedYear)
           ->where('status', 'final')
+          ->whereNull('deleted_at')
           ->sum('volume_target'),
         'verified_count' => HasilHutanKayu::where('forest_type', $forestType)
           ->where('year', $selectedYear)
           ->where('status', 'final')
+          ->whereNull('deleted_at')
           ->count(),
       ];
     });
@@ -200,6 +203,8 @@ class HasilHutanKayuController extends Controller
       }
     });
 
+    cache()->forget("hhk-stats-{$validated['forest_type']}-{$validated['year']}");
+
     return redirect()->route('hasil-hutan-kayu.index', ['forest_type' => $validated['forest_type']])
       ->with('success', 'Data berhasil ditambahkan');
   }
@@ -266,6 +271,8 @@ class HasilHutanKayuController extends Controller
       }
     });
 
+    cache()->forget("hhk-stats-{$hasilHutanKayu->forest_type}-{$hasilHutanKayu->year}");
+
     return redirect()->route('hasil-hutan-kayu.index', ['forest_type' => $hasilHutanKayu->forest_type])
       ->with('success', 'Data berhasil diperbarui');
   }
@@ -273,7 +280,10 @@ class HasilHutanKayuController extends Controller
   public function destroy(HasilHutanKayu $hasilHutanKayu)
   {
     $forestType = $hasilHutanKayu->forest_type;
+    $year = $hasilHutanKayu->year;
     $hasilHutanKayu->delete();
+
+    cache()->forget("hhk-stats-{$forestType}-{$year}");
 
     return redirect()->route('hasil-hutan-kayu.index', ['forest_type' => $forestType])
       ->with('success', 'Data berhasil dihapus');
@@ -282,6 +292,7 @@ class HasilHutanKayuController extends Controller
   public function submit(HasilHutanKayu $hasilHutanKayu)
   {
     $hasilHutanKayu->update(['status' => 'waiting_kasi']);
+    cache()->forget("hhk-stats-{$hasilHutanKayu->forest_type}-{$hasilHutanKayu->year}");
     return redirect()->back()->with('success', 'Laporan berhasil diajukan untuk verifikasi Kasi.');
   }
 
@@ -305,6 +316,8 @@ class HasilHutanKayuController extends Controller
       return redirect()->back()->with('success', 'Laporan telah disetujui secara final.');
     }
 
+    cache()->forget("hhk-stats-{$hasilHutanKayu->forest_type}-{$hasilHutanKayu->year}");
+
     return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
   }
 
@@ -318,6 +331,8 @@ class HasilHutanKayuController extends Controller
       'status' => 'rejected',
       'rejection_note' => $request->rejection_note,
     ]);
+
+    cache()->forget("hhk-stats-{$hasilHutanKayu->forest_type}-{$hasilHutanKayu->year}");
 
     return redirect()->back()->with('success', 'Laporan telah ditolak dengan catatan.');
   }
@@ -353,6 +368,11 @@ class HasilHutanKayuController extends Controller
     // Check for failures if SkipsOnFailure is used (which doesn't throw exception usually, but accumulates)
     if ($import->failures()->isNotEmpty()) {
       return redirect()->back()->with('import_errors', $this->mapImportFailures($import->failures()));
+    }
+
+    // Clear cache for last 5 years as import might contain multiple years
+    foreach (range(date('Y'), date('Y') - 5) as $y) {
+      cache()->forget("hhk-stats-{$request->forest_type}-{$y}");
     }
 
     return redirect()->back()->with('success', 'Data berhasil diimport.');
@@ -393,6 +413,12 @@ class HasilHutanKayuController extends Controller
       return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
     }
 
+    // Clear cache for all affected years and types
+    $affected = HasilHutanKayu::withTrashed()->whereIn('id', $request->ids)->get();
+    foreach ($affected as $item) {
+      cache()->forget("hhk-stats-{$item->forest_type}-{$item->year}");
+    }
+
     return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
   }
 
@@ -409,6 +435,11 @@ class HasilHutanKayuController extends Controller
     $count = HasilHutanKayu::whereIn('id', $request->ids)
       ->whereIn('status', ['draft', 'rejected'])
       ->update(['status' => 'waiting_kasi']);
+
+    $affected = HasilHutanKayu::whereIn('id', $request->ids)->get();
+    foreach ($affected as $item) {
+      cache()->forget("hhk-stats-{$item->forest_type}-{$item->year}");
+    }
 
     return redirect()->back()->with('success', $count . ' laporan berhasil diajukan.');
   }
@@ -442,6 +473,11 @@ class HasilHutanKayuController extends Controller
         ]);
     }
 
+    $affected = HasilHutanKayu::whereIn('id', $request->ids)->get();
+    foreach ($affected as $item) {
+      cache()->forget("hhk-stats-{$item->forest_type}-{$item->year}");
+    }
+
     return redirect()->back()->with('success', $count . ' laporan berhasil disetujui.');
   }
 
@@ -473,6 +509,11 @@ class HasilHutanKayuController extends Controller
           'status' => 'rejected',
           'rejection_note' => $request->rejection_note,
         ]);
+    }
+
+    $affected = HasilHutanKayu::whereIn('id', $request->ids)->get();
+    foreach ($affected as $item) {
+      cache()->forget("hhk-stats-{$item->forest_type}-{$item->year}");
     }
 
     return redirect()->back()->with('success', $count . ' laporan berhasil ditolak.');
