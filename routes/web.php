@@ -163,10 +163,7 @@ Route::middleware('auth')->group(function () {
     Route::get('pbphh/export', [PbphhController::class, 'export'])->name('pbphh.export');
     Route::get('pbphh/template', [PbphhController::class, 'template'])->name('pbphh.template');
     Route::post('pbphh/import', [PbphhController::class, 'import'])->name('pbphh.import');
-    Route::post('pbphh/bulk-delete', [PbphhController::class, 'bulkDestroy'])->name('pbphh.bulk-delete');
-    Route::post('pbphh/bulk-submit', [PbphhController::class, 'bulkSubmit'])->name('pbphh.bulk-submit');
-    Route::post('pbphh/bulk-approve', [PbphhController::class, 'bulkApprove'])->name('pbphh.bulk-approve');
-    Route::post('pbphh/bulk-reject', [PbphhController::class, 'bulkReject'])->name('pbphh.bulk-reject');
+    Route::post('pbphh/bulk-workflow-action', [PbphhController::class, 'bulkWorkflowAction'])->name('pbphh.bulk-workflow-action');
     Route::resource('pbphh', PbphhController::class);
     Route::post('/pbphh/{pbphh}/submit', [PbphhController::class, 'submit'])->name('pbphh.submit');
     Route::post('/pbphh/{pbphh}/approve', [PbphhController::class, 'approve'])->name('pbphh.approve');
@@ -176,18 +173,7 @@ Route::middleware('auth')->group(function () {
     Route::get('realisasi-pnbp/export', [RealisasiPnbpController::class, 'export'])->name('realisasi-pnbp.export');
     Route::get('realisasi-pnbp/template', [RealisasiPnbpController::class, 'template'])->name('realisasi-pnbp.template');
     Route::post('realisasi-pnbp/import', [RealisasiPnbpController::class, 'import'])->name('realisasi-pnbp.import');
-    Route::post('realisasi-pnbp/bulk-delete', [RealisasiPnbpController::class, 'bulkDestroy'])
-        ->name('realisasi-pnbp.bulk-delete')
-        ->middleware('permission:bina-usaha.delete');
-    Route::post('realisasi-pnbp/bulk-submit', [RealisasiPnbpController::class, 'bulkSubmit'])
-        ->name('realisasi-pnbp.bulk-submit')
-        ->middleware('permission:bina-usaha.edit');
-    Route::post('realisasi-pnbp/bulk-approve', [RealisasiPnbpController::class, 'bulkApprove'])
-        ->name('realisasi-pnbp.bulk-approve')
-        ->middleware('permission:bina-usaha.approve');
-    Route::post('realisasi-pnbp/bulk-reject', [RealisasiPnbpController::class, 'bulkReject'])
-        ->name('realisasi-pnbp.bulk-reject')
-        ->middleware('permission:bina-usaha.approve');
+    Route::post('realisasi-pnbp/bulk-workflow-action', [RealisasiPnbpController::class, 'bulkWorkflowAction'])->name('realisasi-pnbp.bulk-workflow-action');
     Route::resource('realisasi-pnbp', RealisasiPnbpController::class)->parameters(['realisasi-pnbp' => 'realisasi_pnbp']);
     Route::post('/realisasi-pnbp/{realisasi_pnbp}/submit', [RealisasiPnbpController::class, 'submit'])->name('realisasi-pnbp.submit');
     Route::post('/realisasi-pnbp/{realisasi_pnbp}/approve', [RealisasiPnbpController::class, 'approve'])->name('realisasi-pnbp.approve');

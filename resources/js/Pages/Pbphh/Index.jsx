@@ -13,11 +13,23 @@ import Pagination from '@/Components/Pagination';
 import StatusBadge from '@/Components/StatusBadge';
 import LoadingOverlay from '@/Components/LoadingOverlay';
 import BulkActionToolbar from '@/Components/BulkActionToolbar';
+import TextInput from '@/Components/TextInput';
+
+const SortIcon = ({ field }) => {
+  const currentSort = new URLSearchParams(window.location.search).get('sort');
+  const currentDirection = new URLSearchParams(window.location.search).get('direction');
+  return (
+    <span className="flex flex-col ml-1">
+      <svg className={`w-2 h-2 ${currentSort === field && currentDirection === 'asc' ? 'text-gray-800' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" /></svg>
+      <svg className={`w-2 h-2 ${currentSort === field && currentDirection === 'desc' ? 'text-gray-800' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+    </span>
+  );
+};
 
 export default function Index({ auth, datas, stats, filters = {} }) {
   // Use filters prop safely with default empty object
   const currentFilters = filters || {};
-  const { flash } = usePage().props;
+  const { flash, errors } = usePage().props;
 
   const isAdmin = auth.user.roles.includes('admin');
   const isKasi = auth.user.roles.includes('kasi');
@@ -30,6 +42,15 @@ export default function Index({ auth, datas, stats, filters = {} }) {
   const canApprove = userPermissions.includes('bina-usaha.approve') || isAdmin;
 
   useEffect(() => {
+    if (flash?.import_errors) {
+      let errorHtml = '<div class="text-left max-h-60 overflow-y-auto text-sm space-y-2">';
+      flash.import_errors.forEach(fail => {
+        errorHtml += `<div class="p-2 bg-red-50 rounded border border-red-100"><span class="font-bold text-red-700">Baris ${fail.row}:</span> <span class="text-gray-600">${fail.errors.join(', ')}</span></div>`;
+      });
+      errorHtml += '</div>';
+      MySwal.fire({ title: 'Import Gagal Sebagian', html: errorHtml, icon: 'error', confirmButtonText: 'Tutup', confirmButtonColor: '#d33', width: '600px' });
+    }
+
     if (flash?.success) {
       MySwal.fire({
         title: 'Berhasil',
@@ -50,16 +71,15 @@ export default function Index({ auth, datas, stats, filters = {} }) {
       });
     }
 
-    if (flash?.import_errors) {
-      const errorList = flash.import_errors.map(f => `Baris ${f.row}: ${Array.isArray(f.errors) ? f.errors.join(', ') : f.errors}`).join('<br>');
-      MySwal.fire({
-        title: 'Import Gagal',
-        html: `<div class="text-left text-sm">${errorList}</div>`,
-        icon: 'error',
-        confirmButtonColor: '#dc2626',
+    if (Object.keys(errors).length > 0) {
+      let errorHtml = '<div class="text-left text-sm space-y-1">';
+      Object.keys(errors).forEach(key => {
+        errorHtml += `<div class="text-red-600 font-medium">• ${errors[key]}</div>`;
       });
+      errorHtml += '</div>';
+      MySwal.fire({ title: 'Terjadi Kesalahan', html: errorHtml, icon: 'error', confirmButtonText: 'Tutup', confirmButtonColor: '#d33' });
     }
-  }, [flash]);
+  }, [flash, errors]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -72,6 +92,32 @@ export default function Index({ auth, datas, stats, filters = {} }) {
   const [selectedIds, setSelectedIds] = useState([]);
 
   /* Handlers */
+  const debouncedSearch = useCallback(
+    debounce((query) => {
+      router.get(
+        route('pbphh.index'),
+        {
+          search: query,
+          sort: currentFilters.sort,
+          direction: currentFilters.direction
+        },
+        {
+          preserveState: true,
+          preserveScroll: true,
+          replace: true,
+          onFinish: () => setIsSearching(false)
+        }
+      );
+    }, 500),
+    [currentFilters]
+  );
+
+  const onSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchTerm(query);
+    setIsSearching(true);
+    debouncedSearch(query);
+  };
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       const allIds = datas.data.map(item => item.id);
@@ -117,7 +163,7 @@ export default function Index({ auth, datas, stats, filters = {} }) {
     if (selectedIds.length === 0) return;
 
     let title = '';
-    let routeName = '';
+    const routeName = 'pbphh.bulk-workflow-action';
     let confirmText = '';
     let color = '#3085d6';
     let showInput = false;
@@ -126,25 +172,21 @@ export default function Index({ auth, datas, stats, filters = {} }) {
       case 'delete':
         title = 'Hapus Data Terpilih?';
         confirmText = 'Ya, Hapus!';
-        routeName = 'pbphh.bulk-delete';
         color = '#d33';
         break;
       case 'submit':
         title = 'Ajukan Data Terpilih?';
         confirmText = 'Ya, Ajukan!';
-        routeName = 'pbphh.bulk-submit';
         color = '#15803d';
         break;
       case 'approve':
         title = 'Setujui Data Terpilih?';
         confirmText = 'Ya, Setujui!';
-        routeName = 'pbphh.bulk-approve';
         color = '#15803d';
         break;
       case 'reject':
         title = 'Tolak Data Terpilih?';
         confirmText = 'Ya, Tolak!';
-        routeName = 'pbphh.bulk-reject';
         color = '#d33';
         showInput = true;
         break;
@@ -165,8 +207,13 @@ export default function Index({ auth, datas, stats, filters = {} }) {
       } : undefined,
       showCancelButton: true,
       confirmButtonColor: color,
+      cancelButtonColor: '#6B7280',
       confirmButtonText: confirmText,
       cancelButtonText: 'Batal',
+      customClass: {
+        confirmButton: 'rounded-xl font-bold px-6 py-2.5',
+        cancelButton: 'rounded-xl font-bold px-6 py-2.5'
+      },
       borderRadius: '1.25rem',
     }).then((result) => {
       if (result.isConfirmed) {
@@ -174,6 +221,7 @@ export default function Index({ auth, datas, stats, filters = {} }) {
         setIsLoading(true);
         router.post(route(routeName), {
           ids: selectedIds,
+          action: action,
           rejection_note: showInput ? result.value : undefined
         }, {
           preserveScroll: true,
@@ -193,158 +241,85 @@ export default function Index({ auth, datas, stats, filters = {} }) {
     });
   };
 
-  const SortIcon = ({ field }) => {
-    if (currentFilters.sort !== field) return <div className="w-4 h-4 ml-1 opacity-20"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" /></svg></div>;
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    return (
-      <div className="w-4 h-4 ml-1 text-primary-600">
-        {currentFilters.direction === 'asc' ? (
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" /></svg>
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-        )}
-      </div>
-    );
+    setLoadingText('Mengimport Data...');
+    setIsLoading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    router.post(route('pbphh.import'), formData, {
+      forceFormData: true,
+      preserveScroll: true,
+      onSuccess: () => {
+        MySwal.fire({
+          title: 'Berhasil!',
+          text: 'Data berhasil diimport.',
+          icon: 'success',
+          confirmButtonColor: '#15803d',
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+        });
+        setShowImportModal(false);
+        setImportFile(null);
+      },
+      onError: (errors) => {
+        MySwal.fire({
+          title: 'Gagal!',
+          text: errors.file || 'Terjadi kesalahan saat import.',
+          icon: 'error',
+          confirmButtonColor: '#15803d',
+        });
+      },
+      onFinish: () => {
+        setIsLoading(false);
+      }
+    });
   };
 
   const handleImportSubmit = (e) => {
     e.preventDefault();
     if (!importFile) return;
+
     setLoadingText('Mengimport Data...');
     setIsLoading(true);
-    setShowImportModal(false);
-    router.post(route('pbphh.import'), { file: importFile }, {
+
+    const formData = new FormData();
+    formData.append('file', importFile);
+
+    router.post(route('pbphh.import'), formData, {
       forceFormData: true,
+      preserveScroll: true,
+      onSuccess: () => {
+        MySwal.fire({
+          title: 'Berhasil!',
+          text: 'Data berhasil diimport.',
+          icon: 'success',
+          confirmButtonColor: '#15803d',
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+        });
+        setShowImportModal(false);
+        setImportFile(null);
+      },
+      onError: (errors) => {
+        MySwal.fire({
+          title: 'Gagal!',
+          text: errors.file || 'Terjadi kesalahan saat import.',
+          icon: 'error',
+          confirmButtonColor: '#15803d',
+        });
+      },
       onFinish: () => {
         setIsLoading(false);
-        setImportFile(null);
       }
     });
   };
-
-  const handleSearch = useCallback(
-    debounce((value) => {
-      router.get(
-        route('pbphh.index'),
-        {
-          search: value,
-          sort: currentFilters.sort,
-          direction: currentFilters.direction
-        },
-        {
-          preserveState: true,
-          replace: true,
-          preserveScroll: true,
-          onStart: () => setIsSearching(true),
-          onFinish: () => setIsSearching(false)
-        }
-      );
-    }, 500),
-    []
-  );
-
-  const onSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    handleSearch(e.target.value);
-  };
-
-  const handleDelete = (id) => {
-    MySwal.fire({
-      title: 'Apakah anda yakin?',
-      text: "Data yang dihapus tidak dapat dikembalikan!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Ya, hapus!',
-      cancelButtonText: 'Batal'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Menghapus Data...');
-        setIsLoading(true);
-        router.delete(route('pbphh.destroy', id), {
-          preserveScroll: true,
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
-
-  const handleSubmit = (id) => {
-    MySwal.fire({
-      title: 'Ajukan Laporan?',
-      text: "Laporan akan dikirim ke Kasi untuk diverifikasi.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Ya, Ajukan',
-      cancelButtonText: 'Batal'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Mengajukan Laporan...');
-        setIsLoading(true);
-        router.post(route('pbphh.submit', id), {}, {
-          preserveScroll: true,
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
-
-  const handleApprove = (id, currentStatus) => {
-    const nextStep = currentStatus === 'waiting_kasi' ? 'KaCDK' : 'Final';
-    MySwal.fire({
-      title: 'Setujui Laporan?',
-      text: `Laporan akan disetujui dan diteruskan ke ${nextStep}.`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Ya, Setujui',
-      confirmationButtonColor: '#10b981',
-      cancelButtonText: 'Batal'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Memverifikasi...');
-        setIsLoading(true);
-        router.post(route('pbphh.approve', id), {}, {
-          preserveScroll: true,
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
-
-  const handleReject = (id) => {
-    MySwal.fire({
-      title: 'Tolak Laporan',
-      input: 'textarea',
-      inputLabel: 'Alasan Penolakan',
-      inputPlaceholder: 'Tuliskan alasan penolakan...',
-      inputAttributes: {
-        'aria-label': 'Tuliskan alasan penolakan'
-      },
-      showCancelButton: true,
-      confirmButtonText: 'Tolak',
-      confirmButtonColor: '#d33',
-      showLoaderOnConfirm: true,
-      preConfirm: (note) => {
-        if (!note) {
-          MySwal.showValidationMessage('Alasan penolakan harus diisi');
-        }
-        return note;
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Memproses Penolakan...');
-        setIsLoading(true);
-        router.post(route('pbphh.reject', id), {
-          rejection_note: result.value
-        }, {
-          preserveScroll: true,
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
-
 
   const userCanEdit = (item) => {
     if (isAdmin) return true;
@@ -395,7 +370,7 @@ export default function Index({ auth, datas, stats, filters = {} }) {
 
         <div className={`space-y-6 transition-all duration-700 ease-in-out ${isLoading ? 'opacity-30 blur-md grayscale-[0.5] pointer-events-none' : 'opacity-100 blur-0'}`}>
 
-          {/* Modern Header Section */}
+          {/* Header Section */}
           <div className="bg-gradient-to-r from-emerald-800 to-emerald-600 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
             <div className="absolute right-0 top-0 h-full w-1/3 bg-white/5 transform skew-x-12 shrink-0"></div>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -436,37 +411,67 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                 )}
               </div>
             </div>
+          </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 relative z-10 w-full">
-              {/* Search Input */}
-              <div className="relative w-full sm:max-w-md group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-20">
-                  <svg className="h-5 w-5 text-emerald-100 group-focus-within:text-white transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          {/* Stats Section */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Industri</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total_count} <span className="text-xs font-normal text-gray-400">Data</span></p>
+                </div>
+                <div className="p-3 bg-emerald-50 rounded-lg text-emerald-600 shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
-                <input
-                  type="text"
-                  className="w-full pl-11 pr-10 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder-emerald-100/70 focus:ring-2 focus:ring-white/30 focus:border-white/30 rounded-xl shadow-sm transition-all hover:bg-white/20"
-                  placeholder="Cari Nama Industri, Nomor Izin..."
-                  value={searchTerm}
-                  onChange={onSearchChange}
-                />
-                {isSearching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  </div>
-                )}
               </div>
+            </div>
 
-              {/* Rows Per Page Selector */}
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 p-1.5 rounded-xl h-[52px]">
-                <span className="text-emerald-100 text-xs font-bold pl-2 whitespace-nowrap">Baris:</span>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Terverifikasi</p>
+                  <p className="text-2xl font-bold text-blue-600 mt-1">{stats.verified_count} <span className="text-xs font-normal text-gray-400">Final</span></p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg text-blue-600 shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Data Table */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <div className="flex items-center gap-4 flex-1">
+                <h3 className="font-bold text-gray-800">Daftar Industri</h3>
+                <div className="h-6 w-px bg-gray-200"></div>
+                <div className="max-w-xs w-full relative">
+                  <TextInput
+                    type="text"
+                    className="w-full text-sm pr-10"
+                    placeholder="Cari Nama Industri, Nomor Izin..."
+                    value={searchTerm}
+                    onChange={onSearchChange}
+                  />
+                  {isSearching && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase">Baris:</span>
                 <select
-                  className="text-sm font-bold bg-transparent border-0 text-white focus:ring-0 cursor-pointer [&>option]:text-gray-900 py-1 pl-1 pr-8"
+                  className="text-sm font-bold border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 py-1"
                   value={currentFilters.per_page || 10}
                   onChange={(e) => {
                     setLoadingText('Memuat Ulang...');
@@ -495,33 +500,6 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                 </select>
               </div>
             </div>
-          </div>
-
-          {/* Stats Section */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Total Data */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
-              <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-emerald-50 to-transparent rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider relative z-10">Total Industri</p>
-              <div className="flex items-baseline gap-2 mt-2 relative z-10">
-                <span className="text-3xl font-black text-gray-900 tracking-tight">{stats.total_count}</span>
-                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Data</span>
-              </div>
-            </div>
-
-            {/* Verified Data */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
-              <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-blue-50 to-transparent rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider relative z-10">Terverifikasi</p>
-              <div className="flex items-baseline gap-2 mt-2 relative z-10">
-                <span className="text-3xl font-black text-gray-900 tracking-tight">{stats.verified_count}</span>
-                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Final</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Data Table */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
@@ -544,34 +522,34 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                       </div>
                     </th>
                     <th
-                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group text-center"
                       onClick={() => handleSort('investment')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-1">
                         Kinerja (Investasi / TK)
                         <SortIcon field="investment" />
                       </div>
                     </th>
                     <th
-                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group text-center"
                       onClick={() => handleSort('condition')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-1">
                         Kondisi
                         <SortIcon field="condition" />
                       </div>
                     </th>
                     <th className="px-6 py-4 font-bold tracking-wider">Jenis Produksi</th>
                     <th
-                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                      className="px-6 py-4 font-bold tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group text-center"
                       onClick={() => handleSort('status')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-1">
                         Status
                         <SortIcon field="status" />
                       </div>
                     </th>
-                    <th className="px-6 py-4 font-bold tracking-wider text-right">Aksi</th>
+                    <th className="px-6 py-4 font-bold tracking-wider text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
@@ -593,9 +571,6 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                           </span>
                           <div className="flex flex-col text-xs text-gray-500">
                             <span>{item.district?.name || '-'}, {item.regency?.name || '-'}</span>
-                          </div>
-                          <div className="text-[10px] text-gray-400 mt-1">
-                            Input: {item.creator?.name || 'Unknown'}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -651,69 +626,51 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                                 </div>
                               ))
                             ) : (
-                              <span className="text-gray-400 text-xs italic">- Tidak ada data -</span>
+                              <span className="text-xs text-gray-400 italic">-</span>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <StatusBadge status={item.status} />
-                          {item.status === 'rejected' && item.rejection_note && (
-                            <div className="text-xs text-red-500 mt-1 italic max-w-[150px] truncate" title={item.rejection_note}>
-                              "{item.rejection_note}"
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex justify-center gap-2">
-                            {userCanApprove(item) && (
-                              <>
-                                <button
-                                  onClick={() => handleApprove(item.id, item.status)}
-                                  className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
-                                  title="Setujui Laporan"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() => handleReject(item.id)}
-                                  className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
-                                  title="Tolak Laporan"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <StatusBadge status={item.status} />
+                            {item.status === 'rejected' && item.rejection_note && (
+                              <div className="text-[10px] text-rose-600 font-medium italic mt-1 max-w-[150px] leading-tight" title={item.rejection_note}>
+                                "{item.rejection_note.length > 50 ? item.rejection_note.substring(0, 50) + '...' : item.rejection_note}"
+                              </div>
                             )}
-                            {userCanSubmit(item) && (
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            {userCanApprove(item) && (
                               <button
-                                onClick={() => handleSubmit(item.id)}
-                                className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors shadow-sm bg-blue-50"
-                                title="Kirim ke Pimpinan"
+                                onClick={() => handleBulkAction('approve')}
+                                className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                                title="Setujui"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 9l3 3m0 0l-3 3m3-3H9" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                               </button>
                             )}
+
                             {userCanEdit(item) && (
                               <Link
                                 href={route('pbphh.edit', item.id)}
-                                className="p-2 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors shadow-sm bg-amber-50"
-                                title="Edit Data"
+                                className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                title="Edit"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                 </svg>
                               </Link>
                             )}
+
                             {userCanDelete(item) && (
                               <button
                                 onClick={() => handleDelete(item.id)}
-                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
-                                title="Hapus Data"
+                                className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                title="Hapus"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -726,8 +683,16 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="9" className="px-6 py-12 text-center text-gray-500 bg-gray-50/20 italic">
-                        Belum ada data PBPHH yang ditemukan.
+                      <td colSpan="7" className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                          </div>
+                          <p className="text-gray-900 font-bold mb-1">Tidak ada data ditemukan</p>
+                          <p className="text-gray-500 text-sm">Coba sesuaikan filter pencarian atau tambah data baru.</p>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -745,18 +710,18 @@ export default function Index({ auth, datas, stats, filters = {} }) {
               <Pagination links={datas.links} />
             </div>
           </div>
-
-          <BulkActionToolbar
-            selectedIds={selectedIds}
-            setSelectedIds={setSelectedIds}
-            handleBulkAction={handleBulkAction}
-            canEdit={canEdit}
-            canApprove={canApprove}
-            canDelete={canDelete}
-            isAdmin={isAdmin}
-          />
         </div>
       </AuthenticatedLayout>
+
+      <BulkActionToolbar
+        selectedIds={selectedIds}
+        setSelectedIds={setSelectedIds}
+        handleBulkAction={handleBulkAction}
+        canEdit={canEdit}
+        canApprove={canApprove}
+        canDelete={canDelete}
+        isAdmin={isAdmin}
+      />
 
       {/* Import Modal */}
       <Modal show={showImportModal} onClose={() => setShowImportModal(false)}>
@@ -817,5 +782,4 @@ export default function Index({ auth, datas, stats, filters = {} }) {
       </Modal>
     </>
   );
-
 }
