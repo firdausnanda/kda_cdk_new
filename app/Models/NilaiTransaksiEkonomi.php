@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -88,7 +89,7 @@ class NilaiTransaksiEkonomi extends Model implements Workflowable
       ->logOnlyDirty();
   }
 
-  public static function baseQuery(array $ids): \Illuminate\Database\Eloquent\Builder
+  public static function baseQuery(array $ids): Builder
   {
     return static::query()->whereIn('id', $ids);
   }
