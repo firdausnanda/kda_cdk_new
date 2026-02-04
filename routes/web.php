@@ -143,10 +143,7 @@ Route::middleware('auth')->group(function () {
     Route::get('hasil-hutan-kayu/export', [HasilHutanKayuController::class, 'export'])->name('hasil-hutan-kayu.export');
     Route::get('hasil-hutan-kayu/template', [HasilHutanKayuController::class, 'template'])->name('hasil-hutan-kayu.template');
     Route::post('hasil-hutan-kayu/import', [HasilHutanKayuController::class, 'import'])->name('hasil-hutan-kayu.import');
-    Route::post('hasil-hutan-kayu/bulk-delete', [HasilHutanKayuController::class, 'bulkDestroy'])->name('hasil-hutan-kayu.bulk-delete');
-    Route::post('hasil-hutan-kayu/bulk-submit', [HasilHutanKayuController::class, 'bulkSubmit'])->name('hasil-hutan-kayu.bulk-submit');
-    Route::post('hasil-hutan-kayu/bulk-approve', [HasilHutanKayuController::class, 'bulkApprove'])->name('hasil-hutan-kayu.bulk-approve');
-    Route::post('hasil-hutan-kayu/bulk-reject', [HasilHutanKayuController::class, 'bulkReject'])->name('hasil-hutan-kayu.bulk-reject');
+    Route::post('hasil-hutan-kayu/bulk-workflow-action', [HasilHutanKayuController::class, 'bulkWorkflowAction'])->name('hasil-hutan-kayu.bulk-workflow-action');
     Route::resource('hasil-hutan-kayu', HasilHutanKayuController::class)->parameters(['hasil-hutan-kayu' => 'hasil_hutan_kayu']);
     Route::post('/hasil-hutan-kayu/{hasil_hutan_kayu}/submit', [HasilHutanKayuController::class, 'submit'])->name('hasil-hutan-kayu.submit');
     Route::post('/hasil-hutan-kayu/{hasil_hutan_kayu}/approve', [HasilHutanKayuController::class, 'approve'])->name('hasil-hutan-kayu.approve');
@@ -156,10 +153,7 @@ Route::middleware('auth')->group(function () {
     Route::get('hasil-hutan-bukan-kayu/export', [HasilHutanBukanKayuController::class, 'export'])->name('hasil-hutan-bukan-kayu.export');
     Route::get('hasil-hutan-bukan-kayu/template', [HasilHutanBukanKayuController::class, 'template'])->name('hasil-hutan-bukan-kayu.template');
     Route::post('hasil-hutan-bukan-kayu/import', [HasilHutanBukanKayuController::class, 'import'])->name('hasil-hutan-bukan-kayu.import');
-    Route::post('hasil-hutan-bukan-kayu/bulk-delete', [HasilHutanBukanKayuController::class, 'bulkDestroy'])->name('hasil-hutan-bukan-kayu.bulk-delete');
-    Route::post('hasil-hutan-bukan-kayu/bulk-submit', [HasilHutanBukanKayuController::class, 'bulkSubmit'])->name('hasil-hutan-bukan-kayu.bulk-submit');
-    Route::post('hasil-hutan-bukan-kayu/bulk-approve', [HasilHutanBukanKayuController::class, 'bulkApprove'])->name('hasil-hutan-bukan-kayu.bulk-approve');
-    Route::post('hasil-hutan-bukan-kayu/bulk-reject', [HasilHutanBukanKayuController::class, 'bulkReject'])->name('hasil-hutan-bukan-kayu.bulk-reject');
+    Route::post('hasil-hutan-bukan-kayu/bulk-workflow-action', [HasilHutanBukanKayuController::class, 'bulkWorkflowAction'])->name('hasil-hutan-bukan-kayu.bulk-workflow-action');
     Route::resource('hasil-hutan-bukan-kayu', HasilHutanBukanKayuController::class)->parameters(['hasil-hutan-bukan-kayu' => 'hasil_hutan_bukan_kayu']);
     Route::post('/hasil-hutan-bukan-kayu/{hasil_hutan_bukan_kayu}/submit', [HasilHutanBukanKayuController::class, 'submit'])->name('hasil-hutan-bukan-kayu.submit');
     Route::post('/hasil-hutan-bukan-kayu/{hasil_hutan_bukan_kayu}/approve', [HasilHutanBukanKayuController::class, 'approve'])->name('hasil-hutan-bukan-kayu.approve');

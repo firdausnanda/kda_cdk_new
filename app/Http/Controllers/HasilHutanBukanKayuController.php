@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\HasilHutanBukanKayu;
-use App\Models\BukanKayu;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Actions\BulkWorkflowAction;
+use App\Enums\WorkflowAction;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
 class HasilHutanBukanKayuController extends Controller
@@ -41,6 +43,7 @@ class HasilHutanBukanKayuController extends Controller
         'hasil_hutan_bukan_kayu.forest_type',
         'hasil_hutan_bukan_kayu.volume_target',
         'hasil_hutan_bukan_kayu.status',
+        'hasil_hutan_bukan_kayu.rejection_note',
         'hasil_hutan_bukan_kayu.created_at',
         'hasil_hutan_bukan_kayu.created_by',
       ])
@@ -381,141 +384,47 @@ class HasilHutanBukanKayuController extends Controller
   /**
    * Bulk delete records.
    */
-  public function bulkDestroy(Request $request)
+  public function bulkWorkflowAction(Request $request, BulkWorkflowAction $action)
   {
     $request->validate([
       'ids' => 'required|array',
       'ids.*' => 'exists:hasil_hutan_bukan_kayu,id',
+      'action' => ['required', Rule::enum(WorkflowAction::class)],
+      'rejection_note' => 'nullable|string|max:255',
     ]);
 
-    $user = auth()->user();
-    $count = 0;
+    $workflowAction = WorkflowAction::from($request->action);
 
-    if ($user->hasAnyRole(['kasi', 'kacdk'])) {
-      return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
+    if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
+      return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
 
-    if ($user->hasAnyRole(['pk', 'peh', 'pelaksana'])) {
-      $count = HasilHutanBukanKayu::whereIn('id', $request->ids)
-        ->where('status', 'draft')
-        ->delete();
-
-      if ($count === 0) {
-        return redirect()->back()->with('error', 'Hanya data dengan status draft yang dapat dihapus.');
-      }
-
-      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
+    $extraData = [];
+    if ($request->filled('rejection_note')) {
+      $extraData['rejection_note'] = $request->rejection_note;
     }
 
-    if ($user->hasRole('admin')) {
-      $count = HasilHutanBukanKayu::whereIn('id', $request->ids)->delete();
+    $count = $action->execute(
+      model: HasilHutanBukanKayu::class,
+      action: $workflowAction,
+      ids: $request->ids,
+      user: auth()->user(),
+      extraData: $extraData
+    );
 
-      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
-    }
-
-    // Clear cache for all affected years and types
+    // Clear cache
     $affected = HasilHutanBukanKayu::withTrashed()->whereIn('id', $request->ids)->get();
     foreach ($affected as $item) {
       cache()->forget("hhbk-stats-{$item->forest_type}-{$item->year}");
     }
 
-    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
-  }
+    $message = match ($workflowAction) {
+      WorkflowAction::DELETE => 'dihapus',
+      WorkflowAction::SUBMIT => 'diajukan',
+      WorkflowAction::APPROVE => 'disetujui',
+      WorkflowAction::REJECT => 'ditolak',
+    };
 
-  /**
-   * Bulk submit records.
-   */
-  public function bulkSubmit(Request $request)
-  {
-    $request->validate([
-      'ids' => 'required|array',
-      'ids.*' => 'exists:hasil_hutan_bukan_kayu,id',
-    ]);
-
-    $count = HasilHutanBukanKayu::whereIn('id', $request->ids)
-      ->whereIn('status', ['draft', 'rejected'])
-      ->update(['status' => 'waiting_kasi']);
-
-    $affected = HasilHutanBukanKayu::whereIn('id', $request->ids)->get();
-    foreach ($affected as $item) {
-      cache()->forget("hhbk-stats-{$item->forest_type}-{$item->year}");
-    }
-
-    return redirect()->back()->with('success', $count . ' laporan berhasil diajukan.');
-  }
-
-  /**
-   * Bulk approve records.
-   */
-  public function bulkApprove(Request $request)
-  {
-    $request->validate([
-      'ids' => 'required|array',
-      'ids.*' => 'exists:hasil_hutan_bukan_kayu,id',
-    ]);
-
-    $user = auth()->user();
-    $count = 0;
-
-    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
-      $count = HasilHutanBukanKayu::whereIn('id', $request->ids)
-        ->where('status', 'waiting_kasi')
-        ->update([
-          'status' => 'waiting_cdk',
-          'approved_by_kasi_at' => now(),
-        ]);
-    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-      $count = HasilHutanBukanKayu::whereIn('id', $request->ids)
-        ->where('status', 'waiting_cdk')
-        ->update([
-          'status' => 'final',
-          'approved_by_cdk_at' => now(),
-        ]);
-    }
-
-    $affected = HasilHutanBukanKayu::whereIn('id', $request->ids)->get();
-    foreach ($affected as $item) {
-      cache()->forget("hhbk-stats-{$item->forest_type}-{$item->year}");
-    }
-
-    return redirect()->back()->with('success', $count . ' laporan berhasil disetujui.');
-  }
-
-  /**
-   * Bulk reject records.
-   */
-  public function bulkReject(Request $request)
-  {
-    $request->validate([
-      'ids' => 'required|array',
-      'ids.*' => 'exists:hasil_hutan_bukan_kayu,id',
-      'rejection_note' => 'required|string|max:255',
-    ]);
-
-    $user = auth()->user();
-    $count = 0;
-
-    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
-      $count = HasilHutanBukanKayu::whereIn('id', $request->ids)
-        ->where('status', 'waiting_kasi')
-        ->update([
-          'status' => 'rejected',
-          'rejection_note' => $request->rejection_note,
-        ]);
-    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-      $count = HasilHutanBukanKayu::whereIn('id', $request->ids)
-        ->where('status', 'waiting_cdk')
-        ->update([
-          'status' => 'rejected',
-          'rejection_note' => $request->rejection_note,
-        ]);
-    }
-
-    $affected = HasilHutanBukanKayu::whereIn('id', $request->ids)->get();
-    foreach ($affected as $item) {
-      cache()->forget("hhbk-stats-{$item->forest_type}-{$item->year}");
-    }
-
-    return redirect()->back()->with('success', $count . ' laporan berhasil ditolak.');
+    return redirect()->back()->with('success', "{$count} data berhasil {$message}.");
   }
 }
