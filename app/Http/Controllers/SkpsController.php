@@ -7,6 +7,8 @@ use App\Models\SkemaPerhutananSosial;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
+use App\Actions\BulkWorkflowAction;
+use App\Enums\WorkflowAction;
 
 class SkpsController extends Controller
 {
@@ -246,117 +248,45 @@ class SkpsController extends Controller
     return redirect()->back()->with('success', 'Data berhasil diimport.');
   }
 
-  public function bulkDestroy(Request $request)
+  public function bulkWorkflowAction(Request $request, BulkWorkflowAction $action)
   {
     $request->validate([
       'ids' => 'required|array',
       'ids.*' => 'exists:skps,id',
+      'action' => 'required|string',
+      'rejection_note' => 'nullable|string|max:255',
     ]);
 
-    $user = auth()->user();
-    $count = 0;
+    $workflowAction = WorkflowAction::from($request->action);
 
-    if ($user->hasAnyRole(['kasi', 'kacdk'])) {
-      return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
+    if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
+      return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
 
-    if ($user->hasAnyRole(['pk', 'peh', 'pelaksana'])) {
-      $count = Skps::whereIn('id', $request->ids)
-        ->where('status', 'draft')
-        ->delete();
-
-      if ($count === 0) {
-        return redirect()->back()->with('error', 'Hanya data dengan status draft yang dapat dihapus.');
-      }
-
-      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
+    $extraData = [];
+    if ($request->filled('rejection_note')) {
+      $extraData['rejection_note'] = $request->rejection_note;
     }
 
-    if ($user->hasRole('admin')) {
-      $count = Skps::whereIn('id', $request->ids)->delete();
+    $count = $action->execute(
+      model: Skps::class,
+      action: $workflowAction,
+      ids: $request->ids,
+      user: auth()->user(),
+      extraData: $extraData
+    );
 
-      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
+    if ($count > 0) {
+      return redirect()->back()->with('success', 'Aksi berhasil dilakukan pada ' . $count . ' data.');
     }
 
-    return redirect()->back()->with('success', count($request->ids) . ' data berhasil dihapus.');
-  }
+    $message = match ($workflowAction) {
+      WorkflowAction::DELETE => 'dihapus',
+      WorkflowAction::SUBMIT => 'diajukan',
+      WorkflowAction::APPROVE => 'disetujui',
+      WorkflowAction::REJECT => 'ditolak',
+    };
 
-  public function bulkSubmit(Request $request)
-  {
-    $request->validate([
-      'ids' => 'required|array',
-      'ids.*' => 'exists:skps,id',
-    ]);
-
-    // Only submit drafts or rejected items
-    Skps::whereIn('id', $request->ids)
-      ->whereIn('status', ['draft', 'rejected'])
-      ->update(['status' => 'waiting_kasi']);
-
-    return redirect()->back()->with('success', count($request->ids) . ' laporan berhasil diajukan.');
-  }
-
-  public function bulkApprove(Request $request)
-  {
-    $request->validate([
-      'ids' => 'required|array',
-      'ids.*' => 'exists:skps,id',
-    ]);
-
-    $user = auth()->user();
-    $ids = $request->ids;
-
-    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
-      Skps::whereIn('id', $ids)
-        ->where('status', 'waiting_kasi')
-        ->update([
-          'status' => 'waiting_cdk',
-          'approved_by_kasi_at' => now(),
-        ]);
-    }
-
-    if ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-      Skps::whereIn('id', $ids)
-        ->where('status', 'waiting_cdk')
-        ->update([
-          'status' => 'final',
-          'approved_by_cdk_at' => now(),
-        ]);
-    }
-
-    return redirect()->back()->with('success', count($ids) . ' laporan berhasil disetujui.');
-  }
-
-  public function bulkReject(Request $request)
-  {
-    $request->validate([
-      'ids' => 'required|array',
-      'ids.*' => 'exists:skps,id',
-      'rejection_note' => 'required|string|max:255',
-    ]);
-
-    $user = auth()->user();
-    $ids = $request->ids;
-    $count = 0;
-
-    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
-      $count = Skps::whereIn('id', $ids)
-        ->where('status', 'waiting_kasi')
-        ->update([
-          'status' => 'rejected',
-          'rejection_note' => $request->rejection_note,
-        ]);
-    }
-
-    if ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-      $count = Skps::whereIn('id', $ids)
-        ->where('status', 'waiting_cdk')
-        ->update([
-          'status' => 'rejected',
-          'rejection_note' => $request->rejection_note,
-        ]);
-    }
-
-    return redirect()->back()->with('success', $count . ' laporan berhasil ditolak.');
+    return redirect()->back()->with('success', "{$count} data berhasil {$message}.");
   }
 }

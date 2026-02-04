@@ -56,6 +56,9 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
     if (flash?.success) {
       MySwal.fire({ title: 'Berhasil', text: flash.success, icon: 'success', timer: 2000, showConfirmButton: false });
     }
+    if (flash?.error) {
+      MySwal.fire({ title: 'Gagal', text: flash.error, icon: 'error', confirmButtonText: 'Tutup', confirmButtonColor: '#d33' });
+    }
   }, [flash]);
 
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
@@ -169,8 +172,8 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
     if (selectedIds.length === 0) return;
 
     let title = '';
-    let routeName = '';
     let confirmText = '';
+    const routeName = 'perkembangan-kth.bulk-workflow-action';
     let color = '#3085d6';
     let showInput = false;
 
@@ -178,25 +181,21 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
       case 'delete':
         title = 'Hapus Data Terpilih?';
         confirmText = 'Ya, Hapus!';
-        routeName = 'perkembangan-kth.bulk-delete';
         color = '#d33';
         break;
       case 'submit':
         title = 'Ajukan Data Terpilih?';
         confirmText = 'Ya, Ajukan!';
-        routeName = 'perkembangan-kth.bulk-submit';
         color = '#15803d';
         break;
       case 'approve':
         title = 'Setujui Data Terpilih?';
         confirmText = 'Ya, Setujui!';
-        routeName = 'perkembangan-kth.bulk-approve';
         color = '#15803d';
         break;
       case 'reject':
         title = 'Tolak Data Terpilih?';
         confirmText = 'Ya, Tolak!';
-        routeName = 'perkembangan-kth.bulk-reject';
         color = '#d33';
         showInput = true;
         break;
@@ -226,17 +225,19 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
         setIsLoading(true);
         router.post(route(routeName), {
           ids: selectedIds,
+          action: action,
           rejection_note: showInput ? result.value : undefined
         }, {
           preserveScroll: true,
           onSuccess: () => {
             setSelectedIds([]);
+          },
+          onError: (errors) => {
             MySwal.fire({
-              title: 'Berhasil!',
-              text: 'Aksi massal berhasil dilakukan.',
-              icon: 'success',
-              timer: 2000,
-              showConfirmButton: false
+              title: 'Gagal!',
+              text: errors?.message || 'Terjadi kesalahan saat memproses aksi massal.',
+              icon: 'error',
+              confirmButtonColor: '#d33',
             });
           },
           onFinish: () => setIsLoading(false)
@@ -636,7 +637,14 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
                       </td>
 
                       <td className="px-6 py-4 text-center">
-                        <StatusBadge status={item.status} />
+                        <div className="flex flex-col items-center gap-2">
+                          <StatusBadge status={item.status} />
+                          {item.status === 'rejected' && item.rejection_note && (
+                            <div className="text-[10px] text-rose-600 font-medium italic mt-1 max-w-[150px] leading-tight" title={item.rejection_note}>
+                              "{item.rejection_note.length > 50 ? item.rejection_note.substring(0, 50) + '...' : item.rejection_note}"
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex justify-center gap-2">

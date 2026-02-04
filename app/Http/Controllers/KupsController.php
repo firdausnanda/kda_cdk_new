@@ -9,6 +9,8 @@ use App\Models\Districts;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use App\Actions\BulkWorkflowAction;
+use App\Enums\WorkflowAction;
 
 class KupsController extends Controller
 {
@@ -141,40 +143,6 @@ class KupsController extends Controller
     return redirect()->route('kups.index')->with('success', 'Data KUPS berhasil dihapus.');
   }
 
-  public function bulkDestroy(Request $request)
-  {
-    $ids = $request->ids;
-    if (empty($ids)) {
-      return back()->with('error', 'Tidak ada data yang dipilih.');
-    }
-
-    $user = auth()->user();
-    $count = 0;
-
-    if ($user->hasAnyRole(['kasi', 'kacdk'])) {
-      return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
-    }
-
-    if ($user->hasAnyRole(['pk', 'peh', 'pelaksana'])) {
-      $count = Kups::whereIn('id', $request->ids)
-        ->where('status', 'draft')
-        ->delete();
-
-      if ($count === 0) {
-        return redirect()->back()->with('error', 'Hanya data dengan status draft yang dapat dihapus.');
-      }
-
-      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
-    }
-
-    if ($user->hasRole('admin')) {
-      $count = Kups::whereIn('id', $request->ids)->delete();
-
-      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
-    }
-    return back()->with('success', "$count data berhasil dihapus.");
-  }
-
   public function submit($id)
   {
     $kup = Kups::findOrFail($id);
@@ -183,20 +151,6 @@ class KupsController extends Controller
       return back()->with('success', 'Laporan berhasil disubmit ke Kasi.');
     }
     return back()->with('error', 'Status laporan tidak valid untuk submit.');
-  }
-
-  public function bulkSubmit(Request $request)
-  {
-    $ids = $request->ids;
-    if (empty($ids)) {
-      return back()->with('error', 'Tidak ada data yang dipilih.');
-    }
-
-    $count = Kups::whereIn('id', $ids)
-      ->whereIn('status', ['draft', 'rejected'])
-      ->update(['status' => 'waiting_kasi']);
-
-    return back()->with('success', "$count data berhasil disubmit ke Kasi.");
   }
 
   public function approve($id)
@@ -221,44 +175,6 @@ class KupsController extends Controller
     }
 
     return back()->with('error', 'Anda tidak memiliki akses untuk menyetujui laporan ini.');
-  }
-
-  public function bulkApprove(Request $request)
-  {
-    $ids = $request->ids;
-    if (empty($ids)) {
-      return back()->with('error', 'Tidak ada data yang dipilih.');
-    }
-
-    $user = Auth::user();
-    $updatedCount = 0;
-
-    if ($user->hasRole('kasi')) {
-      $updatedCount = Kups::whereIn('id', $ids)
-        ->where('status', 'waiting_kasi')
-        ->update([
-          'status' => 'waiting_cdk',
-          'approved_by_kasi_at' => now(),
-        ]);
-    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) { // Admin can finalize waiting_cdk items too? Assuming logic similar to approve
-      // Note: In approve(), admin works on waiting_cdk to final.
-      // Admin usually can approve anything or step in.
-      // Based on approve() logic:
-      // if waiting_cdk -> final (Admin/CDK)
-
-      $updatedCount = Kups::whereIn('id', $ids)
-        ->where('status', 'waiting_cdk')
-        ->update([
-          'status' => 'final',
-          'approved_by_cdk_at' => now(),
-        ]);
-    }
-
-    if ($updatedCount > 0) {
-      return back()->with('success', "$updatedCount data berhasil disetujui.");
-    }
-
-    return back()->with('error', 'Tidak ada data yang dapat disetujui sesuai status dan hak akses.');
   }
 
   public function reject(Request $request, $id)
@@ -302,36 +218,46 @@ class KupsController extends Controller
     return redirect()->back()->with('success', 'Data berhasil diimport.');
   }
 
-  public function bulkReject(Request $request)
+  public function bulkWorkflowAction(Request $request, BulkWorkflowAction $action)
   {
     $request->validate([
       'ids' => 'required|array',
       'ids.*' => 'exists:kups,id',
-      'rejection_note' => 'required|string|max:255',
+      'action' => 'required|string',
+      'rejection_note' => 'nullable|string|max:255',
     ]);
 
-    $user = auth()->user();
-    $ids = $request->ids;
-    $count = 0;
+    $workflowAction = WorkflowAction::from($request->action);
 
-    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
-      $count = Kups::whereIn('id', $ids)
-        ->where('status', 'waiting_kasi')
-        ->update([
-          'status' => 'rejected',
-          'rejection_note' => $request->rejection_note,
-        ]);
+    if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
+      return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
 
-    if ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-      $count = Kups::whereIn('id', $ids)
-        ->where('status', 'waiting_cdk')
-        ->update([
-          'status' => 'rejected',
-          'rejection_note' => $request->rejection_note,
-        ]);
+    $extraData = [];
+    if ($request->filled('rejection_note')) {
+      $extraData['rejection_note'] = $request->rejection_note;
     }
 
-    return redirect()->back()->with('success', $count . ' laporan berhasil ditolak.');
+    $count = $action->execute(
+      model: Kups::class,
+      action: $workflowAction,
+      ids: $request->ids,
+      user: auth()->user(),
+      extraData: $extraData
+    );
+
+    if ($count > 0) {
+      return redirect()->back()->with('success', 'Aksi berhasil dilakukan pada ' . $count . ' data.');
+    }
+
+    $message = match ($workflowAction) {
+      WorkflowAction::DELETE => 'dihapus',
+      WorkflowAction::SUBMIT => 'diajukan',
+      WorkflowAction::APPROVE => 'disetujui',
+      WorkflowAction::REJECT => 'ditolak',
+    };
+
+    return redirect()->back()->with('success', "{$count} data berhasil {$message}.");
   }
 }
+

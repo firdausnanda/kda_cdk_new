@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\PerkembanganKth;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Actions\BulkWorkflowAction;
+use App\Enums\WorkflowAction;
 
 class PerkembanganKthController extends Controller
 {
@@ -52,6 +54,7 @@ class PerkembanganKthController extends Controller
         'perkembangan_kth.jumlah_anggota',
         'perkembangan_kth.luas_kelola',
         'perkembangan_kth.status',
+        'perkembangan_kth.rejection_note',
         'perkembangan_kth.created_at',
         'perkembangan_kth.created_by'
       ])
@@ -121,84 +124,46 @@ class PerkembanganKthController extends Controller
     ]);
   }
 
-  public function bulkDestroy(Request $request)
+  public function bulkWorkflowAction(Request $request, BulkWorkflowAction $action)
   {
-    $ids = $request->ids;
-    if (empty($ids)) {
-      return back()->with('error', 'Tidak ada data yang dipilih.');
-    }
-    $user = auth()->user();
-    $count = 0;
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:perkembangan_kth,id',
+      'action' => 'required|string',
+      'rejection_note' => 'nullable|string|max:255',
+    ]);
 
-    if ($user->hasAnyRole(['kasi', 'kacdk'])) {
-      return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
-    }
+    $workflowAction = WorkflowAction::from($request->action);
 
-    if ($user->hasAnyRole(['pk', 'peh', 'pelaksana'])) {
-      $count = PerkembanganKth::whereIn('id', $request->ids)
-        ->where('status', 'draft')
-        ->delete();
-
-      if ($count === 0) {
-        return redirect()->back()->with('error', 'Hanya data dengan status draft yang dapat dihapus.');
-      }
-
-      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
+    if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
+      return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
 
-    if ($user->hasRole('admin')) {
-      $count = PerkembanganKth::whereIn('id', $request->ids)->delete();
-
-      return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
-    }
-    return back()->with('success', "$count data berhasil dihapus.");
-  }
-
-  public function bulkSubmit(Request $request)
-  {
-    $ids = $request->ids;
-    if (empty($ids)) {
-      return back()->with('error', 'Tidak ada data yang dipilih.');
+    $extraData = [];
+    if ($request->filled('rejection_note')) {
+      $extraData['rejection_note'] = $request->rejection_note;
     }
 
-    $count = PerkembanganKth::whereIn('id', $ids)
-      ->whereIn('status', ['draft', 'rejected'])
-      ->update(['status' => 'waiting_kasi']);
+    $count = $action->execute(
+      model: PerkembanganKth::class,
+      action: $workflowAction,
+      ids: $request->ids,
+      user: auth()->user(),
+      extraData: $extraData
+    );
 
-    return back()->with('success', "$count data berhasil disubmit ke Kasi.");
-  }
-
-  public function bulkApprove(Request $request)
-  {
-    $ids = $request->ids;
-    if (empty($ids)) {
-      return back()->with('error', 'Tidak ada data yang dipilih.');
+    if ($count > 0) {
+      return redirect()->back()->with('success', 'Aksi berhasil dilakukan pada ' . $count . ' data.');
     }
 
-    $user = auth()->user();
-    $updatedCount = 0;
+    $message = match ($workflowAction) {
+      WorkflowAction::DELETE => 'dihapus',
+      WorkflowAction::SUBMIT => 'diajukan',
+      WorkflowAction::APPROVE => 'disetujui',
+      WorkflowAction::REJECT => 'ditolak',
+    };
 
-    if ($user->hasRole('kasi')) {
-      $updatedCount = PerkembanganKth::whereIn('id', $ids)
-        ->where('status', 'waiting_kasi')
-        ->update([
-          'status' => 'waiting_cdk',
-          'approved_by_kasi_at' => now(),
-        ]);
-    } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-      $updatedCount = PerkembanganKth::whereIn('id', $ids)
-        ->where('status', 'waiting_cdk')
-        ->update([
-          'status' => 'final',
-          'approved_by_cdk_at' => now(),
-        ]);
-    }
-
-    if ($updatedCount > 0) {
-      return back()->with('success', "$updatedCount data berhasil disetujui.");
-    }
-
-    return back()->with('error', 'Tidak ada data yang dapat disetujui sesuai status dan hak akses.');
+    return redirect()->back()->with('success', "{$count} data berhasil {$message}.");
   }
 
   /**

@@ -183,18 +183,7 @@ Route::middleware('auth')->group(function () {
     Route::get('skps/export', [SkpsController::class, 'export'])->name('skps.export');
     Route::get('skps/template', [SkpsController::class, 'template'])->name('skps.template');
     Route::post('skps/import', [SkpsController::class, 'import'])->name('skps.import');
-    Route::post('skps/bulk-delete', [SkpsController::class, 'bulkDestroy'])
-        ->name('skps.bulk-delete')
-        ->middleware('permission:pemberdayaan.delete');
-    Route::post('skps/bulk-submit', [SkpsController::class, 'bulkSubmit'])
-        ->name('skps.bulk-submit')
-        ->middleware('permission:pemberdayaan.edit');
-    Route::post('skps/bulk-approve', [SkpsController::class, 'bulkApprove'])
-        ->name('skps.bulk-approve')
-        ->middleware('permission:pemberdayaan.approve');
-    Route::post('skps/bulk-reject', [SkpsController::class, 'bulkReject'])
-        ->name('skps.bulk-reject')
-        ->middleware('permission:pemberdayaan.approve');
+    Route::post('skps/bulk-workflow-action', [SkpsController::class, 'bulkWorkflowAction'])->name('skps.bulk-workflow-action');
     Route::resource('skps', SkpsController::class);
     Route::post('/skps/{skp}/submit', [SkpsController::class, 'submit'])->name('skps.submit');
     Route::post('/skps/{skp}/approve', [SkpsController::class, 'approve'])->name('skps.approve');
@@ -204,36 +193,14 @@ Route::middleware('auth')->group(function () {
     Route::get('kups/export', [KupsController::class, 'export'])->name('kups.export');
     Route::get('kups/template', [KupsController::class, 'template'])->name('kups.template');
     Route::post('kups/import', [KupsController::class, 'import'])->name('kups.import');
-    Route::post('kups/bulk-delete', [KupsController::class, 'bulkDestroy'])
-        ->name('kups.bulk-delete')
-        ->middleware('permission:pemberdayaan.delete');
-    Route::post('kups/bulk-submit', [KupsController::class, 'bulkSubmit'])
-        ->name('kups.bulk-submit')
-        ->middleware('permission:pemberdayaan.edit');
-    Route::post('kups/bulk-approve', [KupsController::class, 'bulkApprove'])
-        ->name('kups.bulk-approve')
-        ->middleware('permission:pemberdayaan.approve');
-    Route::post('kups/bulk-reject', [KupsController::class, 'bulkReject'])
-        ->name('kups.bulk-reject')
-        ->middleware('permission:pemberdayaan.approve');
+    Route::post('kups/bulk-workflow-action', [KupsController::class, 'bulkWorkflowAction'])->name('kups.bulk-workflow-action');
     Route::resource('kups', KupsController::class);
     Route::post('/kups/{kups}/submit', [KupsController::class, 'submit'])->name('kups.submit');
     Route::post('/kups/{kups}/approve', [KupsController::class, 'approve'])->name('kups.approve');
     Route::post('/kups/{kups}/reject', [KupsController::class, 'reject'])->name('kups.reject');
 
     // Nilai Ekonomi (NEKON)
-    Route::post('nilai-ekonomi/bulk-delete', [NilaiEkonomiController::class, 'bulkDestroy'])
-        ->name('nilai-ekonomi.bulk-delete')
-        ->middleware('permission:pemberdayaan.delete');
-    Route::post('nilai-ekonomi/bulk-submit', [NilaiEkonomiController::class, 'bulkSubmit'])
-        ->name('nilai-ekonomi.bulk-submit')
-        ->middleware('permission:pemberdayaan.edit');
-    Route::post('nilai-ekonomi/bulk-approve', [NilaiEkonomiController::class, 'bulkApprove'])
-        ->name('nilai-ekonomi.bulk-approve')
-        ->middleware('permission:pemberdayaan.approve');
-    Route::post('nilai-ekonomi/bulk-reject', [NilaiEkonomiController::class, 'bulkReject'])
-        ->name('nilai-ekonomi.bulk-reject')
-        ->middleware('permission:pemberdayaan.approve');
+    Route::post('nilai-ekonomi/bulk-workflow-action', [NilaiEkonomiController::class, 'bulkWorkflowAction'])->name('nilai-ekonomi.bulk-workflow-action');
     Route::resource('nilai-ekonomi', NilaiEkonomiController::class);
     Route::post('/nilai-ekonomi/{nilai_ekonomi}/submit', [NilaiEkonomiController::class, 'submit'])->name('nilai-ekonomi.submit');
     Route::post('/nilai-ekonomi/{nilai_ekonomi}/approve', [NilaiEkonomiController::class, 'approve'])->name('nilai-ekonomi.approve');
@@ -241,18 +208,7 @@ Route::middleware('auth')->group(function () {
 
 
     // Perkembangan KTH
-    Route::post('perkembangan-kth/bulk-delete', [PerkembanganKthController::class, 'bulkDestroy'])
-        ->name('perkembangan-kth.bulk-delete')
-        ->middleware('permission:pemberdayaan.delete');
-    Route::post('perkembangan-kth/bulk-submit', [PerkembanganKthController::class, 'bulkSubmit'])
-        ->name('perkembangan-kth.bulk-submit')
-        ->middleware('permission:pemberdayaan.edit');
-    Route::post('perkembangan-kth/bulk-approve', [PerkembanganKthController::class, 'bulkApprove'])
-        ->name('perkembangan-kth.bulk-approve')
-        ->middleware('permission:pemberdayaan.approve');
-    Route::post('perkembangan-kth/bulk-reject', [PerkembanganKthController::class, 'bulkReject'])
-        ->name('perkembangan-kth.bulk-reject')
-        ->middleware('permission:pemberdayaan.approve');
+    Route::post('perkembangan-kth/bulk-workflow-action', [PerkembanganKthController::class, 'bulkWorkflowAction'])->name('perkembangan-kth.bulk-workflow-action');
     Route::get('perkembangan-kth/export', [PerkembanganKthController::class, 'export'])->name('perkembangan-kth.export');
     Route::get('perkembangan-kth/template', [PerkembanganKthController::class, 'template'])->name('perkembangan-kth.template');
     Route::post('perkembangan-kth/import', [PerkembanganKthController::class, 'import'])->name('perkembangan-kth.import');
@@ -262,18 +218,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/perkembangan-kth/{perkembangan_kth}/reject', [PerkembanganKthController::class, 'reject'])->name('perkembangan-kth.reject');
 
     // Nilai Transaksi Ekonomi
-    Route::post('nilai-transaksi-ekonomi/bulk-delete', [NilaiTransaksiEkonomiController::class, 'bulkDestroy'])
-        ->name('nilai-transaksi-ekonomi.bulk-delete')
-        ->middleware('permission:pemberdayaan.delete');
-    Route::post('nilai-transaksi-ekonomi/bulk-submit', [NilaiTransaksiEkonomiController::class, 'bulkSubmit'])
-        ->name('nilai-transaksi-ekonomi.bulk-submit')
-        ->middleware('permission:pemberdayaan.edit');
-    Route::post('nilai-transaksi-ekonomi/bulk-approve', [NilaiTransaksiEkonomiController::class, 'bulkApprove'])
-        ->name('nilai-transaksi-ekonomi.bulk-approve')
-        ->middleware('permission:pemberdayaan.approve');
-    Route::post('nilai-transaksi-ekonomi/bulk-reject', [NilaiTransaksiEkonomiController::class, 'bulkReject'])
-        ->name('nilai-transaksi-ekonomi.bulk-reject')
-        ->middleware('permission:pemberdayaan.approve');
+    Route::post('nilai-transaksi-ekonomi/bulk-workflow-action', [NilaiTransaksiEkonomiController::class, 'bulkWorkflowAction'])->name('nilai-transaksi-ekonomi.bulk-workflow-action');
     Route::get('nilai-transaksi-ekonomi/export', [NilaiTransaksiEkonomiController::class, 'export'])->name('nilai-transaksi-ekonomi.export');
     Route::get('nilai-transaksi-ekonomi/template', [NilaiTransaksiEkonomiController::class, 'template'])->name('nilai-transaksi-ekonomi.template');
     Route::post('nilai-transaksi-ekonomi/import', [NilaiTransaksiEkonomiController::class, 'import'])->name('nilai-transaksi-ekonomi.import');

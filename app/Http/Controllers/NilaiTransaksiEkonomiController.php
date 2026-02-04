@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\NilaiTransaksiEkonomi;
 use App\Models\Commodity;
 use App\Models\NilaiTransaksiEkonomiDetail;
+use App\Actions\BulkWorkflowAction;
+use App\Enums\WorkflowAction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -104,100 +106,39 @@ class NilaiTransaksiEkonomiController extends Controller
     ]);
   }
 
-  public function bulkDestroy(Request $request)
+  public function bulkWorkflowAction(Request $request, BulkWorkflowAction $action)
   {
-    $ids = collect((array) $request->ids)
-      ->filter()
-      ->unique()
-      ->values();
+    $request->validate([
+      'ids' => 'required|array',
+      'ids.*' => 'exists:nilai_transaksi_ekonomi,id',
+      'action' => 'required|string|in:submit,approve,reject,delete',
+      'rejection_note' => 'nullable|string|required_if:action,reject',
+    ]);
 
-    if ($ids->isEmpty()) {
-      return back()->with('error', 'Tidak ada data yang dipilih.');
+    $data = [
+      'ids' => $request->ids,
+      'action' => WorkflowAction::tryFrom($request->action),
+      'rejection_note' => $request->rejection_note,
+    ];
+
+    try {
+      $count = $action->execute(
+        model: NilaiTransaksiEkonomi::class,
+        action: $data['action'],
+        ids: $data['ids'],
+        user: auth()->user(),
+        extraData: ['rejection_note' => $data['rejection_note']]
+      );
+      $message = match ($request->action) {
+        'delete' => "$count data berhasil dihapus.",
+        'submit' => "$count data berhasil disubmit.",
+        'approve' => "$count data berhasil disetujui.",
+        'reject' => "$count data berhasil ditolak.",
+      };
+      return back()->with('success', $message);
+    } catch (\Exception $e) {
+      return back()->with('error', $e->getMessage());
     }
-
-    $user = auth()->user();
-
-    /**
-     * Role yang TIDAK boleh hapus
-     */
-    if ($user->hasAnyRole(['kasi', 'kacdk'])) {
-      return back()->with('error', 'Aksi tidak diijinkan.');
-    }
-
-    /**
-     * Role terbatas: hanya hapus draft
-     */
-    if ($user->hasAnyRole(['pk', 'peh', 'pelaksana'])) {
-      $count = NilaiTransaksiEkonomi::whereIn('id', $ids)
-        ->where('status', 'draft')
-        ->delete();
-
-      if ($count === 0) {
-        return back()->with('error', 'Hanya data dengan status draft yang dapat dihapus.');
-      }
-
-      return back()->with('success', "{$count} data berhasil dihapus.");
-    }
-
-    /**
-     * Admin: bebas hapus
-     */
-    if ($user->hasRole('admin')) {
-      $count = NilaiTransaksiEkonomi::whereIn('id', $ids)->delete();
-
-      return back()->with('success', "{$count} data berhasil dihapus.");
-    }
-
-    return back()->with('error', 'Hak akses tidak dikenali.');
-  }
-
-  public function bulkSubmit(Request $request)
-  {
-    $ids = $request->ids;
-    if (empty($ids)) {
-      return back()->with('error', 'Tidak ada data yang dipilih.');
-    }
-
-    $count = NilaiTransaksiEkonomi::whereIn('id', $ids)
-      ->whereIn('status', ['draft', 'rejected'])
-      ->update(['status' => 'waiting_kasi']);
-
-    return back()->with('success', "$count data berhasil disubmit ke Kasi.");
-  }
-
-  public function bulkApprove(Request $request)
-  {
-    $ids = $request->ids;
-    if (empty($ids)) {
-      return back()->with('error', 'Tidak ada data yang dipilih.');
-    }
-
-    $user = auth()->user();
-    $updatedCount = 0;
-
-    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
-      $updatedCount += NilaiTransaksiEkonomi::whereIn('id', $ids)
-        ->where('status', 'waiting_kasi')
-        ->update([
-          'status' => 'waiting_cdk',
-          'approved_by_kasi_at' => now(),
-        ]);
-    }
-
-    if ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-      $updatedCount += NilaiTransaksiEkonomi::whereIn('id', $ids)
-        ->where('status', 'waiting_cdk')
-        ->update([
-          'status' => 'final',
-          'approved_by_cdk_at' => now(),
-        ]);
-    }
-
-    if ($updatedCount > 0) {
-      return back()->with('success', "$updatedCount data berhasil disetujui.");
-    }
-
-    return back()->with('error', 'Tidak ada data yang dapat disetujui sesuai status dan hak akses.');
   }
 
   public function create()
@@ -340,38 +281,7 @@ class NilaiTransaksiEkonomiController extends Controller
     return redirect()->back()->with('success', 'Laporan telah ditolak dengan catatan.');
   }
 
-  public function bulkReject(Request $request)
-  {
-    $request->validate([
-      'ids' => 'required|array',
-      'ids.*' => 'exists:nilai_transaksi_ekonomi,id',
-      'rejection_note' => 'required|string|max:255',
-    ]);
 
-    $user = auth()->user();
-    $ids = $request->ids;
-    $count = 0;
-
-    if ($user->hasRole('kasi') || $user->hasRole('admin')) {
-      $count = NilaiTransaksiEkonomi::whereIn('id', $ids)
-        ->where('status', 'waiting_kasi')
-        ->update([
-          'status' => 'rejected',
-          'rejection_note' => $request->rejection_note,
-        ]);
-    }
-
-    if ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-      $count = NilaiTransaksiEkonomi::whereIn('id', $ids)
-        ->where('status', 'waiting_cdk')
-        ->update([
-          'status' => 'rejected',
-          'rejection_note' => $request->rejection_note,
-        ]);
-    }
-
-    return redirect()->back()->with('success', $count . ' laporan berhasil ditolak.');
-  }
 
   public function export(Request $request)
   {

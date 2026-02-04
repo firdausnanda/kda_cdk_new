@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Actions\BulkWorkflowAction;
+use App\Enums\WorkflowAction;
 
 class NilaiEkonomiController extends Controller
 {
@@ -246,43 +248,6 @@ class NilaiEkonomiController extends Controller
         return redirect()->route('nilai-ekonomi.index')->with('success', 'Data Nilai Ekonomi berhasil dihapus.');
     }
 
-    public function bulkDestroy(Request $request)
-    {
-        $ids = $request->ids;
-        if (empty($ids)) {
-            return back()->with('error', 'Tidak ada data yang dipilih.');
-        }
-
-        $user = auth()->user();
-        $count = 0;
-
-        if ($user->hasAnyRole(['kasi', 'kacdk'])) {
-            return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
-        }
-
-        if ($user->hasAnyRole(['pk', 'peh', 'pelaksana'])) {
-            $count = NilaiEkonomi::whereIn('id', $request->ids)
-                ->where('status', 'draft')
-                ->delete();
-
-            if ($count === 0) {
-                return redirect()->back()->with('error', 'Hanya data dengan status draft yang dapat dihapus.');
-            }
-
-            return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
-        }
-
-        if ($user->hasRole('admin')) {
-            $count = NilaiEkonomi::whereIn('id', $request->ids)->delete();
-
-            return redirect()->back()->with('success', $count . ' data berhasil dihapus.');
-        }
-        if ($count > 0) {
-            $this->clearCache(); // Clear for all years if bulk delete
-        }
-        return back()->with('success', "$count data berhasil dihapus.");
-    }
-
     public function submit(NilaiEkonomi $nilaiEkonomi)
     {
         // Custom authorization: Allow if user is creator OR has specific permissions
@@ -292,20 +257,6 @@ class NilaiEkonomiController extends Controller
 
         $nilaiEkonomi->update(['status' => 'waiting_kasi']);
         return redirect()->back()->with('success', 'Laporan berhasil diajukan untuk verifikasi Kasi.');
-    }
-
-    public function bulkSubmit(Request $request)
-    {
-        $ids = $request->ids;
-        if (empty($ids)) {
-            return back()->with('error', 'Tidak ada data yang dipilih.');
-        }
-
-        $count = NilaiEkonomi::whereIn('id', $ids)
-            ->whereIn('status', ['draft', 'rejected'])
-            ->update(['status' => 'waiting_kasi']);
-
-        return back()->with('success', "$count data berhasil disubmit ke Kasi.");
     }
 
     public function approve(NilaiEkonomi $nilaiEkonomi)
@@ -333,40 +284,6 @@ class NilaiEkonomiController extends Controller
         return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
     }
 
-    public function bulkApprove(Request $request)
-    {
-        $ids = $request->ids;
-        if (empty($ids)) {
-            return back()->with('error', 'Tidak ada data yang dipilih.');
-        }
-
-        $user = Auth::user();
-        $updatedCount = 0;
-
-        if ($user->hasRole('kasi')) {
-            $updatedCount = NilaiEkonomi::whereIn('id', $ids)
-                ->where('status', 'waiting_kasi')
-                ->update([
-                    'status' => 'waiting_cdk',
-                    'approved_by_kasi_at' => now(),
-                ]);
-        } elseif ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-            $updatedCount = NilaiEkonomi::whereIn('id', $ids)
-                ->where('status', 'waiting_cdk')
-                ->update([
-                    'status' => 'final',
-                    'approved_by_cdk_at' => now(),
-                ]);
-        }
-
-        if ($updatedCount > 0) {
-            $this->clearCache();
-            return back()->with('success', "$updatedCount data berhasil disetujui.");
-        }
-
-        return back()->with('error', 'Tidak ada data yang dapat disetujui sesuai status dan hak akses.');
-    }
-
     public function reject(Request $request, NilaiEkonomi $nilaiEkonomi)
     {
         $request->validate([
@@ -382,41 +299,47 @@ class NilaiEkonomiController extends Controller
         return redirect()->back()->with('success', 'Laporan telah ditolak dengan catatan.');
     }
 
-    public function bulkReject(Request $request)
+    public function bulkWorkflowAction(Request $request, BulkWorkflowAction $action)
     {
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:nilai_ekonomi,id',
-            'rejection_note' => 'required|string|max:255',
+            'action' => 'required|string',
+            'rejection_note' => 'nullable|string|max:255',
         ]);
 
-        $user = auth()->user();
-        $ids = $request->ids;
-        $count = 0;
+        $workflowAction = WorkflowAction::from($request->action);
 
-        if ($user->hasRole('kasi') || $user->hasRole('admin')) {
-            $count = NilaiEkonomi::whereIn('id', $ids)
-                ->where('status', 'waiting_kasi')
-                ->update([
-                    'status' => 'rejected',
-                    'rejection_note' => $request->rejection_note,
-                ]);
+        if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
+            return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
         }
 
-        if ($user->hasRole('kacdk') || $user->hasRole('admin')) {
-            $count = NilaiEkonomi::whereIn('id', $ids)
-                ->where('status', 'waiting_cdk')
-                ->update([
-                    'status' => 'rejected',
-                    'rejection_note' => $request->rejection_note,
-                ]);
+        $extraData = [];
+        if ($request->filled('rejection_note')) {
+            $extraData['rejection_note'] = $request->rejection_note;
         }
+
+        $count = $action->execute(
+            model: NilaiEkonomi::class,
+            action: $workflowAction,
+            ids: $request->ids,
+            user: auth()->user(),
+            extraData: $extraData
+        );
 
         if ($count > 0) {
             $this->clearCache();
+            return redirect()->back()->with('success', 'Aksi berhasil dilakukan pada ' . $count . ' data.');
         }
 
-        return redirect()->back()->with('success', $count . ' laporan berhasil ditolak.');
+        $message = match ($workflowAction) {
+            WorkflowAction::DELETE => 'dihapus',
+            WorkflowAction::SUBMIT => 'diajukan',
+            WorkflowAction::APPROVE => 'disetujui',
+            WorkflowAction::REJECT => 'ditolak',
+        };
+
+        return redirect()->back()->with('success', "{$count} data berhasil {$message}.");
     }
 
     private function clearCache($year = null)

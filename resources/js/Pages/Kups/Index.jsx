@@ -98,8 +98,8 @@ export default function Index({ auth, kups, stats, filters }) {
     if (selectedIds.length === 0) return;
 
     let title = '';
-    let routeName = '';
     let confirmText = '';
+    const routeName = 'kups.bulk-workflow-action';
     let color = '#3085d6';
     let showInput = false;
 
@@ -107,25 +107,21 @@ export default function Index({ auth, kups, stats, filters }) {
       case 'delete':
         title = 'Hapus Data Terpilih?';
         confirmText = 'Ya, Hapus!';
-        routeName = 'kups.bulk-delete';
         color = '#d33';
         break;
       case 'submit':
         title = 'Ajukan Data Terpilih?';
         confirmText = 'Ya, Ajukan!';
-        routeName = 'kups.bulk-submit';
         color = '#15803d';
         break;
       case 'approve':
         title = 'Setujui Data Terpilih?';
         confirmText = 'Ya, Setujui!';
-        routeName = 'kups.bulk-approve';
         color = '#15803d';
         break;
       case 'reject':
         title = 'Tolak Data Terpilih?';
         confirmText = 'Ya, Tolak!';
-        routeName = 'kups.bulk-reject';
         color = '#d33';
         showInput = true;
         break;
@@ -155,17 +151,19 @@ export default function Index({ auth, kups, stats, filters }) {
         setIsLoading(true);
         router.post(route(routeName), {
           ids: selectedIds,
+          action: action,
           rejection_note: showInput ? result.value : undefined
         }, {
           preserveScroll: true,
           onSuccess: () => {
             setSelectedIds([]);
+          },
+          onError: (errors) => {
             MySwal.fire({
-              title: 'Berhasil!',
-              text: 'Aksi massal berhasil dilakukan.',
-              icon: 'success',
-              timer: 2000,
-              showConfirmButton: false
+              title: 'Gagal!',
+              text: errors?.message || 'Terjadi kesalahan saat memproses aksi massal.',
+              icon: 'error',
+              confirmButtonColor: '#d33',
             });
           },
           onFinish: () => setIsLoading(false)
