@@ -44,13 +44,17 @@ class BulkWorkflowAction
       }
 
       if (!empty($rule['delete'])) {
-        // For delete, we might not need to track IDs if we just want to count them,
-        // but to be safe and consistent:
         $idsToDelete = $query->pluck('id')->toArray();
         if (empty($idsToDelete))
           continue;
 
-        $modelClass::whereIn('id', $idsToDelete)->delete();
+        // Iterate and delete individually to trigger events
+        DB::transaction(function () use ($modelClass, $idsToDelete) {
+          foreach ($modelClass::whereIn('id', $idsToDelete)->cursor() as $modelInstance) {
+            $modelInstance->delete();
+          }
+        });
+
         $processedIds = array_merge($processedIds, $idsToDelete);
         $totalCount += count($idsToDelete);
         continue;
@@ -71,7 +75,12 @@ class BulkWorkflowAction
         continue;
       }
 
-      $modelClass::whereIn('id', $idsToUpdate)->update(array_merge($update, $extraData));
+      // Iterate and update individually to trigger events
+      DB::transaction(function () use ($modelClass, $idsToUpdate, $update, $extraData) {
+        foreach ($modelClass::whereIn('id', $idsToUpdate)->cursor() as $modelInstance) {
+          $modelInstance->update(array_merge($update, $extraData));
+        }
+      });
 
       $processedIds = array_merge($processedIds, $idsToUpdate);
       $totalCount += count($idsToUpdate);
