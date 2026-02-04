@@ -268,97 +268,104 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
     handleSearch(e.target.value);
   };
 
-  const handleDelete = (id) => {
-    MySwal.fire({
-      title: 'Apakah anda yakin?',
-      text: "Data yang dihapus tidak dapat dikembalikan!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Ya, hapus!',
-      cancelButtonText: 'Batal'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Menghapus Data...');
-        setIsLoading(true);
-        router.delete(route('realisasi-pnbp.destroy', id), {
-          preserveScroll: true,
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
+  const handleSingleAction = (id, action) => {
+    let title = '';
+    let text = '';
+    let icon = 'warning';
+    let confirmText = '';
+    let confirmColor = '#15803d';
+    let showInput = false;
+    let loadingMsg = '';
 
-  const handleSubmit = (id) => {
-    MySwal.fire({
-      title: 'Ajukan Laporan?',
-      text: "Laporan akan dikirim ke Kasi untuk diverifikasi.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Ya, Ajukan',
-      cancelButtonText: 'Batal'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Mengajukan Laporan...');
-        setIsLoading(true);
-        router.post(route('realisasi-pnbp.submit', id), {}, {
-          preserveScroll: true,
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
+    switch (action) {
+      case 'delete':
+        title = 'Apakah Anda yakin?';
+        text = "Data yang dihapus akan tidak bisa dikembalikan!";
+        icon = 'warning';
+        confirmText = 'Ya, hapus!';
+        confirmColor = '#d33';
+        loadingMsg = 'Menghapus Data...';
+        break;
+      case 'submit':
+        title = 'Ajukan Laporan?';
+        text = "Laporan akan dikirim ke Kasi untuk diverifikasi.";
+        icon = 'question';
+        confirmText = 'Ya, Ajukan!';
+        loadingMsg = 'Mengajukan Laporan...';
+        break;
+      case 'approve':
+        title = 'Setujui Laporan?';
+        text = "Apakah Anda yakin ingin menyetujui laporan ini?";
+        icon = 'check-circle';
+        confirmText = 'Ya, Setujui';
+        loadingMsg = 'Memverifikasi...';
+        break;
+      case 'reject':
+        title = 'Tolak Laporan?';
+        text = "Berikan alasan penolakan:";
+        icon = 'warning';
+        confirmText = 'Ya, Tolak';
+        confirmColor = '#d33';
+        showInput = true;
+        loadingMsg = 'Memproses Penolakan...';
+        break;
+      default:
+        return;
+    }
 
-  const handleApprove = (id, currentStatus) => {
-    const nextStep = currentStatus === 'waiting_kasi' ? 'KaCDK' : 'Final';
     MySwal.fire({
-      title: 'Setuji Laporan?',
-      text: `Laporan akan disetujui dan diteruskan ke ${nextStep}.`,
-      icon: 'warning',
+      title: title,
+      text: showInput ? text : text,
+      icon: icon,
       showCancelButton: true,
-      confirmButtonText: 'Ya, Setujui',
-      confirmationButtonColor: '#10b981',
-      cancelButtonText: 'Batal'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Memverifikasi...');
-        setIsLoading(true);
-        router.post(route('realisasi-pnbp.approve', id), {}, {
-          preserveScroll: true,
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
-
-  const handleReject = (id) => {
-    MySwal.fire({
-      title: 'Tolak Laporan',
-      input: 'textarea',
-      inputLabel: 'Alasan Penolakan',
-      inputPlaceholder: 'Tuliskan alasan penolakan...',
-      inputAttributes: {
-        'aria-label': 'Tuliskan alasan penolakan'
-      },
-      showCancelButton: true,
-      confirmButtonText: 'Tolak',
-      confirmButtonColor: '#d33',
-      showLoaderOnConfirm: true,
-      preConfirm: (note) => {
-        if (!note) {
-          MySwal.showValidationMessage('Alasan penolakan harus diisi');
+      confirmButtonColor: confirmColor,
+      confirmButtonText: confirmText,
+      cancelButtonText: 'Batal',
+      cancelButtonColor: '#6B7280',
+      input: showInput ? 'textarea' : undefined,
+      inputPlaceholder: showInput ? 'Tuliskan catatan penolakan di sini...' : undefined,
+      inputValidator: showInput ? (value) => {
+        if (!value) {
+          return 'Alasan penolakan harus diisi!'
         }
-        return note;
+      } : undefined,
+      background: '#ffffff',
+      borderRadius: '1.25rem',
+      customClass: {
+        title: 'font-bold text-gray-900',
+        popup: 'rounded-3xl shadow-2xl border-none',
+        confirmButton: 'rounded-xl font-bold px-6 py-2.5',
+        cancelButton: 'rounded-xl font-bold px-6 py-2.5'
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        setLoadingText('Memproses Penolakan...');
+        setLoadingText(loadingMsg);
         setIsLoading(true);
-        router.post(route('realisasi-pnbp.reject', id), {
-          rejection_note: result.value
-        }, {
+
+        const data = {
+          action: action
+        };
+        if (showInput) {
+          data.rejection_note = result.value;
+        }
+
+        router.post(route('realisasi-pnbp.single-workflow-action', id), data, {
           preserveScroll: true,
+          onSuccess: () => {
+            if (action === 'delete') {
+              MySwal.fire({
+                title: 'Terhapus!',
+                text: 'Data laporan telah berhasil dihapus.',
+                icon: 'success',
+                confirmButtonColor: '#15803d',
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+              });
+            }
+            setIsLoading(false);
+          },
+          onError: () => setIsLoading(false),
           onFinish: () => setIsLoading(false)
         });
       }
@@ -650,7 +657,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                             {userCanApprove(item) && (
                               <>
                                 <button
-                                  onClick={() => handleApprove(item.id, item.status)}
+                                  onClick={() => handleSingleAction(item.id, 'approve')}
                                   className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
                                   title="Setujui Laporan"
                                 >
@@ -659,7 +666,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                                   </svg>
                                 </button>
                                 <button
-                                  onClick={() => handleReject(item.id)}
+                                  onClick={() => handleSingleAction(item.id, 'reject')}
                                   className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
                                   title="Tolak Laporan"
                                 >
@@ -671,7 +678,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                             )}
                             {userCanSubmit(item) && (
                               <button
-                                onClick={() => handleSubmit(item.id)}
+                                onClick={() => handleSingleAction(item.id, 'submit')}
                                 className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors shadow-sm bg-blue-50"
                                 title="Kirim ke Pimpinan"
                               >
@@ -693,7 +700,7 @@ export default function Index({ auth, datas, filters, stats, available_years }) 
                             )}
                             {userCanDelete(item) && (
                               <button
-                                onClick={() => handleDelete(item.id)}
+                                onClick={() => handleSingleAction(item.id, 'delete')}
                                 className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
                                 title="Hapus Data"
                               >

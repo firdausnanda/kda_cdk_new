@@ -281,6 +281,110 @@ export default function Index({ auth, datas, stats, filters = {} }) {
     });
   };
 
+  const handleSingleAction = (id, action) => {
+    let title = '';
+    let text = '';
+    let icon = 'warning';
+    let confirmText = '';
+    let confirmColor = '#15803d';
+    let showInput = false;
+    let loadingMsg = '';
+
+    switch (action) {
+      case 'delete':
+        title = 'Apakah Anda yakin?';
+        text = "Data yang dihapus akan tidak bisa dikembalikan!";
+        icon = 'warning';
+        confirmText = 'Ya, hapus!';
+        confirmColor = '#d33';
+        loadingMsg = 'Menghapus Data...';
+        break;
+      case 'submit':
+        title = 'Ajukan Laporan?';
+        text = "Laporan akan dikirim ke Kasi untuk diverifikasi.";
+        icon = 'question';
+        confirmText = 'Ya, Ajukan!';
+        loadingMsg = 'Mengajukan Laporan...';
+        break;
+      case 'approve':
+        title = 'Setujui Laporan?';
+        text = "Apakah Anda yakin ingin menyetujui laporan ini?";
+        icon = 'check-circle';
+        confirmText = 'Ya, Setujui';
+        loadingMsg = 'Memverifikasi...';
+        break;
+      case 'reject':
+        title = 'Tolak Laporan?';
+        text = "Berikan alasan penolakan:";
+        icon = 'warning';
+        confirmText = 'Ya, Tolak';
+        confirmColor = '#d33';
+        showInput = true;
+        loadingMsg = 'Memproses Penolakan...';
+        break;
+      default:
+        return;
+    }
+
+    MySwal.fire({
+      title: title,
+      text: showInput ? text : text,
+      icon: icon,
+      showCancelButton: true,
+      confirmButtonColor: confirmColor,
+      confirmButtonText: confirmText,
+      cancelButtonText: 'Batal',
+      cancelButtonColor: '#6B7280',
+      input: showInput ? 'textarea' : undefined,
+      inputPlaceholder: showInput ? 'Tuliskan catatan penolakan di sini...' : undefined,
+      inputValidator: showInput ? (value) => {
+        if (!value) {
+          return 'Alasan penolakan harus diisi!'
+        }
+      } : undefined,
+      background: '#ffffff',
+      borderRadius: '1.25rem',
+      customClass: {
+        title: 'font-bold text-gray-900',
+        popup: 'rounded-3xl shadow-2xl border-none',
+        confirmButton: 'rounded-xl font-bold px-6 py-2.5',
+        cancelButton: 'rounded-xl font-bold px-6 py-2.5'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setLoadingText(loadingMsg);
+        setIsLoading(true);
+
+        const data = {
+          action: action
+        };
+        if (showInput) {
+          data.rejection_note = result.value;
+        }
+
+        router.post(route('pbphh.single-workflow-action', id), data, {
+          preserveScroll: true,
+          onSuccess: () => {
+            if (action === 'delete') {
+              MySwal.fire({
+                title: 'Terhapus!',
+                text: 'Data laporan telah berhasil dihapus.',
+                icon: 'success',
+                confirmButtonColor: '#15803d',
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+              });
+            }
+            setIsLoading(false);
+          },
+          onError: () => setIsLoading(false),
+          onFinish: () => setIsLoading(false)
+        });
+      }
+    });
+  };
+
   const handleImportSubmit = (e) => {
     e.preventDefault();
     if (!importFile) return;
@@ -642,16 +746,39 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            {userCanApprove(item) && (
+                            {userCanSubmit(item) && (
                               <button
-                                onClick={() => handleBulkAction('approve')}
-                                className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
-                                title="Setujui"
+                                onClick={() => handleSingleAction(item.id, 'submit')}
+                                className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                title="Ajukan Laporan"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 9l3 3m0 0l-3 3m3-3H9" />
                                 </svg>
                               </button>
+                            )}
+
+                            {userCanApprove(item) && (
+                              <>
+                                <button
+                                  onClick={() => handleSingleAction(item.id, 'approve')}
+                                  className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                                  title="Setujui"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => handleSingleAction(item.id, 'reject')}
+                                  className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                  title="Tolak"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </>
                             )}
 
                             {userCanEdit(item) && (
@@ -668,7 +795,7 @@ export default function Index({ auth, datas, stats, filters = {} }) {
 
                             {userCanDelete(item) && (
                               <button
-                                onClick={() => handleDelete(item.id)}
+                                onClick={() => handleSingleAction(item.id, 'delete')}
                                 className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                                 title="Hapus"
                               >

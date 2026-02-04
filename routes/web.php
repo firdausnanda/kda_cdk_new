@@ -146,9 +146,7 @@ Route::middleware('auth')->group(function () {
     Route::post('pbphh/import', [PbphhController::class, 'import'])->name('pbphh.import');
     Route::post('pbphh/bulk-workflow-action', [PbphhController::class, 'bulkWorkflowAction'])->name('pbphh.bulk-workflow-action');
     Route::resource('pbphh', PbphhController::class);
-    Route::post('/pbphh/{pbphh}/submit', [PbphhController::class, 'submit'])->name('pbphh.submit');
-    Route::post('/pbphh/{pbphh}/approve', [PbphhController::class, 'approve'])->name('pbphh.approve');
-    Route::post('/pbphh/{pbphh}/reject', [PbphhController::class, 'reject'])->name('pbphh.reject');
+    Route::post('/pbphh/{pbphh}/single-workflow-action', [PbphhController::class, 'singleWorkflowAction'])->name('pbphh.single-workflow-action');
 
     // Realisasi PNBP
     Route::get('realisasi-pnbp/export', [RealisasiPnbpController::class, 'export'])->name('realisasi-pnbp.export');
@@ -156,9 +154,7 @@ Route::middleware('auth')->group(function () {
     Route::post('realisasi-pnbp/import', [RealisasiPnbpController::class, 'import'])->name('realisasi-pnbp.import');
     Route::post('realisasi-pnbp/bulk-workflow-action', [RealisasiPnbpController::class, 'bulkWorkflowAction'])->name('realisasi-pnbp.bulk-workflow-action');
     Route::resource('realisasi-pnbp', RealisasiPnbpController::class)->parameters(['realisasi-pnbp' => 'realisasi_pnbp']);
-    Route::post('/realisasi-pnbp/{realisasi_pnbp}/submit', [RealisasiPnbpController::class, 'submit'])->name('realisasi-pnbp.submit');
-    Route::post('/realisasi-pnbp/{realisasi_pnbp}/approve', [RealisasiPnbpController::class, 'approve'])->name('realisasi-pnbp.approve');
-    Route::post('/realisasi-pnbp/{realisasi_pnbp}/reject', [RealisasiPnbpController::class, 'reject'])->name('realisasi-pnbp.reject');
+    Route::post('/realisasi-pnbp/{realisasi_pnbp}/single-workflow-action', [RealisasiPnbpController::class, 'singleWorkflowAction'])->name('realisasi-pnbp.single-workflow-action');
 
     // Perkembangan SK PS
     Route::get('skps/export', [SkpsController::class, 'export'])->name('skps.export');
