@@ -495,7 +495,7 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
@@ -514,11 +514,25 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Volume Target</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-1">{formatNumber(stats.total_volume)} <span className="text-xs font-normal text-gray-400">m³</span></p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{formatNumber(stats.total_volume)} <span className="text-xs font-normal text-gray-400">m³</span></p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg text-gray-600 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Volume Realisasi</p>
+                <p className="text-2xl font-bold text-emerald-600 mt-1">{formatNumber(stats.total_volume_realization)} <span className="text-xs font-normal text-gray-400">m³</span></p>
               </div>
               <div className="p-3 bg-emerald-50 rounded-lg text-emerald-600 shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
@@ -534,7 +548,7 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
               </div>
               <div className="p-3 bg-purple-50 rounded-lg text-purple-600 shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
               </div>
             </div>

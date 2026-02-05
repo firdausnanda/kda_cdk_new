@@ -107,6 +107,14 @@ class HasilHutanKayuController extends Controller
           ->where('status', 'final')
           ->whereNull('deleted_at')
           ->sum('volume_target'),
+        'total_volume_realization' => HasilHutanKayu::where('forest_type', $forestType)
+          ->where('year', $selectedYear)
+          ->where('status', 'final')
+          ->whereNull('deleted_at')
+          ->whereHas('details')
+          ->withSum('details', 'volume_realization')
+          ->get()
+          ->sum('details_sum_volume_realization'),
         'verified_count' => HasilHutanKayu::where('forest_type', $forestType)
           ->where('year', $selectedYear)
           ->where('status', 'final')
