@@ -21,7 +21,7 @@ class KupsController extends Controller
   {
     $this->middleware('permission:pemberdayaan.view')->only(['index', 'show']);
     $this->middleware('permission:pemberdayaan.create')->only(['create', 'store']);
-    $this->middleware('permission:pemberdayaan.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:pemberdayaan.edit')->only(['edit', 'update']);
     $this->middleware('permission:pemberdayaan.delete')->only(['destroy']);
   }
 
@@ -157,6 +157,12 @@ class KupsController extends Controller
 
     $workflowAction = WorkflowAction::from($request->action);
 
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('pemberdayaan.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('pemberdayaan.approve'),
+      WorkflowAction::DELETE => $this->authorize('pemberdayaan.delete'),
+    };
+
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
@@ -227,6 +233,12 @@ class KupsController extends Controller
     ]);
 
     $workflowAction = WorkflowAction::from($request->action);
+
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('pemberdayaan.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('pemberdayaan.approve'),
+      WorkflowAction::DELETE => $this->authorize('pemberdayaan.delete'),
+    };
 
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');

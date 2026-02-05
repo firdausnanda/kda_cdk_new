@@ -22,9 +22,8 @@ class NilaiEkonomiController extends Controller
     {
         $this->middleware('permission:pemberdayaan.view')->only(['index']);
         $this->middleware('permission:pemberdayaan.create')->only(['create', 'store']);
-        $this->middleware('permission:pemberdayaan.create|pemberdayaan.edit')->only(['edit', 'update']);
+        $this->middleware('permission:pemberdayaan.edit')->only(['edit', 'update']);
         $this->middleware('permission:pemberdayaan.delete')->only(['destroy']);
-        $this->middleware('permission:pemberdayaan.approve')->only(['approve', 'reject']);
     }
 
     public function index(Request $request)
@@ -262,6 +261,12 @@ class NilaiEkonomiController extends Controller
 
         $workflowAction = WorkflowAction::from($request->action);
 
+        match ($workflowAction) {
+            WorkflowAction::SUBMIT => $this->authorize('pemberdayaan.edit'),
+            WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('pemberdayaan.approve'),
+            WorkflowAction::DELETE => $this->authorize('pemberdayaan.delete'),
+        };
+
         if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
             return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
         }
@@ -303,6 +308,12 @@ class NilaiEkonomiController extends Controller
         ]);
 
         $workflowAction = WorkflowAction::from($request->action);
+
+        match ($workflowAction) {
+            WorkflowAction::SUBMIT => $this->authorize('pemberdayaan.edit'),
+            WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('pemberdayaan.approve'),
+            WorkflowAction::DELETE => $this->authorize('pemberdayaan.delete'),
+        };
 
         if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
             return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');

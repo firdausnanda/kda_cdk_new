@@ -18,9 +18,8 @@ class ReboisasiPsController extends Controller
   {
     $this->middleware('permission:rehab.view')->only(['index', 'show']);
     $this->middleware('permission:rehab.create')->only(['create', 'store']);
-    $this->middleware('permission:rehab.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:rehab.edit')->only(['edit', 'update']);
     $this->middleware('permission:rehab.delete')->only(['destroy']);
-    $this->middleware('permission:rehab.approve')->only(['verify', 'approve', 'reject']);
   }
 
   public function index(Request $request)
@@ -219,6 +218,12 @@ class ReboisasiPsController extends Controller
 
     $workflowAction = WorkflowAction::from($request->action);
 
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('rehab.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('rehab.approve'),
+      WorkflowAction::DELETE => $this->authorize('rehab.delete'),
+    };
+
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
@@ -290,6 +295,12 @@ class ReboisasiPsController extends Controller
     ]);
 
     $workflowAction = WorkflowAction::from($request->action);
+
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('rehab.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('rehab.approve'),
+      WorkflowAction::DELETE => $this->authorize('rehab.delete'),
+    };
 
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');

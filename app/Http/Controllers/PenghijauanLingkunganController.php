@@ -19,9 +19,8 @@ class PenghijauanLingkunganController extends Controller
   {
     $this->middleware('permission:penghijauan.view')->only(['index', 'show']);
     $this->middleware('permission:penghijauan.create')->only(['create', 'store']);
-    $this->middleware('permission:penghijauan.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:penghijauan.edit')->only(['edit', 'update']);
     $this->middleware('permission:penghijauan.delete')->only(['destroy']);
-    $this->middleware('permission:penghijauan.approve')->only(['verify', 'approve', 'reject']);
   }
 
   public function index(Request $request)
@@ -216,6 +215,12 @@ class PenghijauanLingkunganController extends Controller
 
     $workflowAction = WorkflowAction::from($request->action);
 
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('penghijauan.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('penghijauan.approve'),
+      WorkflowAction::DELETE => $this->authorize('penghijauan.delete'),
+    };
+
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
@@ -299,6 +304,12 @@ class PenghijauanLingkunganController extends Controller
     ]);
 
     $workflowAction = WorkflowAction::from($request->action);
+
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('penghijauan.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('penghijauan.approve'),
+      WorkflowAction::DELETE => $this->authorize('penghijauan.delete'),
+    };
 
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');

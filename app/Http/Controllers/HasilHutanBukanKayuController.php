@@ -6,6 +6,7 @@ use App\Models\HasilHutanBukanKayu;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Actions\BulkWorkflowAction;
+use App\Actions\SingleWorkflowAction;
 use App\Enums\WorkflowAction;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -17,9 +18,8 @@ class HasilHutanBukanKayuController extends Controller
   {
     $this->middleware('permission:bina-usaha.view')->only(['index', 'show']);
     $this->middleware('permission:bina-usaha.create')->only(['create', 'store']);
-    $this->middleware('permission:bina-usaha.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:bina-usaha.edit')->only(['edit', 'update']);
     $this->middleware('permission:bina-usaha.delete')->only(['destroy']);
-    $this->middleware('permission:bina-usaha.approve')->only(['verify', 'approve', 'reject']);
   }
 
   public function index(Request $request)
@@ -307,6 +307,12 @@ class HasilHutanBukanKayuController extends Controller
 
     $workflowAction = WorkflowAction::from($request->action);
 
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('bina-usaha.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('bina-usaha.approve'),
+      WorkflowAction::DELETE => $this->authorize('bina-usaha.delete'),
+    };
+
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
@@ -391,6 +397,12 @@ class HasilHutanBukanKayuController extends Controller
     ]);
 
     $workflowAction = WorkflowAction::from($request->action);
+
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('bina-usaha.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('bina-usaha.approve'),
+      WorkflowAction::DELETE => $this->authorize('bina-usaha.delete'),
+    };
 
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');

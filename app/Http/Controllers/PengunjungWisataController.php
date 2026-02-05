@@ -18,7 +18,7 @@ class PengunjungWisataController extends Controller
   {
     $this->middleware('permission:perlindungan.view')->only(['index', 'show']);
     $this->middleware('permission:perlindungan.create')->only(['create', 'store']);
-    $this->middleware('permission:perlindungan.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:perlindungan.edit')->only(['edit', 'update']);
     $this->middleware('permission:perlindungan.delete')->only(['destroy']);
   }
 
@@ -166,6 +166,12 @@ class PengunjungWisataController extends Controller
 
     $workflowAction = WorkflowAction::from($request->action);
 
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('perlindungan.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('perlindungan.approve'),
+      WorkflowAction::DELETE => $this->authorize('perlindungan.delete'),
+    };
+
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
@@ -246,6 +252,12 @@ class PengunjungWisataController extends Controller
     ]);
 
     $workflowAction = WorkflowAction::from($request->action);
+
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('perlindungan.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('perlindungan.approve'),
+      WorkflowAction::DELETE => $this->authorize('perlindungan.delete'),
+    };
 
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');

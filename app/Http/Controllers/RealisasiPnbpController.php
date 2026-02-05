@@ -19,7 +19,7 @@ class RealisasiPnbpController extends Controller
   {
     $this->middleware('permission:bina-usaha.view')->only(['index', 'show']);
     $this->middleware('permission:bina-usaha.create')->only(['create', 'store']);
-    $this->middleware('permission:bina-usaha.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:bina-usaha.edit')->only(['edit', 'update']);
     $this->middleware('permission:bina-usaha.delete')->only(['destroy']);
   }
 
@@ -191,6 +191,12 @@ class RealisasiPnbpController extends Controller
 
     $workflowAction = WorkflowAction::from($request->action);
 
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('bina-usaha.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('bina-usaha.approve'),
+      WorkflowAction::DELETE => $this->authorize('bina-usaha.delete'),
+    };
+
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
@@ -262,6 +268,12 @@ class RealisasiPnbpController extends Controller
     ]);
 
     $workflowAction = WorkflowAction::from($request->action);
+
+    match ($workflowAction) {
+      WorkflowAction::SUBMIT => $this->authorize('bina-usaha.edit'),
+      WorkflowAction::APPROVE, WorkflowAction::REJECT => $this->authorize('bina-usaha.approve'),
+      WorkflowAction::DELETE => $this->authorize('bina-usaha.delete'),
+    };
 
     if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
       return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
