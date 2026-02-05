@@ -121,18 +121,14 @@ class HasilHutanKayuImport implements ToModel, WithHeadingRow, WithValidation, S
       if (array_key_exists($realizationKey, $row)) {
         $realization = $row[$realizationKey] ?? 0;
 
-        // Only add if there is a realization value
-        if ($realization > 0) {
+        // Add detail if realization is 0 or more
+        if ($realization >= 0) {
           $detailsData[] = [
             'kayu_id' => $kayu->id,
             'volume_realization' => $realization,
           ];
         }
       }
-    }
-
-    if (empty($detailsData)) {
-      return null;
     }
 
     return DB::transaction(function () use ($row, $regency, $districtId, $pengelolaHutanId, $pengelolaWisataId, $detailsData) {
