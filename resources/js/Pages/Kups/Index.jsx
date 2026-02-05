@@ -20,9 +20,6 @@ export default function Index({ auth, kups, stats, filters }) {
   const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Memproses...');
-  const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-  const [rejectionNote, setRejectionNote] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -223,16 +220,67 @@ export default function Index({ auth, kups, stats, filters }) {
     debouncedSearch(query);
   };
 
-  const handleDelete = (id) => {
+  const handleSingleAction = (id, action) => {
+    let title = '';
+    let text = '';
+    let icon = 'warning';
+    let confirmText = '';
+    let confirmColor = '#15803d';
+    let showInput = false;
+    let loadingMsg = '';
+
+    switch (action) {
+      case 'delete':
+        title = 'Apakah Anda yakin?';
+        text = "Data yang dihapus tidak dapat dikembalikan!";
+        icon = 'warning';
+        confirmText = 'Ya, hapus!';
+        confirmColor = '#d33';
+        loadingMsg = 'Menghapus Data...';
+        break;
+      case 'submit':
+        title = 'Submit Laporan?';
+        text = "Laporan akan dikirim ke Kasi untuk diperiksa.";
+        icon = 'question';
+        confirmText = 'Ya, Submit';
+        loadingMsg = 'Mengirim Laporan...';
+        break;
+      case 'approve':
+        title = 'Setujui Laporan?';
+        text = "Laporan akan disetujui dan diteruskan.";
+        icon = 'question';
+        confirmText = 'Ya, Setujui';
+        loadingMsg = 'Memverifikasi...';
+        break;
+      case 'reject':
+        title = 'Tolak Laporan?';
+        text = "Berikan alasan penolakan:";
+        icon = 'warning';
+        confirmText = 'Ya, Tolak';
+        confirmColor = '#d33';
+        showInput = true;
+        loadingMsg = 'Menolak Laporan...';
+        break;
+      default:
+        return;
+    }
+
     MySwal.fire({
-      title: 'Apakah Anda yakin?',
-      text: "Data yang dihapus tidak dapat dikembalikan!",
-      icon: 'warning',
+      title: title,
+      text: showInput ? text : text,
+      icon: icon,
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Ya, hapus!',
+      confirmButtonColor: confirmColor,
+      confirmButtonText: confirmText,
       cancelButtonText: 'Batal',
+      cancelButtonColor: '#6B7280',
+      input: showInput ? 'textarea' : undefined,
+      inputPlaceholder: showInput ? 'Tuliskan catatan penolakan di sini...' : undefined,
+      inputValidator: showInput ? (value) => {
+        if (!value) {
+          return 'Alasan penolakan harus diisi!'
+        }
+      } : undefined,
       background: '#ffffff',
       borderRadius: '1.25rem',
       customClass: {
@@ -243,89 +291,36 @@ export default function Index({ auth, kups, stats, filters }) {
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        setLoadingText('Menghapus Data...');
+        setLoadingText(loadingMsg);
         setIsLoading(true);
-        router.delete(route('kups.destroy', id), {
+
+        const data = {
+          action: action
+        };
+        if (showInput) {
+          data.rejection_note = result.value;
+        }
+
+        router.post(route('kups.single-workflow-action', id), data, {
+          preserveScroll: true,
           onSuccess: () => {
+            if (action === 'delete') {
+              MySwal.fire({
+                title: 'Terhapus!',
+                text: 'Data berhasil dihapus.',
+                icon: 'success',
+                confirmButtonColor: '#15803d',
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+              });
+            }
             setIsLoading(false);
-            MySwal.fire({
-              title: 'Terhapus!',
-              text: 'Data berhasil dihapus.',
-              icon: 'success',
-              confirmButtonColor: '#15803d',
-              timer: 2000,
-              timerProgressBar: true,
-              showConfirmButton: false,
-            });
           },
+          onError: () => setIsLoading(false),
           onFinish: () => setIsLoading(false)
         });
       }
-    });
-  };
-
-  const handleSubmit = (id) => {
-    MySwal.fire({
-      title: 'Submit Laporan?',
-      text: "Laporan akan dikirim ke Kasi untuk diperiksa.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#15803d',
-      confirmButtonText: 'Ya, Submit',
-      cancelButtonText: 'Batal',
-      borderRadius: '1.25rem',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Mengirim Laporan...');
-        setIsLoading(true);
-        router.post(route('kups.submit', id), {}, {
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
-
-  const handleApprove = (id) => {
-    MySwal.fire({
-      title: 'Setujui Laporan?',
-      text: "Laporan akan disetujui dan diteruskan.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#15803d',
-      confirmButtonText: 'Ya, Setujui',
-      cancelButtonText: 'Batal',
-      borderRadius: '1.25rem',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Memverifikasi...');
-        setIsLoading(true);
-        router.post(route('kups.approve', id), {}, {
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
-
-  const openRejectModal = (id) => {
-    setSelectedId(id);
-    setRejectionNote('');
-    setRejectModalOpen(true);
-  };
-
-  const handleReject = () => {
-    if (!rejectionNote) {
-      MySwal.fire('Error', 'Alasan penolakan harus diisi', 'error');
-      return;
-    }
-    setLoadingText('Menolak Laporan...');
-    setIsLoading(true);
-    router.post(route('kups.reject', selectedId), { rejection_note: rejectionNote }, {
-      onSuccess: () => {
-        setRejectModalOpen(false);
-        setIsLoading(false);
-        MySwal.fire('Ditolak', 'Laporan telah ditolak.', 'success');
-      },
-      onFinish: () => setIsLoading(false)
     });
   };
 
@@ -586,7 +581,7 @@ export default function Index({ auth, kups, stats, filters }) {
                             {/* Submit Button */}
                             {(canEdit && (item.status === 'draft' || item.status === 'rejected')) && (
                               <button
-                                onClick={() => handleSubmit(item.id)}
+                                onClick={() => handleSingleAction(item.id, 'submit')}
                                 className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors shadow-sm bg-blue-50"
                                 title="Kirim ke Pimpinan"
                               >
@@ -600,7 +595,7 @@ export default function Index({ auth, kups, stats, filters }) {
                             {(canApprove && (isKasi || isAdmin) && item.status === 'waiting_kasi') && (
                               <>
                                 <button
-                                  onClick={() => handleApprove(item.id)}
+                                  onClick={() => handleSingleAction(item.id, 'approve')}
                                   className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
                                   title="Setujui Laporan"
                                 >
@@ -609,7 +604,7 @@ export default function Index({ auth, kups, stats, filters }) {
                                   </svg>
                                 </button>
                                 <button
-                                  onClick={() => openRejectModal(item.id)}
+                                  onClick={() => handleSingleAction(item.id, 'reject')}
                                   className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
                                   title="Tolak Laporan"
                                 >
@@ -624,7 +619,7 @@ export default function Index({ auth, kups, stats, filters }) {
                             {(canApprove && (isKaCdk || isAdmin) && item.status === 'waiting_cdk') && (
                               <>
                                 <button
-                                  onClick={() => handleApprove(item.id)}
+                                  onClick={() => handleSingleAction(item.id, 'approve')}
                                   className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
                                   title="Setujui Laporan"
                                 >
@@ -633,7 +628,7 @@ export default function Index({ auth, kups, stats, filters }) {
                                   </svg>
                                 </button>
                                 <button
-                                  onClick={() => openRejectModal(item.id)}
+                                  onClick={() => handleSingleAction(item.id, 'reject')}
                                   className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
                                   title="Tolak Laporan"
                                 >
@@ -658,7 +653,7 @@ export default function Index({ auth, kups, stats, filters }) {
                                 </Link>
                                 {(canDelete || isAdmin) && (
                                   <button
-                                    onClick={() => handleDelete(item.id)}
+                                    onClick={() => handleSingleAction(item.id, 'delete')}
                                     className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
                                     title="Hapus Data"
                                   >
@@ -704,37 +699,6 @@ export default function Index({ auth, kups, stats, filters }) {
         </div>
       </div>
 
-      <Modal show={rejectModalOpen} onClose={() => setRejectModalOpen(false)}>
-        <div className="p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-2">Tolak Laporan</h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Silakan berikan alasan mengapa laporan ini ditolak. Catatan ini akan terlihat oleh pembuat laporan.
-          </p>
-
-          <textarea
-            className="w-full border-gray-200 rounded-xl shadow-sm focus:border-red-500 focus:ring-red-500 text-sm"
-            rows="4"
-            placeholder="Tuliskan alasan penolakan di sini..."
-            value={rejectionNote}
-            onChange={(e) => setRejectionNote(e.target.value)}
-          ></textarea>
-
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              onClick={() => setRejectModalOpen(false)}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
-            >
-              Batal
-            </button>
-            <button
-              onClick={handleReject}
-              className="px-4 py-2 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-colors shadow-sm shadow-red-200"
-            >
-              Tolak Laporan
-            </button>
-          </div>
-        </div>
-      </Modal>
 
       {/* Import Modal */}
       <Modal show={showImportModal} onClose={() => setShowImportModal(false)}>

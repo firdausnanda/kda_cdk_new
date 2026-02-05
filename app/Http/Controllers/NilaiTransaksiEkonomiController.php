@@ -6,7 +6,9 @@ use App\Models\NilaiTransaksiEkonomi;
 use App\Models\Commodity;
 use App\Models\NilaiTransaksiEkonomiDetail;
 use App\Actions\BulkWorkflowAction;
+use App\Actions\SingleWorkflowAction;
 use App\Enums\WorkflowAction;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -19,9 +21,9 @@ class NilaiTransaksiEkonomiController extends Controller
   {
     $this->middleware('permission:pemberdayaan.view')->only(['index', 'show']);
     $this->middleware('permission:pemberdayaan.create')->only(['create', 'store']);
-    $this->middleware('permission:pemberdayaan.create|pemberdayaan.edit')->only(['edit', 'update']); // submit removed
+    $this->middleware('permission:pemberdayaan.create|pemberdayaan.edit')->only(['edit', 'update', 'singleWorkflowAction']);
     $this->middleware('permission:pemberdayaan.delete')->only(['destroy']);
-    $this->middleware('permission:pemberdayaan.approve')->only(['verify', 'approve', 'reject']);
+    $this->middleware('permission:pemberdayaan.approve')->only(['singleWorkflowAction']);
   }
 
   public function index(Request $request)
@@ -246,39 +248,47 @@ class NilaiTransaksiEkonomiController extends Controller
     return redirect()->route('nilai-transaksi-ekonomi.index')->with('success', 'Data transaksi berhasil dihapus.');
   }
 
-  public function submit(NilaiTransaksiEkonomi $nilaiTransaksiEkonomi)
+  /**
+   * Handle single workflow action.
+   */
+  public function singleWorkflowAction(Request $request, NilaiTransaksiEkonomi $nilaiTransaksiEkonomi, SingleWorkflowAction $action)
   {
-    // Custom authorization: Allow if user is creator OR has specific permissions
-    if (auth()->id() !== $nilaiTransaksiEkonomi->created_by && !auth()->user()->can('pemberdayaan.edit') && !auth()->user()->can('pemberdayaan.create')) {
-      return redirect()->back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk melakukan aksi ini.');
+    $request->validate([
+      'action' => ['required', Rule::enum(WorkflowAction::class)],
+      'rejection_note' => 'nullable|string|max:255',
+    ]);
+
+    $workflowAction = WorkflowAction::from($request->action);
+
+    if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
+      return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
     }
 
-    $nilaiTransaksiEkonomi->update(['status' => 'waiting_kasi']);
-    return redirect()->back()->with('success', 'Laporan berhasil diajukan untuk verifikasi Kasi.');
-  }
-
-  public function approve(NilaiTransaksiEkonomi $nilaiTransaksiEkonomi)
-  {
-    $user = auth()->user();
-
-    if (($user->hasRole('kasi') || $user->hasRole('admin')) && $nilaiTransaksiEkonomi->status === 'waiting_kasi') {
-      $nilaiTransaksiEkonomi->update(['status' => 'waiting_cdk', 'approved_by_kasi_at' => now()]);
-      return redirect()->back()->with('success', 'Laporan disetujui dan diteruskan ke KaCDK.');
+    $extraData = [];
+    if ($request->filled('rejection_note')) {
+      $extraData['rejection_note'] = $request->rejection_note;
     }
 
-    if (($user->hasRole('kacdk') || $user->hasRole('admin')) && $nilaiTransaksiEkonomi->status === 'waiting_cdk') {
-      $nilaiTransaksiEkonomi->update(['status' => 'final', 'approved_by_cdk_at' => now()]);
-      return redirect()->back()->with('success', 'Laporan telah disetujui secara final.');
+    $success = $action->execute(
+      model: $nilaiTransaksiEkonomi,
+      action: $workflowAction,
+      user: auth()->user(),
+      extraData: $extraData
+    );
+
+    if ($success) {
+      cache()->forget("nilai-transaksi-stats-{$nilaiTransaksiEkonomi->year}");
+
+      $message = match ($workflowAction) {
+        WorkflowAction::DELETE => 'dihapus',
+        WorkflowAction::SUBMIT => 'diajukan untuk verifikasi',
+        WorkflowAction::APPROVE => 'disetujui',
+        WorkflowAction::REJECT => 'ditolak',
+      };
+      return redirect()->back()->with('success', "Laporan berhasil {$message}.");
     }
 
-    return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
-  }
-
-  public function reject(Request $request, NilaiTransaksiEkonomi $nilaiTransaksiEkonomi)
-  {
-    $request->validate(['rejection_note' => 'required|string|max:255']);
-    $nilaiTransaksiEkonomi->update(['status' => 'rejected', 'rejection_note' => $request->rejection_note]);
-    return redirect()->back()->with('success', 'Laporan telah ditolak dengan catatan.');
+    return redirect()->back()->with('error', 'Gagal memproses laporan atau status tidak sesuai.');
   }
 
 

@@ -8,7 +8,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
 use App\Actions\BulkWorkflowAction;
+use App\Actions\SingleWorkflowAction;
 use App\Enums\WorkflowAction;
+use Illuminate\Validation\Rule;
 
 class SkpsController extends Controller
 {
@@ -176,47 +178,47 @@ class SkpsController extends Controller
     return Redirect::route('skps.index')->with('success', 'Data berhasil dihapus.');
   }
 
-  public function submit(Skps $skp)
-  {
-    $skp->update(['status' => 'waiting_kasi']);
-    return Redirect::back()->with('success', 'Laporan berhasil diajukan untuk verifikasi Kasi.');
-  }
-
-  public function approve(Skps $skp)
-  {
-    $user = auth()->user();
-
-    if (($user->hasRole('kasi') || $user->hasRole('admin')) && $skp->status === 'waiting_kasi') {
-      $skp->update([
-        'status' => 'waiting_cdk',
-        'approved_by_kasi_at' => now(),
-      ]);
-      return Redirect::back()->with('success', 'Laporan disetujui dan diteruskan ke KaCDK.');
-    }
-
-    if (($user->hasRole('kacdk') || $user->hasRole('admin')) && $skp->status === 'waiting_cdk') {
-      $skp->update([
-        'status' => 'final',
-        'approved_by_cdk_at' => now(),
-      ]);
-      return Redirect::back()->with('success', 'Laporan telah disetujui secara final.');
-    }
-
-    return Redirect::back()->with('error', 'Aksi tidak diijinkan.');
-  }
-
-  public function reject(Request $request, Skps $skp)
+  /**
+   * Handle single workflow action.
+   */
+  public function singleWorkflowAction(Request $request, Skps $skp, SingleWorkflowAction $action)
   {
     $request->validate([
-      'rejection_note' => 'required|string|max:255',
+      'action' => ['required', Rule::enum(WorkflowAction::class)],
+      'rejection_note' => 'nullable|string|max:255',
     ]);
 
-    $skp->update([
-      'status' => 'rejected',
-      'rejection_note' => $request->rejection_note,
-    ]);
+    $workflowAction = WorkflowAction::from($request->action);
 
-    return Redirect::back()->with('success', 'Laporan telah ditolak dengan catatan.');
+    if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
+      return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
+    }
+
+    $extraData = [];
+    if ($request->filled('rejection_note')) {
+      $extraData['rejection_note'] = $request->rejection_note;
+    }
+
+    $success = $action->execute(
+      model: $skp,
+      action: $workflowAction,
+      user: auth()->user(),
+      extraData: $extraData
+    );
+
+    if ($success) {
+      cache()->forget('skps-stats');
+
+      $message = match ($workflowAction) {
+        WorkflowAction::DELETE => 'dihapus',
+        WorkflowAction::SUBMIT => 'diajukan untuk verifikasi',
+        WorkflowAction::APPROVE => 'disetujui',
+        WorkflowAction::REJECT => 'ditolak',
+      };
+      return redirect()->back()->with('success', "Laporan berhasil {$message}.");
+    }
+
+    return redirect()->back()->with('error', 'Gagal memproses laporan atau status tidak sesuai.');
   }
 
   public function export()

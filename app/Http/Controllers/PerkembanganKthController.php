@@ -6,7 +6,9 @@ use App\Models\PerkembanganKth;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Actions\BulkWorkflowAction;
+use App\Actions\SingleWorkflowAction;
 use App\Enums\WorkflowAction;
+use Illuminate\Validation\Rule;
 
 class PerkembanganKthController extends Controller
 {
@@ -16,9 +18,9 @@ class PerkembanganKthController extends Controller
   {
     $this->middleware('permission:pemberdayaan.view')->only(['index', 'show']);
     $this->middleware('permission:pemberdayaan.create')->only(['create', 'store']);
-    $this->middleware('permission:pemberdayaan.edit')->only(['edit', 'update', 'submit']);
+    $this->middleware('permission:pemberdayaan.edit')->only(['edit', 'update', 'singleWorkflowAction']);
     $this->middleware('permission:pemberdayaan.delete')->only(['destroy']);
-    $this->middleware('permission:pemberdayaan.approve')->only(['verify', 'approve', 'reject']);
+    $this->middleware('permission:pemberdayaan.approve')->only(['singleWorkflowAction']);
   }
 
   public function index(Request $request)
@@ -253,55 +255,46 @@ class PerkembanganKthController extends Controller
   }
 
   /**
-   * Submit the report for verification.
+   * Handle single workflow action.
    */
-  public function submit(PerkembanganKth $perkembanganKth)
-  {
-    $perkembanganKth->update(['status' => 'waiting_kasi']);
-    return redirect()->back()->with('success', 'Laporan berhasil diajukan untuk verifikasi Kasi.');
-  }
-
-  /**
-   * Approve the report.
-   */
-  public function approve(PerkembanganKth $perkembanganKth)
-  {
-    $user = auth()->user();
-
-    if (($user->hasRole('kasi') || $user->hasRole('admin')) && $perkembanganKth->status === 'waiting_kasi') {
-      $perkembanganKth->update([
-        'status' => 'waiting_cdk',
-        'approved_by_kasi_at' => now(),
-      ]);
-      return redirect()->back()->with('success', 'Laporan disetujui dan diteruskan ke KaCDK.');
-    }
-
-    if (($user->hasRole('kacdk') || $user->hasRole('admin')) && $perkembanganKth->status === 'waiting_cdk') {
-      $perkembanganKth->update([
-        'status' => 'final',
-        'approved_by_cdk_at' => now(),
-      ]);
-      return redirect()->back()->with('success', 'Laporan telah disetujui secara final.');
-    }
-
-    return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
-  }
-
-  /**
-   * Reject the report.
-   */
-  public function reject(Request $request, PerkembanganKth $perkembanganKth)
+  public function singleWorkflowAction(Request $request, PerkembanganKth $perkembanganKth, SingleWorkflowAction $action)
   {
     $request->validate([
-      'rejection_note' => 'required|string|max:255',
+      'action' => ['required', Rule::enum(WorkflowAction::class)],
+      'rejection_note' => 'nullable|string|max:255',
     ]);
 
-    $perkembanganKth->update([
-      'status' => 'rejected',
-      'rejection_note' => $request->rejection_note,
-    ]);
+    $workflowAction = WorkflowAction::from($request->action);
 
-    return redirect()->back()->with('success', 'Laporan telah ditolak dengan catatan.');
+    if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
+      return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
+    }
+
+    $extraData = [];
+    if ($request->filled('rejection_note')) {
+      $extraData['rejection_note'] = $request->rejection_note;
+    }
+
+    $success = $action->execute(
+      model: $perkembanganKth,
+      action: $workflowAction,
+      user: auth()->user(),
+      extraData: $extraData
+    );
+
+    if ($success) {
+      cache()->forget('perkembangan-kth-stats-' . $perkembanganKth->year);
+
+      $message = match ($workflowAction) {
+        WorkflowAction::DELETE => 'dihapus',
+        WorkflowAction::SUBMIT => 'diajukan untuk verifikasi',
+        WorkflowAction::APPROVE => 'disetujui',
+        WorkflowAction::REJECT => 'ditolak',
+      };
+      return redirect()->back()->with('success', "Laporan berhasil {$message}.");
+    }
+
+    return redirect()->back()->with('error', 'Gagal memproses laporan atau status tidak sesuai.');
   }
 
   public function bulkReject(Request $request)

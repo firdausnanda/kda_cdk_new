@@ -162,9 +162,7 @@ Route::middleware('auth')->group(function () {
     Route::post('skps/import', [SkpsController::class, 'import'])->name('skps.import');
     Route::post('skps/bulk-workflow-action', [SkpsController::class, 'bulkWorkflowAction'])->name('skps.bulk-workflow-action');
     Route::resource('skps', SkpsController::class);
-    Route::post('/skps/{skp}/submit', [SkpsController::class, 'submit'])->name('skps.submit');
-    Route::post('/skps/{skp}/approve', [SkpsController::class, 'approve'])->name('skps.approve');
-    Route::post('/skps/{skp}/reject', [SkpsController::class, 'reject'])->name('skps.reject');
+    Route::post('/skps/{skp}/single-workflow-action', [SkpsController::class, 'singleWorkflowAction'])->name('skps.single-workflow-action');
 
     // Perkembangan KUPS
     Route::get('kups/export', [KupsController::class, 'export'])->name('kups.export');
@@ -172,16 +170,12 @@ Route::middleware('auth')->group(function () {
     Route::post('kups/import', [KupsController::class, 'import'])->name('kups.import');
     Route::post('kups/bulk-workflow-action', [KupsController::class, 'bulkWorkflowAction'])->name('kups.bulk-workflow-action');
     Route::resource('kups', KupsController::class);
-    Route::post('/kups/{kups}/submit', [KupsController::class, 'submit'])->name('kups.submit');
-    Route::post('/kups/{kups}/approve', [KupsController::class, 'approve'])->name('kups.approve');
-    Route::post('/kups/{kups}/reject', [KupsController::class, 'reject'])->name('kups.reject');
+    Route::post('/kups/{kups}/single-workflow-action', [KupsController::class, 'singleWorkflowAction'])->name('kups.single-workflow-action');
 
     // Nilai Ekonomi (NEKON)
     Route::post('nilai-ekonomi/bulk-workflow-action', [NilaiEkonomiController::class, 'bulkWorkflowAction'])->name('nilai-ekonomi.bulk-workflow-action');
     Route::resource('nilai-ekonomi', NilaiEkonomiController::class);
-    Route::post('/nilai-ekonomi/{nilai_ekonomi}/submit', [NilaiEkonomiController::class, 'submit'])->name('nilai-ekonomi.submit');
-    Route::post('/nilai-ekonomi/{nilai_ekonomi}/approve', [NilaiEkonomiController::class, 'approve'])->name('nilai-ekonomi.approve');
-    Route::post('/nilai-ekonomi/{nilai_ekonomi}/reject', [NilaiEkonomiController::class, 'reject'])->name('nilai-ekonomi.reject');
+    Route::post('/nilai-ekonomi/{nilai_ekonomi}/single-workflow-action', [NilaiEkonomiController::class, 'singleWorkflowAction'])->name('nilai-ekonomi.single-workflow-action');
 
 
     // Perkembangan KTH
@@ -190,9 +184,7 @@ Route::middleware('auth')->group(function () {
     Route::get('perkembangan-kth/template', [PerkembanganKthController::class, 'template'])->name('perkembangan-kth.template');
     Route::post('perkembangan-kth/import', [PerkembanganKthController::class, 'import'])->name('perkembangan-kth.import');
     Route::resource('perkembangan-kth', PerkembanganKthController::class)->parameters(['perkembangan-kth' => 'perkembangan_kth']);
-    Route::post('/perkembangan-kth/{perkembangan_kth}/submit', [PerkembanganKthController::class, 'submit'])->name('perkembangan-kth.submit');
-    Route::post('/perkembangan-kth/{perkembangan_kth}/approve', [PerkembanganKthController::class, 'approve'])->name('perkembangan-kth.approve');
-    Route::post('/perkembangan-kth/{perkembangan_kth}/reject', [PerkembanganKthController::class, 'reject'])->name('perkembangan-kth.reject');
+    Route::post('/perkembangan-kth/{perkembangan_kth}/single-workflow-action', [PerkembanganKthController::class, 'singleWorkflowAction'])->name('perkembangan-kth.single-workflow-action');
 
     // Nilai Transaksi Ekonomi
     Route::post('nilai-transaksi-ekonomi/bulk-workflow-action', [NilaiTransaksiEkonomiController::class, 'bulkWorkflowAction'])->name('nilai-transaksi-ekonomi.bulk-workflow-action');
@@ -200,9 +192,7 @@ Route::middleware('auth')->group(function () {
     Route::get('nilai-transaksi-ekonomi/template', [NilaiTransaksiEkonomiController::class, 'template'])->name('nilai-transaksi-ekonomi.template');
     Route::post('nilai-transaksi-ekonomi/import', [NilaiTransaksiEkonomiController::class, 'import'])->name('nilai-transaksi-ekonomi.import');
     Route::resource('nilai-transaksi-ekonomi', NilaiTransaksiEkonomiController::class)->parameters(['nilai-transaksi-ekonomi' => 'nilai_transaksi_ekonomi']);
-    Route::post('/nilai-transaksi-ekonomi/{nilai_transaksi_ekonomi}/submit', [NilaiTransaksiEkonomiController::class, 'submit'])->name('nilai-transaksi-ekonomi.submit');
-    Route::post('/nilai-transaksi-ekonomi/{nilai_transaksi_ekonomi}/approve', [NilaiTransaksiEkonomiController::class, 'approve'])->name('nilai-transaksi-ekonomi.approve');
-    Route::post('/nilai-transaksi-ekonomi/{nilai_transaksi_ekonomi}/reject', [NilaiTransaksiEkonomiController::class, 'reject'])->name('nilai-transaksi-ekonomi.reject');
+    Route::post('/nilai-transaksi-ekonomi/{nilai_transaksi_ekonomi}/single-workflow-action', [NilaiTransaksiEkonomiController::class, 'singleWorkflowAction'])->name('nilai-transaksi-ekonomi.single-workflow-action');
 
     // User Management
     // User Management

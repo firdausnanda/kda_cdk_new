@@ -10,7 +10,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Actions\BulkWorkflowAction;
+use App\Actions\SingleWorkflowAction;
 use App\Enums\WorkflowAction;
+use Illuminate\Validation\Rule;
 
 class KupsController extends Controller
 {
@@ -143,50 +145,47 @@ class KupsController extends Controller
     return redirect()->route('kups.index')->with('success', 'Data KUPS berhasil dihapus.');
   }
 
-  public function submit($id)
+  /**
+   * Handle single workflow action.
+   */
+  public function singleWorkflowAction(Request $request, Kups $kup, SingleWorkflowAction $action)
   {
-    $kup = Kups::findOrFail($id);
-    if ($kup->status === 'draft' || $kup->status === 'rejected') {
-      $kup->update(['status' => 'waiting_kasi']);
-      return back()->with('success', 'Laporan berhasil disubmit ke Kasi.');
-    }
-    return back()->with('error', 'Status laporan tidak valid untuk submit.');
-  }
-
-  public function approve($id)
-  {
-    $kup = Kups::findOrFail($id);
-    $user = Auth::user();
-
-    if ($user->hasRole('kasi') && $kup->status === 'waiting_kasi') {
-      $kup->update([
-        'status' => 'waiting_cdk',
-        'approved_by_kasi_at' => now(),
-      ]);
-      return back()->with('success', 'Laporan disetujui oleh Kasi.');
-    }
-
-    if (($user->hasRole('kacdk') || $user->hasRole('admin')) && $kup->status === 'waiting_cdk') {
-      $kup->update([
-        'status' => 'final',
-        'approved_by_cdk_at' => now(),
-      ]);
-      return back()->with('success', 'Laporan disetujui oleh Kepala CDK.');
-    }
-
-    return back()->with('error', 'Anda tidak memiliki akses untuk menyetujui laporan ini.');
-  }
-
-  public function reject(Request $request, $id)
-  {
-    $request->validate(['rejection_note' => 'required|string']);
-    $kup = Kups::findOrFail($id);
-    $kup->update([
-      'status' => 'rejected',
-      'rejection_note' => $request->rejection_note
+    $request->validate([
+      'action' => ['required', Rule::enum(WorkflowAction::class)],
+      'rejection_note' => 'nullable|string|max:255',
     ]);
 
-    return back()->with('success', 'Laporan ditolak.');
+    $workflowAction = WorkflowAction::from($request->action);
+
+    if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
+      return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
+    }
+
+    $extraData = [];
+    if ($request->filled('rejection_note')) {
+      $extraData['rejection_note'] = $request->rejection_note;
+    }
+
+    $success = $action->execute(
+      model: $kup,
+      action: $workflowAction,
+      user: auth()->user(),
+      extraData: $extraData
+    );
+
+    if ($success) {
+      cache()->forget('kups-stats');
+
+      $message = match ($workflowAction) {
+        WorkflowAction::DELETE => 'dihapus',
+        WorkflowAction::SUBMIT => 'diajukan untuk verifikasi',
+        WorkflowAction::APPROVE => 'disetujui',
+        WorkflowAction::REJECT => 'ditolak',
+      };
+      return redirect()->back()->with('success', "Laporan berhasil {$message}.");
+    }
+
+    return redirect()->back()->with('error', 'Gagal memproses laporan atau status tidak sesuai.');
   }
 
   public function export()

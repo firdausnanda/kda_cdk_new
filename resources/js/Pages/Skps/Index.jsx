@@ -252,16 +252,67 @@ export default function Index({ auth, datas, stats, filters = {} }) {
   const canSubmit = userPermissions.includes('pemberdayaan.edit') || isAdmin;
 
 
-  const handleDelete = (id) => {
+  const handleSingleAction = (id, action) => {
+    let title = '';
+    let text = '';
+    let icon = 'warning';
+    let confirmText = '';
+    let confirmColor = '#15803d';
+    let showInput = false;
+    let loadingMsg = '';
+
+    switch (action) {
+      case 'delete':
+        title = 'Apakah Anda yakin?';
+        text = "Data yang dihapus akan tidak bisa dikembalikan!";
+        icon = 'warning';
+        confirmText = 'Ya, hapus!';
+        confirmColor = '#d33';
+        loadingMsg = 'Menghapus Data...';
+        break;
+      case 'submit':
+        title = 'Ajukan Laporan?';
+        text = "Laporan akan dikirim ke Kasi untuk diverifikasi.";
+        icon = 'question';
+        confirmText = 'Ya, Ajukan!';
+        loadingMsg = 'Mengajukan Laporan...';
+        break;
+      case 'approve':
+        title = 'Setujui Laporan?';
+        text = "Apakah Anda yakin ingin menyetujui laporan ini?";
+        icon = 'check-circle';
+        confirmText = 'Ya, Setujui';
+        loadingMsg = 'Memverifikasi...';
+        break;
+      case 'reject':
+        title = 'Tolak Laporan?';
+        text = "Berikan alasan penolakan:";
+        icon = 'warning';
+        confirmText = 'Ya, Tolak';
+        confirmColor = '#d33';
+        showInput = true;
+        loadingMsg = 'Memproses Penolakan...';
+        break;
+      default:
+        return;
+    }
+
     MySwal.fire({
-      title: 'Apakah Anda yakin?',
-      text: "Data yang dihapus akan tidak bisa dikembalikan!",
-      icon: 'warning',
+      title: title,
+      text: showInput ? text : text,
+      icon: icon,
       showCancelButton: true,
-      confirmButtonColor: '#15803d',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Ya, hapus!',
+      confirmButtonColor: confirmColor,
+      confirmButtonText: confirmText,
       cancelButtonText: 'Batal',
+      cancelButtonColor: '#6B7280',
+      input: showInput ? 'textarea' : undefined,
+      inputPlaceholder: showInput ? 'Tuliskan catatan penolakan di sini...' : undefined,
+      inputValidator: showInput ? (value) => {
+        if (!value) {
+          return 'Alasan penolakan harus diisi!'
+        }
+      } : undefined,
       background: '#ffffff',
       borderRadius: '1.25rem',
       customClass: {
@@ -272,98 +323,33 @@ export default function Index({ auth, datas, stats, filters = {} }) {
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        setLoadingText('Menghapus Data...');
+        setLoadingText(loadingMsg);
         setIsLoading(true);
-        router.delete(route('skps.destroy', id), {
+
+        const data = {
+          action: action
+        };
+        if (showInput) {
+          data.rejection_note = result.value;
+        }
+
+        router.post(route('skps.single-workflow-action', id), data, {
           preserveScroll: true,
           onSuccess: () => {
+            if (action === 'delete') {
+              MySwal.fire({
+                title: 'Terhapus!',
+                text: 'Data laporan telah berhasil dihapus.',
+                icon: 'success',
+                confirmButtonColor: '#15803d',
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+              });
+            }
             setIsLoading(false);
-            MySwal.fire({
-              title: 'Terhapus!',
-              text: 'Data laporan telah berhasil dihapus.',
-              icon: 'success',
-              confirmButtonColor: '#15803d',
-              timer: 2000,
-              timerProgressBar: true,
-              showConfirmButton: false,
-            });
           },
           onError: () => setIsLoading(false),
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
-
-  const handleSubmit = (id) => {
-    MySwal.fire({
-      title: 'Ajukan Laporan?',
-      text: "Laporan akan dikirim ke Kasi untuk diverifikasi.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#15803d',
-      confirmButtonText: 'Ya, Ajukan!',
-      cancelButtonText: 'Batal',
-      borderRadius: '1.25rem',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Mengajukan Laporan...');
-        setIsLoading(true);
-        router.post(route('skps.submit', id), {}, {
-          preserveScroll: true,
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
-
-  const handleVerify = (id) => {
-    MySwal.fire({
-      title: 'Setujui Laporan?',
-      text: "Apakah Anda yakin ingin menyetujui laporan ini?",
-      icon: 'check-circle',
-      showCancelButton: true,
-      confirmButtonColor: '#15803d',
-      confirmButtonText: 'Ya, Setujui',
-      cancelButtonText: 'Batal',
-      borderRadius: '1.25rem',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Memverifikasi...');
-        setIsLoading(true);
-        router.post(route('skps.approve', id), {}, {
-          preserveScroll: true,
-          onFinish: () => setIsLoading(false)
-        });
-      }
-    });
-  };
-
-  const handleReject = (id) => {
-    MySwal.fire({
-      title: 'Tolak Laporan?',
-      text: "Berikan alasan penolakan:",
-      input: 'textarea',
-      inputPlaceholder: 'Tuliskan catatan penolakan di sini...',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      confirmButtonText: 'Ya, Tolak',
-      cancelButtonText: 'Batal',
-      borderRadius: '1.25rem',
-      inputValidator: (value) => {
-        if (!value) {
-          return 'Alasan penolakan harus diisi!'
-        }
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLoadingText('Memproses Penolakan...');
-        setIsLoading(true);
-        router.post(route('skps.reject', id), {
-          rejection_note: result.value
-        }, {
-          preserveScroll: true,
           onFinish: () => setIsLoading(false)
         });
       }
@@ -635,7 +621,7 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                             {/* Submit Button */}
                             {(canSubmit && (item.status === 'draft' || item.status === 'rejected')) && (
                               <button
-                                onClick={() => handleSubmit(item.id)}
+                                onClick={() => handleSingleAction(item.id, 'submit')}
                                 className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors shadow-sm bg-blue-50"
                                 title="Kirim ke Pimpinan"
                               >
@@ -649,7 +635,7 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                             {(canApprove && (isKasi || isAdmin) && item.status === 'waiting_kasi') && (
                               <>
                                 <button
-                                  onClick={() => handleVerify(item.id)}
+                                  onClick={() => handleSingleAction(item.id, 'approve')}
                                   className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
                                   title="Setujui Laporan"
                                 >
@@ -658,7 +644,7 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                                   </svg>
                                 </button>
                                 <button
-                                  onClick={() => handleReject(item.id)}
+                                  onClick={() => handleSingleAction(item.id, 'reject')}
                                   className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
                                   title="Tolak Laporan"
                                 >
@@ -673,7 +659,7 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                             {(canApprove && (isKaCdk || isAdmin) && item.status === 'waiting_cdk') && (
                               <>
                                 <button
-                                  onClick={() => handleVerify(item.id)}
+                                  onClick={() => handleSingleAction(item.id, 'approve')}
                                   className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm bg-emerald-50"
                                   title="Setujui Laporan"
                                 >
@@ -682,7 +668,7 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                                   </svg>
                                 </button>
                                 <button
-                                  onClick={() => handleReject(item.id)}
+                                  onClick={() => handleSingleAction(item.id, 'reject')}
                                   className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
                                   title="Tolak Laporan"
                                 >
@@ -707,7 +693,7 @@ export default function Index({ auth, datas, stats, filters = {} }) {
                                 </Link>
                                 {(canDelete || isAdmin) && (
                                   <button
-                                    onClick={() => handleDelete(item.id)}
+                                    onClick={() => handleSingleAction(item.id, 'delete')}
                                     className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm bg-red-50"
                                     title="Hapus Data"
                                   >

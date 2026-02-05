@@ -12,7 +12,9 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Actions\BulkWorkflowAction;
+use App\Actions\SingleWorkflowAction;
 use App\Enums\WorkflowAction;
+use Illuminate\Validation\Rule;
 
 class NilaiEkonomiController extends Controller
 {
@@ -248,55 +250,47 @@ class NilaiEkonomiController extends Controller
         return redirect()->route('nilai-ekonomi.index')->with('success', 'Data Nilai Ekonomi berhasil dihapus.');
     }
 
-    public function submit(NilaiEkonomi $nilaiEkonomi)
-    {
-        // Custom authorization: Allow if user is creator OR has specific permissions
-        if (auth()->id() !== $nilaiEkonomi->created_by && !auth()->user()->can('pemberdayaan.edit') && !auth()->user()->can('pemberdayaan.create')) {
-            return redirect()->back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk melakukan aksi ini.');
-        }
-
-        $nilaiEkonomi->update(['status' => 'waiting_kasi']);
-        return redirect()->back()->with('success', 'Laporan berhasil diajukan untuk verifikasi Kasi.');
-    }
-
-    public function approve(NilaiEkonomi $nilaiEkonomi)
-    {
-        $user = auth()->user();
-
-        if (($user->hasRole('kasi') || $user->hasRole('admin')) && $nilaiEkonomi->status === 'waiting_kasi') {
-            $nilaiEkonomi->update([
-                'status' => 'waiting_cdk',
-                'approved_by_kasi_at' => now(),
-            ]);
-            return redirect()->back()->with('success', 'Laporan disetujui dan diteruskan ke KaCDK.');
-        }
-
-        if (($user->hasRole('kacdk') || $user->hasRole('admin')) && $nilaiEkonomi->status === 'waiting_cdk') {
-            $nilaiEkonomi->update([
-                'status' => 'final',
-                'approved_by_cdk_at' => now(),
-            ]);
-            return redirect()->back()->with('success', 'Laporan telah disetujui secara final.');
-        }
-
-        $this->clearCache($nilaiEkonomi->year);
-
-        return redirect()->back()->with('error', 'Aksi tidak diijinkan.');
-    }
-
-    public function reject(Request $request, NilaiEkonomi $nilaiEkonomi)
+    /**
+     * Handle single workflow action.
+     */
+    public function singleWorkflowAction(Request $request, NilaiEkonomi $nilaiEkonomi, SingleWorkflowAction $action)
     {
         $request->validate([
-            'rejection_note' => 'required|string|max:255',
+            'action' => ['required', Rule::enum(WorkflowAction::class)],
+            'rejection_note' => 'nullable|string|max:255',
         ]);
 
-        $nilaiEkonomi->update([
-            'status' => 'rejected',
-            'rejection_note' => $request->rejection_note,
-        ]);
+        $workflowAction = WorkflowAction::from($request->action);
 
-        $this->clearCache($nilaiEkonomi->year);
-        return redirect()->back()->with('success', 'Laporan telah ditolak dengan catatan.');
+        if ($workflowAction === WorkflowAction::REJECT && !$request->filled('rejection_note')) {
+            return redirect()->back()->with('error', 'Catatan penolakan wajib diisi.');
+        }
+
+        $extraData = [];
+        if ($request->filled('rejection_note')) {
+            $extraData['rejection_note'] = $request->rejection_note;
+        }
+
+        $success = $action->execute(
+            model: $nilaiEkonomi,
+            action: $workflowAction,
+            user: auth()->user(),
+            extraData: $extraData
+        );
+
+        if ($success) {
+            $this->clearCache($nilaiEkonomi->year);
+
+            $message = match ($workflowAction) {
+                WorkflowAction::DELETE => 'dihapus',
+                WorkflowAction::SUBMIT => 'diajukan untuk verifikasi',
+                WorkflowAction::APPROVE => 'disetujui',
+                WorkflowAction::REJECT => 'ditolak',
+            };
+            return redirect()->back()->with('success', "Laporan berhasil {$message}.");
+        }
+
+        return redirect()->back()->with('error', 'Gagal memproses laporan atau status tidak sesuai.');
     }
 
     public function bulkWorkflowAction(Request $request, BulkWorkflowAction $action)
