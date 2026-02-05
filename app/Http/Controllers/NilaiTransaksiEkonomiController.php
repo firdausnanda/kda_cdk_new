@@ -151,7 +151,9 @@ class NilaiTransaksiEkonomiController extends Controller
   public function create()
   {
     return Inertia::render('NilaiTransaksiEkonomi/Create', [
-      'commodities' => Commodity::orderBy('name')->get(),
+      'commodities' => Commodity::withoutGlobalScope('not_nilai_transaksi_ekonomi')
+        ->where('is_nilai_transaksi_ekonomi', true)
+        ->get(),
     ]);
   }
 
@@ -203,7 +205,9 @@ class NilaiTransaksiEkonomiController extends Controller
 
     return Inertia::render('NilaiTransaksiEkonomi/Edit', [
       'data' => $nilaiTransaksiEkonomi,
-      'commodities' => Commodity::orderBy('name')->get(),
+      'commodities' => Commodity::withoutGlobalScope('not_nilai_transaksi_ekonomi')
+        ->where('is_nilai_transaksi_ekonomi', true)
+        ->get(),
     ]);
   }
 

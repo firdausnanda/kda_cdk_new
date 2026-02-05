@@ -29,6 +29,7 @@ class CommodityController extends Controller
         $request->validate([
             'name' => 'required|string|unique:m_commodities,name|max:255',
             'type' => 'nullable|string',
+            'is_nilai_transaksi_ekonomi' => 'nullable|boolean',
         ]);
 
         $commodity = Commodity::create($request->all());

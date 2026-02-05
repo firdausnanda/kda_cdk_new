@@ -22,7 +22,7 @@ class HasilHutanBukanKayuImport implements ToModel, WithHeadingRow, WithValidati
   public function __construct($forestType)
   {
     $this->forestType = $forestType;
-    $this->commodities = \App\Models\BukanKayu::all();
+    $this->commodities = BukanKayu::all();
   }
 
   public function rules(): array

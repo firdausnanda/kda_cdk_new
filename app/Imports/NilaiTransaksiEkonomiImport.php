@@ -120,7 +120,10 @@ class NilaiTransaksiEkonomiImport implements ToModel, WithHeadingRow, WithValida
 
     // 3. Find or Create Commodity
     $commodityName = trim($row['komoditas']);
-    $commodity = Commodity::firstOrCreate(['name' => $commodityName]);
+    $commodity = Commodity::withoutGlobalScope('not_nilai_transaksi_ekonomi')->firstOrCreate(
+      ['name' => $commodityName],
+      ['is_nilai_transaksi_ekonomi' => true]
+    );
 
     // 4. Create Detail
     $nilai = $row['nilai_transaksi_rp'] ?? 0;

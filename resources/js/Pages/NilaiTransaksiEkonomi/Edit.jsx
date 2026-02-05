@@ -101,7 +101,7 @@ export default function Edit({ auth, data: transactionData, commodities }) {
     if (!newCommodityName.trim()) return;
 
     setIsSavingCommodity(true);
-    axios.post(route('commodities.store'), { name: newCommodityName })
+    axios.post(route('commodities.store'), { name: newCommodityName, is_nilai_transaksi_ekonomi: true })
       .then(res => {
         if (res.data.commodity) {
           setLocalCommodities(prev => [...prev, res.data.commodity]);
