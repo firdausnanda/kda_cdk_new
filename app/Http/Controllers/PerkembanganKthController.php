@@ -24,20 +24,6 @@ class PerkembanganKthController extends Controller
 
   public function index(Request $request)
   {
-    // Caching Available Years
-    $availableYears = cache()->remember('perkembangan-kth-years', 300, function () {
-      $dbYears = PerkembanganKth::distinct()->orderBy('year', 'desc')->pluck('year')->toArray();
-      $fixedYears = range(date('Y'), 2021);
-      $years = array_values(array_unique(array_merge($dbYears, $fixedYears)));
-      rsort($years);
-      return $years;
-    });
-
-    $selectedYear = $request->query('year');
-    if (!$selectedYear) {
-      $selectedYear = $availableYears[0] ?? date('Y');
-    }
-
     $sortField = $request->query('sort', 'created_at');
     $sortDirection = $request->query('direction', 'desc');
 
@@ -64,8 +50,7 @@ class PerkembanganKthController extends Controller
         'regency_rel:id,name',
         'district_rel:id,name',
         'village_rel:id,name'
-      ])
-      ->where('perkembangan_kth.year', $selectedYear);
+      ]);
 
     if ($request->has('search')) {
       $search = $request->search;
@@ -97,8 +82,8 @@ class PerkembanganKthController extends Controller
     $datas = $query->paginate($request->integer('per_page', 10))->withQueryString();
 
     // Stats Caching
-    $stats = cache()->remember('perkembangan-kth-stats-' . $selectedYear, 300, function () use ($selectedYear) {
-      $baseQuery = PerkembanganKth::where('year', $selectedYear)->where('status', 'final');
+    $stats = cache()->remember('perkembangan-kth-stats-all', 300, function () {
+      $baseQuery = PerkembanganKth::where('status', 'final');
       return [
         'total_kth' => (clone $baseQuery)->count(),
         'total_anggota' => (clone $baseQuery)->sum('jumlah_anggota'),
@@ -115,13 +100,12 @@ class PerkembanganKthController extends Controller
       'datas' => $datas,
       'stats' => $stats,
       'filters' => [
-        'year' => (int) $selectedYear,
         'search' => $request->search,
         'sort' => $sortField,
         'direction' => $sortDirection,
         'per_page' => (int) $request->query('per_page', 10),
       ],
-      'availableYears' => $availableYears,
+      'availableYears' => [],
     ]);
   }
 
@@ -160,6 +144,7 @@ class PerkembanganKthController extends Controller
     );
 
     if ($count > 0) {
+      cache()->forget('perkembangan-kth-stats-all');
       return redirect()->back()->with('success', 'Aksi berhasil dilakukan pada ' . $count . ' data.');
     }
 
@@ -294,7 +279,7 @@ class PerkembanganKthController extends Controller
     );
 
     if ($success) {
-      cache()->forget('perkembangan-kth-stats-' . $perkembanganKth->year);
+      cache()->forget('perkembangan-kth-stats-all');
 
       $message = match ($workflowAction) {
         WorkflowAction::DELETE => 'dihapus',
@@ -336,6 +321,10 @@ class PerkembanganKthController extends Controller
           'status' => 'rejected',
           'rejection_note' => $request->rejection_note,
         ]);
+    }
+
+    if ($count > 0) {
+      cache()->forget('perkembangan-kth-stats-all');
     }
 
     return redirect()->back()->with('success', $count . ' laporan berhasil ditolak.');

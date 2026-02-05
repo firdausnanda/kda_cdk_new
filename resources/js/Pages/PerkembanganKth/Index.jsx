@@ -25,7 +25,6 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
   const [importFile, setImportFile] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [params, setParams] = useState({
-    year: filters.year,
     search: filters.search || '',
     sort: filters.sort || '',
     direction: filters.direction || 'asc',
@@ -64,17 +63,6 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [isSearching, setIsSearching] = useState(false);
 
-  const handleYearChange = (year) => {
-    setLoadingText('Sinkronisasi Tahun...');
-    setIsLoading(true);
-    const newParams = { ...params, year };
-    setParams(newParams);
-    router.get(route('perkembangan-kth.index'), newParams, {
-      preserveState: true,
-      replace: true,
-      onFinish: () => setIsLoading(false)
-    });
-  };
 
   const handleSearch = useCallback(
     debounce((value) => {
@@ -388,7 +376,7 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
               {canCreate && (
                 <div className="flex gap-2">
                   <button
-                    onClick={() => window.location.href = route('perkembangan-kth.export', { year: filters.year })}
+                    onClick={() => window.location.href = route('perkembangan-kth.export')}
                     className="flex items-center gap-2 px-4 py-2.5 bg-primary-700 text-primary-100 rounded-xl font-bold text-sm shadow-sm hover:bg-primary-800 transition-colors border border-primary-600/50"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -423,7 +411,7 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total KTH {filters.year}</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total KTH</p>
                   <p className="text-2xl font-bold text-gray-900 mt-1">{formatNumber(stats.total_kth)} <span className="text-xs font-normal text-gray-400">Kelompok</span></p>
                 </div>
                 <div className="p-3 bg-primary-50 rounded-lg text-primary-600 shrink-0">
@@ -488,19 +476,6 @@ export default function Index({ auth, datas, stats, filters, availableYears }) {
             <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div className="flex items-center gap-4 flex-1">
                 <h3 className="font-bold text-gray-800">Daftar Data KTH</h3>
-                <div className="h-6 w-px bg-gray-200"></div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-400 uppercase">Tahun:</span>
-                  <select
-                    className="text-sm font-bold border-gray-200 rounded-lg focus:ring-primary-500 focus:border-primary-500 py-1"
-                    value={filters.year}
-                    onChange={(e) => handleYearChange(e.target.value)}
-                  >
-                    {availableYears.map(year => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
-                </div>
                 <div className="max-w-xs w-full ml-auto md:ml-4 relative">
                   <TextInput
                     type="text"
