@@ -47,11 +47,11 @@ class KupsController extends Controller
       ->with(['regency:id,name', 'district:id,name'])
       ->when($request->search, function ($query, $search) {
         $query->where(function ($q) use ($search) {
-          $q->whereHas('regency', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('district', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhere('nama_kups', 'like', "%{$search}%")
-            ->orWhere('category', 'like', "%{$search}%")
-            ->orWhere('commodity', 'like', "%{$search}%");
+          $q->whereHas('regency', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhereHas('district', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhere('nama_kups', 'like', "{$search}%")
+            ->orWhere('category', 'like', "{$search}%")
+            ->orWhere('commodity', 'like', "{$search}%");
         });
       })
       ->when($sortField === 'location', function ($q) use ($sortDirection) {

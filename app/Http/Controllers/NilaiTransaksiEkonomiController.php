@@ -46,11 +46,11 @@ class NilaiTransaksiEkonomiController extends Controller
       ->where('year', $selectedYear)
 
       ->when($request->search, function ($q, $search) {
-        $q->where('nama_kth', 'like', "%{$search}%")
-          ->orWhereHas('village_rel', fn($q) => $q->where('name', 'like', "%{$search}%"))
-          ->orWhereHas('district_rel', fn($q) => $q->where('name', 'like', "%{$search}%"))
-          ->orWhereHas('regency_rel', fn($q) => $q->where('name', 'like', "%{$search}%"))
-          ->orWhereHas('details.commodity', fn($q) => $q->where('name', 'like', "%{$search}%"));
+        $q->where('nama_kth', 'like', "{$search}%")
+          ->orWhereHas('village_rel', fn($q) => $q->where('name', 'like', "{$search}%"))
+          ->orWhereHas('district_rel', fn($q) => $q->where('name', 'like', "{$search}%"))
+          ->orWhereHas('regency_rel', fn($q) => $q->where('name', 'like', "{$search}%"))
+          ->orWhereHas('details.commodity', fn($q) => $q->where('name', 'like', "{$search}%"));
       })
 
       ->when($request->sort, function ($q) use ($request) {

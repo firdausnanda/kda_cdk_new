@@ -55,10 +55,10 @@ class SkpsController extends Controller
       ])
       ->when($request->search, function ($query, $search) {
         $query->where(function ($q) use ($search) {
-          $q->whereHas('regency', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('district', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('skema', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhere('nama_kelompok', 'like', "%{$search}%");
+          $q->whereHas('regency', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhereHas('district', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhereHas('skema', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhere('nama_kelompok', 'like', "{$search}%");
         });
       })
       ->when($sortField === 'location', function ($q) use ($sortDirection) {

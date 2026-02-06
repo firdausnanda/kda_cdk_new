@@ -71,10 +71,10 @@ class NilaiEkonomiController extends Controller
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('nilai_ekonomi.nama_kelompok', 'like', "%{$search}%")
-                    ->orWhereHas('details.commodity', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('regency', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('district', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
+                $q->where('nilai_ekonomi.nama_kelompok', 'like', "{$search}%")
+                    ->orWhereHas('details.commodity', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+                    ->orWhereHas('regency', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+                    ->orWhereHas('district', fn($q2) => $q2->where('name', 'like', "{$search}%"));
             });
         }
 
