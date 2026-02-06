@@ -59,9 +59,9 @@ class RealisasiPnbpController extends Controller
       })
       ->when($request->search, function ($query, $search) {
         $query->where(function ($q) use ($search) {
-          $q->where('types_of_forest_products', 'like', "%{$search}%")
-            ->orWhereHas('regency', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('pengelola_wisata', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
+          $q->where('types_of_forest_products', 'like', "{$search}%")
+            ->orWhereHas('regency', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhereHas('pengelola_wisata', fn($q2) => $q2->where('name', 'like', "{$search}%"));
         });
       })
       ->when($sortField === 'pengelola', function ($q) use ($sortDirection) {

@@ -58,11 +58,11 @@ class KebakaranHutanController extends Controller
 
       ->when($request->search, function ($q, $search) {
         $q->where(function ($qq) use ($search) {
-          $qq->where('area_function', 'like', "%{$search}%")
-            ->orWhereHas('village', fn($q) => $q->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('district', fn($q) => $q->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('regency', fn($q) => $q->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('pengelolaWisata', fn($q) => $q->where('name', 'like', "%{$search}%"));
+          $qq->where('area_function', 'like', "{$search}%")
+            ->orWhereHas('village', fn($q) => $q->where('name', 'like', "{$search}%"))
+            ->orWhereHas('district', fn($q) => $q->where('name', 'like', "{$search}%"))
+            ->orWhereHas('regency', fn($q) => $q->where('name', 'like', "{$search}%"))
+            ->orWhereHas('pengelolaWisata', fn($q) => $q->where('name', 'like', "{$search}%"));
         });
       })
 

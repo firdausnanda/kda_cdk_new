@@ -60,11 +60,11 @@ class HasilHutanBukanKayuController extends Controller
 
       ->when($request->search, function ($query, $search) {
         $query->where(function ($q) use ($search) {
-          $q->whereHas('details.bukanKayu', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('regency', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('district', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('pengelolaHutan', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('pengelolaWisata', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
+          $q->whereHas('details.bukanKayu', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhereHas('regency', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhereHas('district', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhereHas('pengelolaHutan', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhereHas('pengelolaWisata', fn($q2) => $q2->where('name', 'like', "{$search}%"));
         });
       })
 

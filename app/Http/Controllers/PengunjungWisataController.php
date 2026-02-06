@@ -49,7 +49,7 @@ class PengunjungWisataController extends Controller
       ->where('year', $selectedYear)
 
       ->when($request->search, function ($q, $search) {
-        $q->whereHas('pengelolaWisata', fn($qq) => $qq->where('name', 'like', "%{$search}%"));
+        $q->whereHas('pengelolaWisata', fn($qq) => $qq->where('name', 'like', "{$search}%"));
       })
 
       ->when($sortField === 'pengelola', function ($q) use ($sortDirection) {

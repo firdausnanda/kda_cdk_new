@@ -52,11 +52,11 @@ class PbphhController extends Controller
       ])
       ->when($request->search, function ($query, $search) {
         $query->where(function ($q) use ($search) {
-          $q->where('name', 'like', "%{$search}%")
-            ->orWhere('number', 'like', "%{$search}%")
-            ->orWhereHas('jenis_produksi', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('regency', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('district', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
+          $q->where('name', 'like', "{$search}%")
+            ->orWhere('number', 'like', "{$search}%")
+            ->orWhereHas('jenis_produksi', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhereHas('regency', fn($q2) => $q2->where('name', 'like', "{$search}%"))
+            ->orWhereHas('district', fn($q2) => $q2->where('name', 'like', "{$search}%"));
         });
       })
       ->when($sortField === 'location', function ($q) use ($sortDirection) {

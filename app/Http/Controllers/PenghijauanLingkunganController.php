@@ -57,10 +57,10 @@ class PenghijauanLingkunganController extends Controller
 
       ->when($request->search, function ($q, $search) {
         $q->where(function ($qq) use ($search) {
-          $qq->where('fund_source', 'like', "%{$search}%")
-            ->orWhereHas('village_rel', fn($q) => $q->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('district_rel', fn($q) => $q->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('regency_rel', fn($q) => $q->where('name', 'like', "%{$search}%"));
+          $qq->where('fund_source', 'like', "{$search}%")
+            ->orWhereHas('village_rel', fn($q) => $q->where('name', 'like', "{$search}%"))
+            ->orWhereHas('district_rel', fn($q) => $q->where('name', 'like', "{$search}%"))
+            ->orWhereHas('regency_rel', fn($q) => $q->where('name', 'like', "{$search}%"));
         });
       })
 

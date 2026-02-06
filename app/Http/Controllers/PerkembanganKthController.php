@@ -52,15 +52,20 @@ class PerkembanganKthController extends Controller
         'village_rel:id,name'
       ]);
 
-    if ($request->has('search')) {
+    if ($request->filled('search')) {
       $search = $request->search;
-      $query->where(function ($q) use ($search) {
-        $q->where('perkembangan_kth.nama_kth', 'like', "%{$search}%")
-          ->orWhere('perkembangan_kth.nomor_register', 'like', "%{$search}%")
-          ->orWhereHas('village_rel', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-          ->orWhereHas('district_rel', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-          ->orWhereHas('regency_rel', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
-      });
+
+      $query
+        ->leftJoin('m_villages', 'perkembangan_kth.village_id', '=', 'm_villages.id')
+        ->leftJoin('m_districts', 'perkembangan_kth.district_id', '=', 'm_districts.id')
+        ->leftJoin('m_regencies', 'perkembangan_kth.regency_id', '=', 'm_regencies.id')
+        ->where(function ($q) use ($search) {
+          $q->where('perkembangan_kth.nama_kth', 'like', "{$search}%")
+            ->orWhere('perkembangan_kth.nomor_register', 'like', "{$search}%")
+            ->orWhere('m_villages.name', 'like', "{$search}%")
+            ->orWhere('m_districts.name', 'like', "{$search}%")
+            ->orWhere('m_regencies.name', 'like', "{$search}%");
+        });
     }
 
     // Sorting logic

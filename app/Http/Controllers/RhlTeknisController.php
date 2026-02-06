@@ -59,11 +59,11 @@ class RhlTeknisController extends Controller
 
       ->when($request->search, function ($q, $search) {
         $q->where(function ($qq) use ($search) {
-          $qq->where('fund_source', 'like', "%{$search}%")
-            ->orWhereHas('details.bangunan_kta', fn($q) => $q->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('village', fn($q) => $q->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('district', fn($q) => $q->where('name', 'like', "%{$search}%"))
-            ->orWhereHas('regency', fn($q) => $q->where('name', 'like', "%{$search}%"));
+          $qq->where('fund_source', 'like', "{$search}%")
+            ->orWhereHas('details.bangunan_kta', fn($q) => $q->where('name', 'like', "{$search}%"))
+            ->orWhereHas('village', fn($q) => $q->where('name', 'like', "{$search}%"))
+            ->orWhereHas('district', fn($q) => $q->where('name', 'like', "{$search}%"))
+            ->orWhereHas('regency', fn($q) => $q->where('name', 'like', "{$search}%"));
         });
       })
 
