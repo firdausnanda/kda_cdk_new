@@ -70,6 +70,16 @@ class SkpsController extends Controller
           ->orderBy('m_skema_perhutanan_sosial.name', $sortDirection);
       })
       ->when(!in_array($sortField, ['location', 'skema']), function ($q) use ($sortField, $sortDirection) {
+        $user = auth()->user();
+
+        if ($sortField === 'created_at' && $sortDirection === 'desc') {
+          if ($user->hasRole('kacdk')) {
+            $q->orderByRaw("CASE WHEN status = 'waiting_cdk' THEN 0 ELSE 1 END");
+          } elseif ($user->hasRole('kasi')) {
+            $q->orderByRaw("CASE WHEN status = 'waiting_kasi' THEN 0 ELSE 1 END");
+          }
+        }
+
         match ($sortField) {
           'group_name' => $q->orderBy('nama_kelompok', $sortDirection),
           'area' => $q->orderBy('ps_area', $sortDirection),

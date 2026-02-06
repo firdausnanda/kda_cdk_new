@@ -82,6 +82,16 @@ class HasilHutanKayuController extends Controller
       })
 
       ->when(!in_array($sortField, ['location', 'pengelola']), function ($q) use ($sortField, $sortDirection) {
+        $user = auth()->user();
+
+        if ($sortField === 'created_at' && $sortDirection === 'desc') {
+          if ($user->hasRole('kacdk')) {
+            $q->orderByRaw("CASE WHEN status = 'waiting_cdk' THEN 0 ELSE 1 END");
+          } elseif ($user->hasRole('kasi')) {
+            $q->orderByRaw("CASE WHEN status = 'waiting_kasi' THEN 0 ELSE 1 END");
+          }
+        }
+
         match ($sortField) {
           'month' => $q->orderBy('month', $sortDirection),
           'target' => $q->orderBy('volume_target', $sortDirection),

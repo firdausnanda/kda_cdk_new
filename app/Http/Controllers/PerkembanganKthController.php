@@ -68,6 +68,16 @@ class PerkembanganKthController extends Controller
       $q->leftJoin('m_districts', 'perkembangan_kth.district_id', '=', 'm_districts.id')
         ->orderBy('m_districts.name', $sortDirection);
     })->when(!in_array($sortField, ['location']), function ($q) use ($sortField, $sortDirection) {
+      $user = auth()->user();
+
+      if ($sortField === 'created_at' && $sortDirection === 'desc') {
+        if ($user->hasRole('kacdk')) {
+          $q->orderByRaw("CASE WHEN status = 'waiting_cdk' THEN 0 ELSE 1 END");
+        } elseif ($user->hasRole('kasi')) {
+          $q->orderByRaw("CASE WHEN status = 'waiting_kasi' THEN 0 ELSE 1 END");
+        }
+      }
+
       match ($sortField) {
         'nama_kth' => $q->orderBy('perkembangan_kth.nama_kth', $sortDirection),
         'nomor_register' => $q->orderBy('perkembangan_kth.nomor_register', $sortDirection),

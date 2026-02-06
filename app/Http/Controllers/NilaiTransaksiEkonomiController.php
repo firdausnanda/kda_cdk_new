@@ -41,7 +41,7 @@ class NilaiTransaksiEkonomiController extends Controller
         'district_rel:id,name',
         'village_rel:id,name',
         'details:id,nilai_transaksi_ekonomi_id,commodity_id,volume_produksi,satuan',
-        'details.commodity:id,name'
+        'details.commodity' => fn($q) => $q->withoutGlobalScope('not_nilai_transaksi_ekonomi')->select('id', 'name'),
       ])
       ->where('year', $selectedYear)
 
@@ -54,6 +54,18 @@ class NilaiTransaksiEkonomiController extends Controller
       })
 
       ->when($request->sort, function ($q) use ($request) {
+        $user = auth()->user();
+        $sortField = $request->query('sort', 'created_at');
+        $sortDirection = $request->query('direction', 'desc');
+
+        if ($sortField === 'created_at' && $sortDirection === 'desc') {
+          if ($user->hasRole('kacdk')) {
+            $q->orderByRaw("CASE WHEN status = 'waiting_cdk' THEN 0 ELSE 1 END");
+          } elseif ($user->hasRole('kasi')) {
+            $q->orderByRaw("CASE WHEN status = 'waiting_kasi' THEN 0 ELSE 1 END");
+          }
+        }
+
         match ($request->sort) {
           'nama_kth' => $q->orderBy('nama_kth', $request->direction),
           'nilai' => $q->orderBy('total_nilai_transaksi', $request->direction),
@@ -64,7 +76,15 @@ class NilaiTransaksiEkonomiController extends Controller
             ->orderBy('users.name', $request->direction),
           default => $q->latest(),
         };
-      }, fn($q) => $q->latest())
+      }, function ($q) {
+        $user = auth()->user();
+        if ($user->hasRole('kacdk')) {
+          $q->orderByRaw("CASE WHEN status = 'waiting_cdk' THEN 0 ELSE 1 END");
+        } elseif ($user->hasRole('kasi')) {
+          $q->orderByRaw("CASE WHEN status = 'waiting_kasi' THEN 0 ELSE 1 END");
+        }
+        $q->latest();
+      })
 
       ->paginate($request->integer('per_page', 10))
       ->withQueryString();

@@ -70,6 +70,16 @@ class RehabLahanController extends Controller
             })
 
             ->when($sortField !== 'location', function ($q) use ($sortField, $sortDirection) {
+                $user = auth()->user();
+
+                if ($sortField === 'created_at' && $sortDirection === 'desc') {
+                    if ($user->hasRole('kacdk')) {
+                        $q->orderByRaw("CASE WHEN status = 'waiting_cdk' THEN 0 ELSE 1 END");
+                    } elseif ($user->hasRole('kasi')) {
+                        $q->orderByRaw("CASE WHEN status = 'waiting_kasi' THEN 0 ELSE 1 END");
+                    }
+                }
+
                 match ($sortField) {
                     'year' => $q->orderBy('year', $sortDirection),
                     'month' => $q->orderBy('month', $sortDirection),
