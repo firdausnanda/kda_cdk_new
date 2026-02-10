@@ -25,9 +25,9 @@ class NilaiTransaksiEkonomiImport implements ToModel, WithHeadingRow, WithValida
       'nama_kabupaten' => 'required|string', // Matches template: Nama Kabupaten
       'nama_kecamatan' => 'required|string', // Matches template: Nama Kecamatan
       'nama_desa' => 'required|string',      // Matches template: Nama Desa
-      'komoditas' => 'required|string',
+      'komoditas' => 'required',
       'volume_produksi' => 'required',
-      'satuan' => 'required|string',
+      'satuan' => 'required',
       'nilai_transaksi_rp' => 'required',
     ];
   }
