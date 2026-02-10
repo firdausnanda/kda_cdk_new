@@ -1,6 +1,6 @@
 # SMART - HUT - Sistem Informasi Data Kehutanan
 
-Aplikasi **KDA** adalah sistem informasi berbasis web yang dibangun untuk mengelola dan memonitor data kehutanan secara terintegrasi. Sistem ini mencakup berbagai modul mulai dari rehabilitasi lahan, perhutanan sosial, hasil hutan, hingga nilai transaksi ekonomi.
+Aplikasi **SMART-HUT** adalah sistem informasi berbasis web yang dibangun untuk mengelola dan memonitor data kehutanan secara terintegrasi. Sistem ini mencakup berbagai modul mulai dari rehabilitasi lahan, perhutanan sosial, hasil hutan, hingga nilai transaksi ekonomi.
 
 Dibangun dengan teknologi modern menggunakan **Laravel 10** dan **Inertia.js (React)** untuk memberikan pengalaman pengguna yang responsif dan interaktif.
 
