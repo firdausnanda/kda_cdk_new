@@ -47,9 +47,9 @@ const KelembagaanHrSlide = ({ stats, commonOptions }) => {
       ctx.save();
       const text = stats?.kelembagaan_hr?.kelompok_count || 0;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = '900 48px Inter, sans-serif'; ctx.fillStyle = '#1e293b';
+      ctx.font = '900 32px Inter, sans-serif'; ctx.fillStyle = '#1e293b';
       ctx.fillText(text, left + width / 2, top + height / 2 - 8);
-      ctx.font = 'bold 11px Inter, sans-serif'; ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 8px Inter, sans-serif'; ctx.fillStyle = '#64748b';
       ctx.letterSpacing = '1px';
       ctx.fillText('TOTAL KELOMPOK', left + width / 2, top + height / 2 + 18); ctx.restore();
     }
@@ -57,7 +57,7 @@ const KelembagaanHrSlide = ({ stats, commonOptions }) => {
 
   const doughnutOptions = useMemo(() => ({
     maintainAspectRatio: false,
-    cutout: '75%',
+    cutout: '70%',
     layout: { padding: 20 },
     plugins: {
       legend: {
@@ -131,6 +131,38 @@ const KelembagaanHrSlide = ({ stats, commonOptions }) => {
     plugins: { ...commonOptions.plugins, legend: { display: false } }
   }), [commonOptions]);
 
+  const topGroupsData = useMemo(() => {
+    return {
+      labels: stats?.kelembagaan_hr?.top_groups ? Object.keys(stats.kelembagaan_hr.top_groups) : [],
+      datasets: [{
+        label: 'NTE (Rp)',
+        data: stats?.kelembagaan_hr?.top_groups ? Object.values(stats.kelembagaan_hr.top_groups) : [],
+        backgroundColor: '#f59e0bCC',
+        borderRadius: 4
+      }]
+    };
+  }, [stats?.kelembagaan_hr?.top_groups]);
+
+  const topGroupsOptions = useMemo(() => ({
+    ...commonOptions,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: { ...commonOptions.plugins, legend: { display: false } },
+    scales: {
+      y: {
+        grid: { display: false },
+        ticks: {
+          font: { size: 9, family: "'Inter', sans-serif" },
+          callback: function (value) {
+            const label = this.getLabelForValue(value);
+            return label.length > 20 ? label.substring(0, 20) + '…' : label;
+          }
+        }
+      },
+      x: { grid: { display: false } }
+    }
+  }), [commonOptions]);
+
   return (
     <div className="min-w-full px-4">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -159,7 +191,7 @@ const KelembagaanHrSlide = ({ stats, commonOptions }) => {
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Kelas Kelembagaan (Pie) */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col h-full">
             <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-6">Kelas Kelembagaan (Persentase & Jumlah)</h4>
@@ -190,6 +222,17 @@ const KelembagaanHrSlide = ({ stats, commonOptions }) => {
               <Bar
                 data={topCommoditiesData}
                 options={topCommoditiesOptions}
+              />
+            </div>
+          </div>
+
+          {/* Pengelola Terbesar (Bar) */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col h-full">
+            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-6">5 Pengelola Terbesar (NTE)</h4>
+            <div className="h-[250px] mt-auto">
+              <Bar
+                data={topGroupsData}
+                options={topGroupsOptions}
               />
             </div>
           </div>

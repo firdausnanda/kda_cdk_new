@@ -42,18 +42,18 @@ const KelembagaanPsSlide = ({ stats, commonOptions }) => {
       ctx.save();
       const text = stats?.kelembagaan_ps?.kelompok_count || 0;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = '900 48px Inter, sans-serif'; ctx.fillStyle = '#1e293b';
-      ctx.fillText(text, left + width / 2, top + height / 2 - 8);
-      ctx.font = 'bold 11px Inter, sans-serif'; ctx.fillStyle = '#64748b';
+      ctx.font = '900 24px Inter, sans-serif'; ctx.fillStyle = '#1e293b';
+      ctx.fillText(text, left + width / 2, top + height / 2 - 6);
+      ctx.font = 'bold 8px Inter, sans-serif'; ctx.fillStyle = '#64748b';
       ctx.letterSpacing = '1px';
-      ctx.fillText('TOTAL KELOMPOK', left + width / 2, top + height / 2 + 18); ctx.restore();
+      ctx.fillText('TOTAL KELOMPOK', left + width / 2, top + height / 2 + 14); ctx.restore();
     }
   }], [stats?.kelembagaan_ps?.kelompok_count]);
 
   const doughnutOptions = useMemo(() => ({
     maintainAspectRatio: false,
-    cutout: '75%',
-    layout: { padding: 20 },
+    cutout: '70%',
+    layout: { padding: 10 },
     plugins: {
       legend: {
         position: 'bottom',
@@ -100,6 +100,38 @@ const KelembagaanPsSlide = ({ stats, commonOptions }) => {
     }
   }), [commonOptions]);
 
+  const topGroupsData = useMemo(() => {
+    return {
+      labels: stats?.kelembagaan_ps?.top_groups ? Object.keys(stats.kelembagaan_ps.top_groups) : [],
+      datasets: [{
+        label: 'NEKON (Rp)',
+        data: stats?.kelembagaan_ps?.top_groups ? Object.values(stats.kelembagaan_ps.top_groups) : [],
+        backgroundColor: '#f59e0bCC',
+        borderRadius: 6
+      }]
+    };
+  }, [stats?.kelembagaan_ps?.top_groups]);
+
+  const topGroupsOptions = useMemo(() => ({
+    ...commonOptions,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: { ...commonOptions.plugins, legend: { display: false } },
+    scales: {
+      y: {
+        grid: { display: false },
+        ticks: {
+          font: { size: 9, family: "'Inter', sans-serif" },
+          callback: function (value) {
+            const label = this.getLabelForValue(value);
+            return label.length > 20 ? label.substring(0, 20) + '…' : label;
+          }
+        }
+      },
+      x: { grid: { display: false } }
+    }
+  }), [commonOptions]);
+
   return (
     <div className="min-w-full px-4">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -132,11 +164,11 @@ const KelembagaanPsSlide = ({ stats, commonOptions }) => {
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Chart 1: Skema Perhutanan Sosial (Pie) */}
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col h-full">
-            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-8">Skema Perhutanan Sosial (Persentase & Jumlah)</h4>
-            <div className="h-[300px] mt-auto relative">
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col h-full">
+            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-6">Skema Perhutanan Sosial (Persentase & Jumlah)</h4>
+            <div className="h-[320px] mt-auto relative">
               <Doughnut
                 data={schemeData}
                 plugins={doughnutPlugins}
@@ -146,12 +178,23 @@ const KelembagaanPsSlide = ({ stats, commonOptions }) => {
           </div>
 
           {/* Chart 2: Nilai Ekonomi (NEKON) per Pengelola */}
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col h-full">
-            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-8">Nilai Ekonomi (NEKON) Per Kabupaten</h4>
-            <div className="h-[300px] mt-auto">
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col h-full">
+            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-6">Nilai Ekonomi (NEKON) Per Kabupaten</h4>
+            <div className="h-[320px] mt-auto">
               <Bar
                 data={economicData}
                 options={barOptions}
+              />
+            </div>
+          </div>
+
+          {/* Chart 3: Top 5 Pengelola (NEKON) */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col h-full">
+            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-6">5 Pengelola Terbesar (NEKON)</h4>
+            <div className="h-[320px] mt-auto">
+              <Bar
+                data={topGroupsData}
+                options={topGroupsOptions}
               />
             </div>
           </div>

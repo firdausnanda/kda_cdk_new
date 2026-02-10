@@ -555,7 +555,14 @@ class DashboardController extends Controller
                     ->where('nilai_ekonomi.status', 'final')
                     ->selectRaw('m_regencies.name as regency, sum(total_transaction_value) as total')
                     ->groupBy('m_regencies.name')
-                    ->pluck('total', 'regency')
+                    ->pluck('total', 'regency'),
+                'top_groups' => NilaiEkonomi::where('year', $currentYear)
+                    ->where('status', 'final')
+                    ->selectRaw('nama_kelompok as group_name, sum(total_transaction_value) as total')
+                    ->groupBy('nama_kelompok')
+                    ->orderByDesc('total')
+                    ->limit(5)
+                    ->pluck('total', 'group_name')
             ];
         });
     }
@@ -587,7 +594,14 @@ class DashboardController extends Controller
                     ->groupBy('m_commodities.name')
                     ->orderByDesc('total')
                     ->limit(5)
-                    ->pluck('total', 'commodity')
+                    ->pluck('total', 'commodity'),
+                'top_groups' => NilaiTransaksiEkonomi::where('year', $currentYear)
+                    ->where('status', 'final')
+                    ->selectRaw('nama_kth as group_name, sum(total_nilai_transaksi) as total')
+                    ->groupBy('nama_kth')
+                    ->orderByDesc('total')
+                    ->limit(5)
+                    ->pluck('total', 'group_name')
             ];
         });
     }
