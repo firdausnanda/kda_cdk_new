@@ -6,15 +6,38 @@ use App\Models\NilaiTransaksiEkonomi;
 use App\Models\Commodity;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
 use Illuminate\Support\Facades\Auth;
 
-class NilaiTransaksiEkonomiImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
+class NilaiTransaksiEkonomiImport implements
+  ToModel,
+  WithHeadingRow,
+  WithValidation,
+  SkipsOnFailure,
+  WithChunkReading,
+  WithBatchInserts
 {
   use SkipsFailures;
+
+  private $regencies = [];
+  private $districts = [];
+  private $villages = [];
+  private $commodities = [];
+
+  public function chunkSize(): int
+  {
+    return 500;
+  }
+
+  public function batchSize(): int
+  {
+    return 500;
+  }
 
   public function rules(): array
   {
@@ -61,41 +84,59 @@ class NilaiTransaksiEkonomiImport implements ToModel, WithHeadingRow, WithValida
     }
 
     // 1. Lookup Location IDs
-    $regency = DB::table('m_regencies')
-      ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower(trim($kabupatenInfo)) . '%'])
-      ->first();
+    $kabKey = strtolower(trim($kabupatenInfo));
+
+    if (!isset($this->regencies[$kabKey])) {
+      $this->regencies[$kabKey] = DB::table('m_regencies')
+        ->whereRaw('LOWER(name) LIKE ?', ["%{$kabKey}%"])
+        ->first();
+    }
+
+    $regency = $this->regencies[$kabKey];
 
     if (!$regency) {
       $this->onFailure(new \Maatwebsite\Excel\Validators\Failure(
-        $this->getRowNumber(),
+        $this->rowNumber,
         'nama_kabupaten',
         ["Kabupaten/Kota '{$kabupatenInfo}' tidak ditemukan."]
       ));
       return null;
     }
 
-    $district = DB::table('m_districts')
-      ->where('regency_id', $regency->id)
-      ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower(trim($kecamatanInfo)) . '%'])
-      ->first();
+    $distKey = $regency->id . '_' . strtolower(trim($kecamatanInfo));
+
+    if (!isset($this->districts[$distKey])) {
+      $this->districts[$distKey] = DB::table('m_districts')
+        ->where('regency_id', $regency->id)
+        ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower(trim($kecamatanInfo)) . '%'])
+        ->first();
+    }
+
+    $district = $this->districts[$distKey];
 
     if (!$district) {
       $this->onFailure(new \Maatwebsite\Excel\Validators\Failure(
-        $this->getRowNumber(),
+        $this->rowNumber,
         'nama_kecamatan',
         ["Kecamatan '{$kecamatanInfo}' tidak ditemukan di {$regency->name}."]
       ));
       return null;
     }
 
-    $village = DB::table('m_villages')
-      ->where('district_id', $district->id)
-      ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower(trim($desaInfo)) . '%'])
-      ->first();
+    $villKey = $district->id . '_' . strtolower(trim($desaInfo));
+
+    if (!isset($this->villages[$villKey])) {
+      $this->villages[$villKey] = DB::table('m_villages')
+        ->where('district_id', $district->id)
+        ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower(trim($desaInfo)) . '%'])
+        ->first();
+    }
+
+    $village = $this->villages[$villKey];
 
     if (!$village) {
       $this->onFailure(new \Maatwebsite\Excel\Validators\Failure(
-        $this->getRowNumber(),
+        $this->rowNumber,
         'nama_desa',
         ["Desa '{$desaInfo}' tidak ditemukan di Kecamatan {$district->name}."]
       ));
@@ -165,10 +206,21 @@ class NilaiTransaksiEkonomiImport implements ToModel, WithHeadingRow, WithValida
       $satuan = $satuans[$i] ?? '-';
 
       // Find or Create Commodity
-      $commodity = Commodity::withoutGlobalScope('not_nilai_transaksi_ekonomi')->firstOrCreate(
-        ['name' => $commodityName],
-        ['is_nilai_transaksi_ekonomi' => true]
-      );
+      $commodityName = trim($commodityName);
+
+      if (!isset($this->commodities[$commodityName])) {
+        $this->commodities[$commodityName] = Commodity::withoutGlobalScope('not_nilai_transaksi_ekonomi')
+          ->firstOrCreate(
+            ['name' => $commodityName],
+            ['is_nilai_transaksi_ekonomi' => true]
+          );
+      }
+
+      $commodity = $this->commodities[$commodityName] ?? null;
+
+      if (!$commodity) {
+        continue;
+      }
 
       // Create Detail
       $transaction->details()->create([
@@ -179,10 +231,11 @@ class NilaiTransaksiEkonomiImport implements ToModel, WithHeadingRow, WithValida
       ]);
 
       // Update Total on Parent
-      $transaction->increment('total_nilai_transaksi', $nilai);
+      $transaction->total_nilai_transaksi += $nilai;
+      $transaction->save();
     }
 
-    return $transaction;
+    return null;
   }
 
   private $rowNumber = 1;
