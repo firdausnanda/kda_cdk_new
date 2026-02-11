@@ -132,12 +132,24 @@ export default function Dashboard({ auth, stats, chartData, filters, availableYe
                                 </svg>
                             </div>
                         </div>
-                        <div className="mt-4 flex items-center text-sm text-green-600">
-                            {/* Placeholder trend for now as we don't have prev year for wood */}
-                            <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                            </svg>
-                            <span>Data Tahun {filters.year}</span>
+                        <div className={`mt-4 flex items-center text-sm ${stats.wood_production.growth > 0 ? 'text-green-600' : stats.wood_production.growth < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                            {(stats.wood_production.growth || 0) > 0 ? (
+                                <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            ) : (stats.wood_production.growth || 0) < 0 ? (
+                                <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                                </svg>
+                            ) : (
+                                <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
+                                </svg>
+                            )}
+                            <span className="font-bold">
+                                {(stats.wood_production.growth || 0) > 0 ? `+${stats.wood_production.growth}%` : `${stats.wood_production.growth || 0}%`}
+                            </span>
+                            <span className="ml-1 opacity-70">dari tahun lalu</span>
                         </div>
                     </div>
 
@@ -169,7 +181,7 @@ export default function Dashboard({ auth, stats, chartData, filters, availableYe
                                 </svg>
                             )}
                             <span className="font-bold">
-                                {stats.rehabilitation.growth > 0 ? `+${stats.rehabilitation.growth}%` : `${stats.rehabilitation.growth}%`}
+                                {stats.rehabilitation.growth > 0 ? `+${stats.rehabilitation.growth}%` : `${stats.rehabilitation.growth ?? 0}%`}
                             </span>
                             <span className="ml-1 opacity-70">dari tahun lalu</span>
                         </div>
@@ -188,12 +200,24 @@ export default function Dashboard({ auth, stats, chartData, filters, availableYe
                                 </svg>
                             </div>
                         </div>
-                        <div className="mt-4 flex items-center text-sm text-green-600">
-                            {/* Placeholder trend for now */}
-                            <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                            </svg>
-                            <span>Total Realisasi PNBP</span>
+                        <div className={`mt-4 flex items-center text-sm ${stats.economy.growth > 0 ? 'text-green-600' : stats.economy.growth < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                            {(stats.economy.growth || 0) > 0 ? (
+                                <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            ) : (stats.economy.growth || 0) < 0 ? (
+                                <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                                </svg>
+                            ) : (
+                                <svg className="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
+                                </svg>
+                            )}
+                            <span className="font-bold">
+                                {(stats.economy.growth || 0) > 0 ? `+${stats.economy.growth}%` : `${stats.economy.growth || 0}%`}
+                            </span>
+                            <span className="ml-1 opacity-70">dari tahun lalu</span>
                         </div>
                     </div>
 

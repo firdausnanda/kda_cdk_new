@@ -36,7 +36,7 @@ class DashboardController extends Controller
         $chartYear = $request->input('year', $currentYear);
 
         // Define cache key based on year
-        $cacheKey = "dashboard_stats_{$chartYear}";
+        $cacheKey = "dashboard_stats_v2_{$chartYear}";
 
         // Cache the heavy statistics and chart data for 10 minutes (600 seconds)
         $dashboardData = Cache::remember($cacheKey, 600, function () use ($chartYear) {
@@ -56,11 +56,33 @@ class DashboardController extends Controller
                 ->where('status', 'final')
                 ->sum('volume_target');
 
+            $kayuPrev = HasilHutanKayu::where('year', $chartYear - 1)
+                ->where('status', 'final')
+                ->sum('volume_target');
+
+            $kayuGrowth = 0;
+            if ($kayuPrev > 0) {
+                $kayuGrowth = (($kayuCurrent - $kayuPrev) / $kayuPrev) * 100;
+            } elseif ($kayuCurrent > 0) {
+                $kayuGrowth = 100;
+            }
+
             // --- Transaksi Ekonomi (PNBP) Stats (New) ---
             // Optimized: Use raw SQL for cleaning and summing instead of loading all records
             $pnbpCurrent = RealisasiPnbp::where('year', $chartYear)
                 ->where('status', 'final')
                 ->sum(DB::raw("CAST(REPLACE(REPLACE(REPLACE(pnbp_realization, 'Rp', ''), '.', ''), ' ', '') AS UNSIGNED)"));
+
+            $pnbpPrev = RealisasiPnbp::where('year', $chartYear - 1)
+                ->where('status', 'final')
+                ->sum(DB::raw("CAST(REPLACE(REPLACE(REPLACE(pnbp_realization, 'Rp', ''), '.', ''), ' ', '') AS UNSIGNED)"));
+
+            $pnbpGrowth = 0;
+            if ($pnbpPrev > 0) {
+                $pnbpGrowth = (($pnbpCurrent - $pnbpPrev) / $pnbpPrev) * 100;
+            } elseif ($pnbpCurrent > 0) {
+                $pnbpGrowth = 100;
+            }
 
             // --- KUPS Stats (New) ---
             $kupsTotal = Kups::where('status', 'final')->count();
@@ -98,9 +120,11 @@ class DashboardController extends Controller
                     ],
                     'wood_production' => [
                         'total' => $kayuCurrent,
+                        'growth' => round($kayuGrowth, 1),
                     ],
                     'economy' => [
                         'total' => $pnbpCurrent,
+                        'growth' => round($pnbpGrowth, 1),
                     ],
                     'kups' => [
                         'total' => $kupsTotal,
