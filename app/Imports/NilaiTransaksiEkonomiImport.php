@@ -171,6 +171,10 @@ class NilaiTransaksiEkonomiImport implements
     // Use the count of commodities as the baseline
     $count = count($commodities);
 
+    $detailsToInsert = [];
+    $totalNilai = 0;
+    $now = now(); // Timestamp for batch insert
+
     for ($i = 0; $i < $count; $i++) {
       $commodityName = $commodities[$i] ?? null;
       if (!$commodityName)
@@ -208,12 +212,11 @@ class NilaiTransaksiEkonomiImport implements
       // Find or Create Commodity
       $commodityName = trim($commodityName);
 
-      if (!isset($this->commodities[$commodityName])) {
+
+      if (!array_key_exists($commodityName, $this->commodities)) {
         $this->commodities[$commodityName] = Commodity::withoutGlobalScope('not_nilai_transaksi_ekonomi')
-          ->firstOrCreate(
-            ['name' => $commodityName],
-            ['is_nilai_transaksi_ekonomi' => true]
-          );
+          ->where('name', $commodityName)
+          ->first();
       }
 
       $commodity = $this->commodities[$commodityName] ?? null;
@@ -222,17 +225,30 @@ class NilaiTransaksiEkonomiImport implements
         continue;
       }
 
-      // Create Detail
-      $transaction->details()->create([
+      // Add to batch insert array
+      $detailsToInsert[] = [
+        'nilai_transaksi_ekonomi_id' => $transaction->id,
         'commodity_id' => $commodity->id,
         'volume_produksi' => $volume,
         'satuan' => $satuan,
         'nilai_transaksi' => $nilai,
-      ]);
+        'created_at' => $now,
+        'updated_at' => $now,
+      ];
 
-      // Update Total on Parent
-      $transaction->total_nilai_transaksi += $nilai;
+      // Update Total Accumulator
+      $totalNilai += $nilai;
+    }
+
+    // Single DB Update for Parent
+    if ($totalNilai > 0 || $transaction->total_nilai_transaksi != $totalNilai) {
+      $transaction->total_nilai_transaksi += $totalNilai;
       $transaction->save();
+    }
+
+    // Batch Insert Details
+    if (!empty($detailsToInsert)) {
+      \App\Models\NilaiTransaksiEkonomiDetail::insert($detailsToInsert);
     }
 
     return null;
