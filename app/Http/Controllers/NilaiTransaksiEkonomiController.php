@@ -84,6 +84,8 @@ class NilaiTransaksiEkonomiController extends Controller
           $q->orderByRaw("CASE WHEN status = 'waiting_cdk' THEN 0 ELSE 1 END");
         } elseif ($user->hasRole('kasi')) {
           $q->orderByRaw("CASE WHEN status = 'waiting_kasi' THEN 0 ELSE 1 END");
+        } else {
+          $q->orderByRaw("CASE WHEN status = 'rejected' THEN 0 WHEN status = 'draft' THEN 1 ELSE 2 END");
         }
         $q->latest();
       })
