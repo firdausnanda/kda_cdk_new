@@ -72,6 +72,7 @@ class PengunjungWisata extends Model implements Workflowable
                 ],
             ],
             'reject' => [
+                'admin' => [],
                 'kasi' => ['from' => 'waiting_kasi'],
                 'kacdk' => ['from' => 'waiting_cdk'],
             ],
