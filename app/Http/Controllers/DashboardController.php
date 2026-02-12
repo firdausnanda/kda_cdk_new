@@ -468,8 +468,25 @@ class DashboardController extends Controller
                     ->limit(5)
                     ->pluck('total', 'commodity');
 
-                // Bukan Kayu for this type
-                $binaUsahaData[$key]['bukan_kayu_total'] = (float) ($bukanKayuTotals[$type] ?? 0);
+                // Bukan Kayu for this type (excluding Bambu)
+                $binaUsahaData[$key]['bukan_kayu_total'] = (float) \App\Models\HasilHutanBukanKayuDetail::join('hasil_hutan_bukan_kayu', 'hasil_hutan_bukan_kayu_details.hasil_hutan_bukan_kayu_id', '=', 'hasil_hutan_bukan_kayu.id')
+                    ->join('m_bukan_kayu', 'hasil_hutan_bukan_kayu_details.bukan_kayu_id', '=', 'm_bukan_kayu.id')
+                    ->where('hasil_hutan_bukan_kayu.year', $currentYear)
+                    ->where('hasil_hutan_bukan_kayu.status', 'final')
+                    ->where('hasil_hutan_bukan_kayu.forest_type', $type)
+                    ->whereNull('hasil_hutan_bukan_kayu.deleted_at')
+                    ->where('m_bukan_kayu.name', '!=', 'Bambu')
+                    ->sum('hasil_hutan_bukan_kayu_details.annual_volume_realization');
+
+                // Bambu total for this type
+                $binaUsahaData[$key]['bambu_total'] = (float) \App\Models\HasilHutanBukanKayuDetail::join('hasil_hutan_bukan_kayu', 'hasil_hutan_bukan_kayu_details.hasil_hutan_bukan_kayu_id', '=', 'hasil_hutan_bukan_kayu.id')
+                    ->join('m_bukan_kayu', 'hasil_hutan_bukan_kayu_details.bukan_kayu_id', '=', 'm_bukan_kayu.id')
+                    ->where('hasil_hutan_bukan_kayu.year', $currentYear)
+                    ->where('hasil_hutan_bukan_kayu.status', 'final')
+                    ->where('hasil_hutan_bukan_kayu.forest_type', $type)
+                    ->whereNull('hasil_hutan_bukan_kayu.deleted_at')
+                    ->where('m_bukan_kayu.name', 'Bambu')
+                    ->sum('hasil_hutan_bukan_kayu_details.annual_volume_realization');
                 $binaUsahaData[$key]['bukan_kayu_monthly'] = $this->fillMonths(
                     isset($bukanKayuMonthlyByForestType[$type])
                     ? $bukanKayuMonthlyByForestType[$type]->pluck('total', 'month')

@@ -150,6 +150,22 @@ const ProductionSlide = ({ source, stats, currentYear, commonOptions }) => {
                     </div>
                   </div>
 
+                  {/* Bambu Production Section */}
+                  <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border border-gray-100 flex flex-col items-center justify-center text-center group/card transition-all hover:shadow-md">
+                    <div className="mb-4 p-3 rounded-xl bg-white shadow-sm border border-gray-100 text-green-500 group-hover/card:scale-110 transition-transform duration-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v18m7-18v18m7-18v18M5 9h7m0 6h7" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[9px] uppercase font-bold text-gray-400 tracking-widest mb-1">Total Bambu</span>
+                      <h3 className="text-3xl font-black text-gray-900 leading-none mb-1 tabular-nums tracking-tight">
+                        {formatNumber(stats?.bina_usaha[source.key]?.bambu_total || 0)}
+                      </h3>
+                      <span className="text-xs font-bold text-green-600 px-2 py-0.5 rounded-md bg-green-50">Batang</span>
+                    </div>
+                  </div>
+
                   <div className="text-center mt-2">
                     <p className="text-[9px] text-gray-400 uppercase font-black tracking-[0.2em] opacity-60">Data Terupdate {currentYear}</p>
                   </div>

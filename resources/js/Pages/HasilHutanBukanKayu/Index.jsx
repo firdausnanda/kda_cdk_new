@@ -618,9 +618,9 @@ export default function Index({ auth, datas, forest_type, filters, stats, availa
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Terverifikasi</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Realisasi Bambu</p>
                 <p className="text-2xl font-bold text-purple-600 mt-1">
-                  {formatNumber(stats.verified_count)} <span className="text-xs font-normal text-gray-400">Laporan</span>
+                  {formatNumber(stats.total_volume_bambu)} <span className="text-xs font-normal text-gray-400">Batang</span>
                 </p>
               </div>
               <div className="p-3 bg-purple-50 rounded-lg text-purple-600 shrink-0">

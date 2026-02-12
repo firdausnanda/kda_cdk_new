@@ -120,12 +120,17 @@ class HasilHutanBukanKayuController extends Controller
             ->where('year', $selectedYear)
             ->where('status', 'final')
             ->whereNull('deleted_at');
+        })->whereHas('bukanKayu', function ($q) {
+          $q->where('name', '!=', 'Bambu');
         })->sum('annual_volume_realization'),
-        'verified_count' => HasilHutanBukanKayu::where('forest_type', $forestType)
-          ->where('year', $selectedYear)
-          ->where('status', 'final')
-          ->whereNull('deleted_at')
-          ->count(),
+        'total_volume_bambu' => (float) HasilHutanBukanKayuDetail::whereHas('hasilHutanBukanKayu', function ($q) use ($forestType, $selectedYear) {
+          $q->where('forest_type', $forestType)
+            ->where('year', $selectedYear)
+            ->where('status', 'final')
+            ->whereNull('deleted_at');
+        })->whereHas('bukanKayu', function ($q) {
+          $q->where('name', 'Bambu');
+        })->sum('annual_volume_realization'),
       ];
     });
 
