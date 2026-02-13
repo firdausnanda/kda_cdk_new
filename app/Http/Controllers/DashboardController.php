@@ -449,9 +449,26 @@ class DashboardController extends Controller
             foreach ($forestTypes as $type) {
                 $key = strtolower(str_replace(' ', '_', $type));
 
-                // Kayu for this type
-                $binaUsahaData[$key]['kayu_total'] = (float) ($kayuTotals[$type] ?? 0);
-                $binaUsahaData[$key]['kayu_monthly'] = $this->fillMonths(
+                // Kayu Realization (Sum from details)
+                $kayuRealization = HasilHutanKayu::join('hasil_hutan_kayu_details', 'hasil_hutan_kayu.id', '=', 'hasil_hutan_kayu_details.hasil_hutan_kayu_id')
+                    ->where('hasil_hutan_kayu.year', $currentYear)
+                    ->where('hasil_hutan_kayu.status', 'final')
+                    ->where('hasil_hutan_kayu.forest_type', $type)
+                    ->sum('hasil_hutan_kayu_details.volume_realization');
+
+                // Kayu Monthly Realization
+                $kayuMonthlyRealization = HasilHutanKayu::join('hasil_hutan_kayu_details', 'hasil_hutan_kayu.id', '=', 'hasil_hutan_kayu_details.hasil_hutan_kayu_id')
+                    ->where('hasil_hutan_kayu.year', $currentYear)
+                    ->where('hasil_hutan_kayu.status', 'final')
+                    ->where('hasil_hutan_kayu.forest_type', $type)
+                    ->selectRaw('month, sum(hasil_hutan_kayu_details.volume_realization) as total')
+                    ->groupBy('month')
+                    ->pluck('total', 'month');
+
+                $binaUsahaData[$key]['kayu_total'] = (float) $kayuRealization;
+                $binaUsahaData[$key]['kayu_target'] = (float) ($kayuTotals[$type] ?? 0);
+                $binaUsahaData[$key]['kayu_monthly'] = $this->fillMonths($kayuMonthlyRealization);
+                $binaUsahaData[$key]['kayu_target_monthly'] = $this->fillMonths(
                     isset($kayuMonthlyByForestType[$type])
                     ? $kayuMonthlyByForestType[$type]->pluck('total', 'month')
                     : []
@@ -468,8 +485,15 @@ class DashboardController extends Controller
                     ->limit(5)
                     ->pluck('total', 'commodity');
 
-                // Bukan Kayu for this type (excluding Bambu)
-                $binaUsahaData[$key]['bukan_kayu_total'] = (float) \App\Models\HasilHutanBukanKayuDetail::join('hasil_hutan_bukan_kayu', 'hasil_hutan_bukan_kayu_details.hasil_hutan_bukan_kayu_id', '=', 'hasil_hutan_bukan_kayu.id')
+                // Bukan Kayu Target (Excluding Bambu)
+                $bukanKayuTarget = \App\Models\HasilHutanBukanKayu::where('year', $currentYear)
+                    ->where('status', 'final')
+                    ->where('forest_type', $type)
+                    ->whereHas('details.bukanKayu', fn($q) => $q->where('name', '!=', 'Bambu'))
+                    ->sum('volume_target');
+
+                // Bukan Kayu Realization
+                $bukanKayuRealization = (float) \App\Models\HasilHutanBukanKayuDetail::join('hasil_hutan_bukan_kayu', 'hasil_hutan_bukan_kayu_details.hasil_hutan_bukan_kayu_id', '=', 'hasil_hutan_bukan_kayu.id')
                     ->join('m_bukan_kayu', 'hasil_hutan_bukan_kayu_details.bukan_kayu_id', '=', 'm_bukan_kayu.id')
                     ->where('hasil_hutan_bukan_kayu.year', $currentYear)
                     ->where('hasil_hutan_bukan_kayu.status', 'final')
@@ -478,8 +502,18 @@ class DashboardController extends Controller
                     ->where('m_bukan_kayu.name', '!=', 'Bambu')
                     ->sum('hasil_hutan_bukan_kayu_details.annual_volume_realization');
 
-                // Bambu total for this type
-                $binaUsahaData[$key]['bambu_total'] = (float) \App\Models\HasilHutanBukanKayuDetail::join('hasil_hutan_bukan_kayu', 'hasil_hutan_bukan_kayu_details.hasil_hutan_bukan_kayu_id', '=', 'hasil_hutan_bukan_kayu.id')
+                $binaUsahaData[$key]['bukan_kayu_total'] = $bukanKayuRealization;
+                $binaUsahaData[$key]['bukan_kayu_target'] = (float) $bukanKayuTarget;
+
+                // Bambu Target
+                $bambuTarget = \App\Models\HasilHutanBukanKayu::where('year', $currentYear)
+                    ->where('status', 'final')
+                    ->where('forest_type', $type)
+                    ->whereHas('details.bukanKayu', fn($q) => $q->where('name', 'Bambu'))
+                    ->sum('volume_target');
+
+                // Bambu Realization
+                $bambuRealization = (float) \App\Models\HasilHutanBukanKayuDetail::join('hasil_hutan_bukan_kayu', 'hasil_hutan_bukan_kayu_details.hasil_hutan_bukan_kayu_id', '=', 'hasil_hutan_bukan_kayu.id')
                     ->join('m_bukan_kayu', 'hasil_hutan_bukan_kayu_details.bukan_kayu_id', '=', 'm_bukan_kayu.id')
                     ->where('hasil_hutan_bukan_kayu.year', $currentYear)
                     ->where('hasil_hutan_bukan_kayu.status', 'final')
@@ -487,6 +521,10 @@ class DashboardController extends Controller
                     ->whereNull('hasil_hutan_bukan_kayu.deleted_at')
                     ->where('m_bukan_kayu.name', 'Bambu')
                     ->sum('hasil_hutan_bukan_kayu_details.annual_volume_realization');
+
+                $binaUsahaData[$key]['bambu_total'] = $bambuRealization;
+                $binaUsahaData[$key]['bambu_target'] = (float) $bambuTarget;
+
                 $binaUsahaData[$key]['bukan_kayu_monthly'] = $this->fillMonths(
                     isset($bukanKayuMonthlyByForestType[$type])
                     ? $bukanKayuMonthlyByForestType[$type]->pluck('total', 'month')

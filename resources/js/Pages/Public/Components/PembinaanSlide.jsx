@@ -11,6 +11,10 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 const PembinaanSlide = ({ section, currentYear, commonOptions }) => {
 
   const percentage = useMemo(() => {
+
+    if (section.total > 0 && section.targetTotal <= 0) {
+      return 100;
+    }
     return section.targetTotal > 0 ? (section.total / section.targetTotal) * 100 : 0;
   }, [section.total, section.targetTotal]);
 

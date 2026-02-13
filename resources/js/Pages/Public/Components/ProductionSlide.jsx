@@ -15,12 +15,23 @@ const ProductionSlide = ({ source, stats, currentYear, commonOptions }) => {
       labels,
       datasets: [
         {
-          label: 'Kayu (M³)',
+          label: 'Realisasi Kayu (M³)',
           data: months.map(m => stats?.bina_usaha[source.key]?.kayu_monthly?.[m] || 0),
           borderColor: source.color,
           backgroundColor: `${source.color}20`,
           fill: true,
           tension: 0.4,
+          order: 1
+        },
+        {
+          label: 'Target Kayu (M³)',
+          data: months.map(m => stats?.bina_usaha[source.key]?.kayu_target_monthly?.[m] || 0),
+          borderColor: '#9ca3af', // gray-400
+          backgroundColor: '#9ca3af20',
+          fill: true,
+          tension: 0.4,
+          borderDash: [5, 5],
+          order: 2
         }
       ]
     };
@@ -44,7 +55,17 @@ const ProductionSlide = ({ source, stats, currentYear, commonOptions }) => {
           backgroundColor: '#f59e0b20',
           fill: true,
           tension: 0.4,
-          borderDash: [5, 5]
+          order: 1
+        },
+        {
+          label: 'Target Bukan Kayu (Kg)',
+          data: months.map(m => stats?.bina_usaha[source.key]?.bukan_kayu_target_monthly?.[m] || 0),
+          borderColor: '#9ca3af',
+          backgroundColor: '#9ca3af20',
+          fill: true,
+          tension: 0.4,
+          borderDash: [5, 5],
+          order: 2
         }
       ]
     };
@@ -100,6 +121,43 @@ const ProductionSlide = ({ source, stats, currentYear, commonOptions }) => {
     maintainAspectRatio: false
   }), [commonOptions]);
 
+  const calculatePercentage = (realization, target) => {
+    if (realization > 0 && target <= 0) return 100;
+    return target > 0 ? (realization / target) * 100 : 0;
+  };
+
+  const kayuPercentage = calculatePercentage(
+    stats?.bina_usaha[source.key]?.kayu_total || 0,
+    stats?.bina_usaha[source.key]?.kayu_target || 0
+  );
+
+  const bukanKayuPercentage = calculatePercentage(
+    stats?.bina_usaha[source.key]?.bukan_kayu_total || 0,
+    stats?.bina_usaha[source.key]?.bukan_kayu_target || 0
+  );
+
+
+
+  const renderProgress = (label, percentage, target, color) => (
+    <div className="mb-4 last:mb-0">
+      <div className="flex justify-between items-end mb-1">
+        <div className="flex flex-col">
+          <span className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">{label}</span>
+          <span className="text-lg font-black text-gray-900">{percentage.toFixed(1)}%</span>
+        </div>
+        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter mb-1">Target: {formatNumber(target || 0)}</span>
+      </div>
+      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden shadow-inner p-px">
+        <div
+          className="h-full rounded-full transition-all duration-1000 ease-out shadow-sm relative overflow-hidden"
+          style={{ width: `${Math.min(percentage, 100)}%`, backgroundColor: color }}
+        >
+          <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.2)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0.2)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-[shimmer_2s_linear_infinite]"></div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-w-full px-4">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -150,20 +208,12 @@ const ProductionSlide = ({ source, stats, currentYear, commonOptions }) => {
                     </div>
                   </div>
 
-                  {/* Bambu Production Section */}
-                  <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border border-gray-100 flex flex-col items-center justify-center text-center group/card transition-all hover:shadow-md">
-                    <div className="mb-4 p-3 rounded-xl bg-white shadow-sm border border-gray-100 text-green-500 group-hover/card:scale-110 transition-transform duration-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v18m7-18v18m7-18v18M5 9h7m0 6h7" />
-                      </svg>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-[9px] uppercase font-bold text-gray-400 tracking-widest mb-1">Total Bambu</span>
-                      <h3 className="text-3xl font-black text-gray-900 leading-none mb-1 tabular-nums tracking-tight">
-                        {formatNumber(stats?.bina_usaha[source.key]?.bambu_total || 0)}
-                      </h3>
-                      <span className="text-xs font-bold text-green-600 px-2 py-0.5 rounded-md bg-green-50">Batang</span>
-                    </div>
+
+
+                  <div className="w-full pt-4 border-t border-gray-50">
+                    {renderProgress('Kayu', kayuPercentage, stats?.bina_usaha[source.key]?.kayu_target, source.color)}
+                    {renderProgress('Bukan Kayu', bukanKayuPercentage, stats?.bina_usaha[source.key]?.bukan_kayu_target, '#f59e0b')}
+
                   </div>
 
                   <div className="text-center mt-2">
@@ -179,7 +229,14 @@ const ProductionSlide = ({ source, stats, currentYear, commonOptions }) => {
             {/* Monthly Trends (Stacked) */}
             <div className="grid grid-cols-1 gap-6">
               <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-4">Tren Produksi Kayu Bulanan</h4>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Tren Produksi Kayu Bulanan</h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-500">
+                      Realisasi: {kayuPercentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
                 <div className="h-[200px]">
                   <Line
                     data={woodTrendData}
@@ -189,7 +246,14 @@ const ProductionSlide = ({ source, stats, currentYear, commonOptions }) => {
               </div>
 
               <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-4">Tren Produksi Bukan Kayu Bulanan</h4>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Tren Produksi Bukan Kayu Bulanan</h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-500">
+                      Realisasi: {bukanKayuPercentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
                 <div className="h-[200px]">
                   <Line
                     data={nonWoodTrendData}
